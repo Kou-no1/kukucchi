@@ -35,11 +35,19 @@ const modes = [
     subtitle: 'なかまにしよう',
   },
   {
+    label: 'モンスターバトル',
+    href: '/monster-battle',
+    ready: true,
+    icon: '👾',
+    badge: '05',
+    subtitle: 'ミニゲームでアタック',
+  },
+  {
     label: 'ボスバトル',
     href: '/battle',
     ready: true,
     icon: '🛡️',
-    badge: '05',
+    badge: '06',
     subtitle: 'だんボスに挑戦',
   },
   {
@@ -47,7 +55,7 @@ const modes = [
     href: '/treasure',
     ready: true,
     icon: '🗝️',
-    badge: '06',
+    badge: '07',
     subtitle: 'かぎを集める',
   },
   {
@@ -55,7 +63,7 @@ const modes = [
     href: '/advanced',
     ready: true,
     icon: 'abc',
-    badge: '07',
+    badge: '08',
     subtitle: 'スーパー計算',
   },
 ]

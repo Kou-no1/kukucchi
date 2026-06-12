@@ -3195,6 +3195,224 @@ legend {
   font-weight: 900;
 }
 
+.ufo-badge {
+  position: relative;
+  width: 132px;
+  max-width: 100%;
+  aspect-ratio: 1.38;
+  display: grid;
+  place-items: center;
+  filter: drop-shadow(0 0 12px rgba(91, 233, 244, 0.42));
+}
+
+.ufo-badge.compact {
+  width: 82px;
+}
+
+.ufo-badge-dome {
+  position: absolute;
+  top: 6%;
+  width: 54%;
+  height: 54%;
+  display: grid;
+  place-items: center;
+  border: 3px solid rgba(223, 252, 255, 0.88);
+  border-radius: 999px 999px 42% 42%;
+  background: linear-gradient(155deg, rgba(204, 250, 255, 0.95), rgba(72, 218, 255, 0.58));
+  color: #06213a;
+  font-weight: 950;
+}
+
+.ufo-badge-body {
+  position: absolute;
+  bottom: 21%;
+  width: 88%;
+  min-height: 29%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border: 3px solid rgba(180, 220, 255, 0.78);
+  border-radius: 50%;
+  background: linear-gradient(180deg, #d6ebff 0%, #7694c2 58%, #526486 100%);
+}
+
+.ufo-badge-body i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #66f2ff;
+  box-shadow: 0 0 12px rgba(102, 242, 255, 0.95);
+}
+
+.ufo-badge-all .ufo-badge-dome {
+  background: linear-gradient(155deg, #fff7b4, #65e7ff);
+}
+
+.ufo-badge-square .ufo-badge-dome {
+  border-radius: 22%;
+  transform: rotate(45deg);
+}
+
+.ufo-badge-square .ufo-badge-dome span {
+  transform: rotate(-45deg);
+}
+
+.ufo-badge-pi .ufo-badge-body i {
+  background: #ba8dff;
+  box-shadow: 0 0 12px rgba(186, 141, 255, 0.95);
+}
+
+.ufo-badge-special {
+  width: 154px;
+  filter: drop-shadow(0 0 18px rgba(255, 231, 91, 0.62));
+}
+
+.ufo-badge-special .ufo-badge-dome {
+  background: linear-gradient(155deg, #fff6a9, #ff91e8 45%, #72f2ff);
+}
+
+.ufo-badge-special .ufo-badge-body {
+  background: linear-gradient(90deg, #ffe66b, #6ff6ff, #ff8ce8);
+}
+
+.ufo-badge.locked {
+  opacity: 0.62;
+  filter: grayscale(0.85) drop-shadow(0 0 8px rgba(91, 233, 244, 0.24));
+}
+
+.ufo-badge.locked .ufo-badge-dome,
+.ufo-badge.locked .ufo-badge-body {
+  background: rgba(31, 54, 84, 0.85);
+}
+
+.boss-ufo-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 2px solid rgba(91, 233, 244, 0.28);
+  border-radius: 8px;
+  background: rgba(91, 233, 244, 0.08);
+}
+
+.boss-ufo-preview small {
+  color: #dffcff;
+  font-weight: 850;
+}
+
+.ufo-book-card {
+  align-items: center;
+  text-align: center;
+}
+
+.home-equipped-ufo {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 4;
+  transform: translateX(-50%);
+  animation: ufo-float-home 3.2s ease-in-out infinite;
+}
+
+.mini-equipped-ufo {
+  width: 124px;
+  justify-self: center;
+  animation: ufo-float 3.2s ease-in-out infinite;
+}
+
+.ufo-celebration {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  text-align: center;
+  background:
+    radial-gradient(circle at 50% 36%, rgba(91, 233, 244, 0.32), transparent 18rem),
+    rgba(4, 12, 31, 0.56);
+}
+
+.ufo-celebration::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, #68f4ff 0 4px, transparent 5px),
+    radial-gradient(circle, #ffe86a 0 4px, transparent 5px),
+    radial-gradient(circle, #ff79ce 0 4px, transparent 5px);
+  background-size: 92px 92px, 124px 124px, 156px 156px;
+  animation: confetti-drift 3.4s linear infinite;
+}
+
+.ufo-celebration span,
+.ufo-celebration strong,
+.ufo-celebration small {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.ufo-celebration span {
+  font-size: 4rem;
+}
+
+.ufo-celebration strong {
+  color: #e8fbff;
+  font-size: clamp(1.8rem, 4vw, 3.2rem);
+  text-shadow: 0 0 18px rgba(91, 233, 244, 0.9);
+}
+
+.ufo-celebration small {
+  margin-top: 8px;
+  color: #f8feff;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+@keyframes ufo-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes ufo-float-home {
+  0%,
+  100% {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  50% {
+    transform: translateX(-50%) translateY(-8px);
+  }
+}
+
+@keyframes confetti-drift {
+  from {
+    background-position: 0 0, 10px -20px, -20px 12px;
+  }
+
+  to {
+    background-position: 0 184px, 10px 228px, -20px 324px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-equipped-ufo,
+  .mini-equipped-ufo,
+  .ufo-celebration::before {
+    animation: none;
+  }
+}
+
 @media (max-width: 760px) {
   .speed-command {
     grid-template-columns: 1fr;

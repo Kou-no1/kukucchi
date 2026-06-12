@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
-import { bossDifficulties, bosses, getBossLimitedItem } from '../../data/bosses'
+import { bossDifficultyIds, bosses, getBossDifficulty, getBossLimitedItem } from '../../data/bosses'
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
+import { getUfoById, getUfoForBoss } from '../../data/ufos'
 import { applyBossClearReward, getClearedStars, getDifficultyProgress, isBossUnlocked, isDifficultyUnlocked } from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import {
   generateAdvancedQuestion,
+  generateMissingFactorQuestion,
   generateMultiplicationFactQuestion,
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
@@ -30,21 +33,26 @@ type BossBattleResult = {
   damage: number
   elapsedMs: number
   rewardItemIds: string[]
+  rewardUfoIds: string[]
   rewardTitles: string[]
+  grandReward: boolean
 }
 
-const difficultyIds: BossDifficultyId[] = ['normal', 'hard', 'fast']
+const difficultyIds: BossDifficultyId[] = [...bossDifficultyIds]
 
 function pick<T>(items: T[]): T {
   return items[Math.floor(Math.random() * items.length)] ?? items[0]
 }
 
-function createBossQuestion(boss: BossDefinition): Question {
+function createBossQuestion(boss: BossDefinition, difficulty: BossDifficulty): Question {
   if (boss.advancedCategory) {
     return generateAdvancedQuestion(boss.advancedCategory)
   }
   const stage = pick(boss.stages ?? [2])
   const right = Math.floor(Math.random() * 9) + 1
+  if (difficulty.id === 'gekimuzu' && Math.random() < 0.3) {
+    return generateMissingFactorQuestion(stage, right)
+  }
   return generateMultiplicationFactQuestion(stage, right)
 }
 
@@ -73,7 +81,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
 
   const nextQuestion = useCallback(
     (boss: BossDefinition, difficulty: BossDifficulty, nextIndex: number) => {
-      setQuestion(createBossQuestion(boss))
+      setQuestion(createBossQuestion(boss, difficulty))
       setQuestionIndex(nextIndex)
       setFeedback('idle')
       const limitMs = difficulty.timeLimitSeconds ? difficulty.timeLimitSeconds * 1000 : 0
@@ -104,7 +112,14 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
       const cleared = nextDamage >= difficulty.hp
       const reward = cleared
         ? applyBossClearReward(applied.save, boss.id, difficulty.id, elapsedMs)
-        : { save: applied.save, firstClear: false, rewardItemIds: [], rewardTitles: [] }
+        : {
+            save: applied.save,
+            firstClear: false,
+            rewardItemIds: [],
+            rewardUfoIds: [],
+            rewardTitles: [],
+            grandReward: false,
+          }
       setSaveData(reward.save)
       setBattleResult({
         boss,
@@ -114,7 +129,9 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         damage: nextDamage,
         elapsedMs,
         rewardItemIds: reward.rewardItemIds,
+        rewardUfoIds: reward.rewardUfoIds,
         rewardTitles: reward.rewardTitles,
+        grandReward: reward.grandReward,
       })
       setPhase('result')
     },
@@ -251,8 +268,19 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   }
 
   if (phase === 'result' && battleResult) {
+    const hasRewards =
+      battleResult.rewardItemIds.length > 0 ||
+      battleResult.rewardUfoIds.length > 0 ||
+      battleResult.rewardTitles.length > 0
     return (
       <AppShell title={battleResult.boss.label} backTo={battleResult.boss.group === 'advanced' ? '/advanced' : '/battle'}>
+        {battleResult.grandReward ? (
+          <div className="ufo-celebration" role="status" aria-live="polite">
+            <span aria-hidden="true">🎉</span>
+            <strong>すべてのげきムズをクリア！</strong>
+            <small>スペシャルUFOがなかまになりました</small>
+          </div>
+        ) : null}
         <section className="boss-result">
           <p className="welcome">
             {battleResult.cleared ? 'クリア！' : 'おしい！もういちど！'}
@@ -261,10 +289,13 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             {battleResult.damage}/{battleResult.difficulty.hp} ダメージ
           </h2>
           <p className="title-line">タイム {formatSeconds(battleResult.elapsedMs)}</p>
-          {battleResult.firstClear ? (
+          {hasRewards ? (
             <div className="boss-reward-list">
               {battleResult.rewardItemIds.map((itemId) => (
                 <span key={itemId}>🎁 {getBossLimitedItem(itemId)?.name ?? itemId}</span>
+              ))}
+              {battleResult.rewardUfoIds.map((ufoId) => (
+                <span key={ufoId}>🛸 {getUfoById(ufoId)?.name ?? ufoId}</span>
               ))}
               {battleResult.rewardTitles.map((title) => (
                 <span key={title}>🏷️ {title}</span>
@@ -298,6 +329,10 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         {visibleBosses.map((boss) => {
           const unlocked = isBossUnlocked(boss, saveData)
           const clearedStars = getClearedStars(saveData, boss.id)
+          const rewardUfo = getUfoForBoss(boss.id)
+          const ownsRewardUfo = rewardUfo
+            ? saveData.progress.ownedUfos.includes(rewardUfo.id)
+            : false
           return (
             <article className={unlocked ? 'boss-card' : 'boss-card locked'} key={boss.id}>
               <span className="boss-no">No.{String(boss.no).padStart(2, '0')}</span>
@@ -307,11 +342,23 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
               <h2>{unlocked ? boss.label : '？？？'}</h2>
               <p>{unlocked ? boss.description : '条件をみたすと出会えます。'}</p>
               <strong>{'★'.repeat(clearedStars) || '未クリア'}</strong>
+              {rewardUfo ? (
+                <div className="boss-ufo-preview">
+                  <UfoBadge ufo={rewardUfo} locked={!ownsRewardUfo} compact />
+                  <small>
+                    げきムズ初回クリア報酬：{ownsRewardUfo ? rewardUfo.name : '？？？'}
+                  </small>
+                </div>
+              ) : null}
               <div className="boss-difficulty-row">
                 {difficultyIds.map((difficultyId) => {
-                  const difficulty = bossDifficulties[difficultyId]
+                  const difficulty = getBossDifficulty(boss, difficultyId)
                   const difficultyUnlocked = isDifficultyUnlocked(boss, difficultyId, saveData)
                   const progress = getDifficultyProgress(saveData, boss.id, difficultyId)
+                  const label =
+                    difficultyId === 'gekimuzu' && !difficultyUnlocked
+                      ? '？？？ 🛸'
+                      : difficulty.label
                   return (
                     <button
                       className={progress.cleared ? 'selected' : ''}
@@ -320,7 +367,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
                       type="button"
                       onClick={() => startBattle(boss, difficulty)}
                     >
-                      {difficulty.label}
+                      {label}
                       {progress.bestTimeMs ? ` ${formatSeconds(progress.bestTimeMs)}` : ''}
                     </button>
                   )

@@ -2,8 +2,10 @@ import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
+import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
+import { getUfoById } from '../../data/ufos'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdaptiveMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
@@ -29,10 +31,10 @@ const gameConfig: Record<
   }
 > = {
   battle: {
-    title: 'ボスバトル',
+    title: 'モンスターバトル',
     eyebrow: 'まちがえても だいじょうぶ',
-    heading: '九九ボスにアタック',
-    description: '10もんでボスのシールドをけずろう',
+    heading: 'ミニモンスターにアタック',
+    description: '10もんでシールドをけずろう',
     goal: 10,
     statLabel: 'ボスHP',
     icon: '🛡️',
@@ -75,6 +77,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
   const config = gameConfig[variant]
+  const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [question, setQuestion] = useState<Question>(() =>
     generateAdaptiveMultiplicationQuestion(saveData.progress.facts, { answerMode: 'choice' }),
   )
@@ -142,7 +145,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   return (
     <AppShell title={config.title} backTo="/games">
       <section className="mission-companion mini-game-command" aria-label={config.title}>
-        <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
+        {variant === 'rocket' && equippedUfo ? (
+          <UfoBadge ufo={equippedUfo} compact className="mini-equipped-ufo" />
+        ) : (
+          <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
+        )}
         <div>
           <p className="welcome">{config.eyebrow}</p>
           <h2>{config.heading}</h2>

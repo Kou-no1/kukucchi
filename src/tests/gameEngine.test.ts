@@ -4,6 +4,7 @@ import {
   generateAdaptiveMultiplicationQuestion,
   generateAdvancedQuestion,
   generateChoices,
+  generateMissingFactorQuestion,
   generateMultiplicationQuestion,
 } from '../game-engine/questions/questionGenerator'
 import {
@@ -20,6 +21,7 @@ import { getWeakFacts } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { bosses } from '../data/bosses'
+import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import {
   applyBossClearReward,
   getDifficultyProgress,
@@ -43,6 +45,24 @@ function result(overrides: Partial<AnswerResult> = {}): AnswerResult {
   }
 }
 
+function createSaveWithPlayer(): SaveData {
+  return {
+    ...createDefaultSaveData(),
+    player: {
+      nickname: 'テスト',
+      icon: 'たまご',
+      learningLevel: 'first' as const,
+      level: 1,
+      exp: 0,
+      coins: 0,
+      titles: [],
+      currentTitle: 'はじめのいっぽ',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      lastPlayedAt: null,
+    },
+  }
+}
+
 describe('question generation', () => {
   it('generates multiplication questions with unique choices', () => {
     const question = generateMultiplicationQuestion({
@@ -60,6 +80,16 @@ describe('question generation', () => {
     expect(new Set(choices).size).toBe(4)
     expect(choices).toContain(56)
     expect(choices.some((choice) => [49, 54, 63, 64].includes(choice))).toBe(true)
+  })
+
+  it('generates missing-factor questions with consistent answers', () => {
+    const question = generateMissingFactorQuestion(6, 7, { rng: () => 0.2 })
+    expect(question.prompt).toContain('□')
+    expect(question.prompt).toContain('42')
+    expect(question.answer).toBe(6)
+    expect(new Set(question.choices).size).toBe(4)
+    expect(question.choices).toContain(6)
+    expect(question.metadata?.missingFactor).toBe(true)
   })
 
   it('checks numeric and full-width answers', () => {
@@ -169,9 +199,27 @@ describe('mastery, review, missions, and storage', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(2)
+    expect(migrated.version).toBe(3)
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
+    expect(migrated.progress.ownedUfos).toEqual([])
+    expect(migrated.progress.equippedUfoId).toBeNull()
+  })
+
+  it('migrates v2 save data into v3 UFO fields', () => {
+    const v2Save = {
+      ...createDefaultSaveData(),
+      version: 2,
+      progress: {
+        ...createDefaultSaveData().progress,
+        ownedUfos: undefined,
+        equippedUfoId: undefined,
+      },
+    }
+    const migrated = migrateSaveData(v2Save)
+    expect(migrated.version).toBe(3)
+    expect(migrated.progress.ownedUfos).toEqual([])
+    expect(migrated.progress.equippedUfoId).toBeNull()
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {
@@ -206,43 +254,19 @@ describe('mastery, review, missions, and storage', () => {
     }
     expect(isBossUnlocked(boss, unlockedSave)).toBe(true)
     expect(isDifficultyUnlocked(boss, 'hard', unlockedSave)).toBe(false)
-    const withPlayer = {
-      ...unlockedSave,
-      player: {
-        nickname: 'テスト',
-        icon: 'たまご',
-        learningLevel: 'first' as const,
-        level: 1,
-        exp: 0,
-        coins: 0,
-        titles: [],
-        currentTitle: 'はじめのいっぽ',
-        createdAt: '2026-01-01T00:00:00.000Z',
-        lastPlayedAt: null,
-      },
-    }
+    const withPlayer = { ...createSaveWithPlayer(), progress: unlockedSave.progress }
     const cleared = applyBossClearReward(withPlayer, boss.id, 'normal', 12000).save
     expect(getDifficultyProgress(cleared, boss.id, 'normal').cleared).toBe(true)
     expect(isDifficultyUnlocked(boss, 'hard', cleared)).toBe(true)
+    expect(isDifficultyUnlocked(boss, 'gekimuzu', cleared)).toBe(false)
+    const hardCleared = applyBossClearReward(cleared, boss.id, 'hard', 11000).save
+    const fastCleared = applyBossClearReward(hardCleared, boss.id, 'fast', 9000).save
+    expect(isDifficultyUnlocked(boss, 'gekimuzu', fastCleared)).toBe(true)
   })
 
   it('grants fixed boss rewards only on first clear', () => {
     const boss = bosses[0]
-    let save: SaveData = {
-      ...createDefaultSaveData(),
-      player: {
-        nickname: 'テスト',
-        icon: 'たまご',
-        learningLevel: 'first' as const,
-        level: 1,
-        exp: 0,
-        coins: 0,
-        titles: [],
-        currentTitle: 'はじめのいっぽ',
-        createdAt: '2026-01-01T00:00:00.000Z',
-        lastPlayedAt: null,
-      },
-    }
+    let save: SaveData = createSaveWithPlayer()
     const first = applyBossClearReward(save, boss.id, 'normal', 10000)
     save = first.save
     const second = applyBossClearReward(save, boss.id, 'normal', 9000)
@@ -252,5 +276,43 @@ describe('mastery, review, missions, and storage', () => {
     expect(second.firstClear).toBe(false)
     expect(second.rewardItemIds).toEqual([])
     expect(second.rewardTitles).toEqual([])
+  })
+
+  it('grants fixed UFO rewards only on first gekimuzu clear', () => {
+    const boss = bosses[0]
+    const ufo = getUfoForBoss(boss.id)
+    expect(ufo).toBeTruthy()
+    if (!ufo) {
+      return
+    }
+    let save: SaveData = createSaveWithPlayer()
+    const first = applyBossClearReward(save, boss.id, 'gekimuzu', 8000)
+    save = first.save
+    const second = applyBossClearReward(save, boss.id, 'gekimuzu', 7000)
+    expect(first.firstClear).toBe(true)
+    expect(first.rewardUfoIds).toEqual([ufo.id])
+    expect(first.rewardTitles).toContain(boss.rewards.gekimuzu.title)
+    expect(first.save.progress.ownedUfos).toContain(ufo.id)
+    expect(second.firstClear).toBe(false)
+    expect(second.rewardUfoIds).toEqual([])
+  })
+
+  it('grants the all-gekimuzu reward once when the 11th boss clears', () => {
+    const finalBoss = bosses[bosses.length - 1]
+    let save: SaveData = createSaveWithPlayer()
+    for (const boss of bosses.slice(0, -1)) {
+      save = applyBossClearReward(save, boss.id, 'gekimuzu', 8000).save
+    }
+    expect(save.progress.ownedUfos).not.toContain(specialUfoId)
+
+    const finalClear = applyBossClearReward(save, finalBoss.id, 'gekimuzu', 8000)
+    expect(finalClear.grandReward).toBe(true)
+    expect(finalClear.rewardUfoIds).toContain(specialUfoId)
+    expect(finalClear.rewardTitles).toContain('すべてをしるもの')
+    expect(finalClear.save.progress.ownedUfos).toContain(specialUfoId)
+
+    const repeat = applyBossClearReward(finalClear.save, finalBoss.id, 'gekimuzu', 7000)
+    expect(repeat.grandReward).toBe(false)
+    expect(repeat.rewardUfoIds).toEqual([])
   })
 })

@@ -1,10 +1,13 @@
 import {
+  allGekimuzuTitle,
   bossDifficulties,
   bosses,
   getBossById,
+  getBossDifficulty,
   legendaryBossTitle,
 } from '../../data/bosses'
 import type { BossDefinition } from '../../data/bosses'
+import { specialUfoId } from '../../data/ufos'
 import type {
   BossDifficultyId,
   BossDifficultyProgress,
@@ -12,7 +15,7 @@ import type {
   SaveData,
 } from '../../types/save'
 
-const difficultyOrder: BossDifficultyId[] = ['normal', 'hard', 'fast']
+const difficultyOrder: BossDifficultyId[] = ['normal', 'hard', 'fast', 'gekimuzu']
 
 function createDifficultyProgress(): BossDifficultyProgress {
   return {
@@ -86,15 +89,20 @@ export function isDifficultyUnlocked(
 }
 
 export function getClearedStars(save: SaveData, bossId: string): number {
+  const boss = getBossById(bossId)
   return difficultyOrder.reduce((stars, difficulty) => {
     return getDifficultyProgress(save, bossId, difficulty).cleared
-      ? Math.max(stars, bossDifficulties[difficulty].stars)
+      ? Math.max(stars, boss ? getBossDifficulty(boss, difficulty).stars : bossDifficulties[difficulty].stars)
       : stars
   }, 0)
 }
 
 function hasAllFastClears(save: SaveData): boolean {
   return bosses.every((boss) => getDifficultyProgress(save, boss.id, 'fast').cleared)
+}
+
+function hasAllGekimuzuClears(save: SaveData): boolean {
+  return bosses.every((boss) => getDifficultyProgress(save, boss.id, 'gekimuzu').cleared)
 }
 
 export function applyBossClearReward(
@@ -107,11 +115,20 @@ export function applyBossClearReward(
   save: SaveData
   firstClear: boolean
   rewardItemIds: string[]
+  rewardUfoIds: string[]
   rewardTitles: string[]
+  grandReward: boolean
 } {
   const boss = getBossById(bossId)
   if (!boss || !save.player) {
-    return { save, firstClear: false, rewardItemIds: [], rewardTitles: [] }
+    return {
+      save,
+      firstClear: false,
+      rewardItemIds: [],
+      rewardUfoIds: [],
+      rewardTitles: [],
+      grandReward: false,
+    }
   }
 
   const currentBossProgress = getBossProgress(save, bossId)
@@ -128,7 +145,8 @@ export function applyBossClearReward(
   }
 
   const reward = boss.rewards[difficulty]
-  const rewardItemIds = firstClear ? [reward.itemId] : []
+  const rewardItemIds = firstClear && reward.itemId ? [reward.itemId] : []
+  const rewardUfoIds = firstClear && reward.ufoId ? [reward.ufoId] : []
   const rewardTitles = firstClear ? [reward.title] : []
   const withDifficulty: SaveData = {
     ...save,
@@ -141,6 +159,8 @@ export function applyBossClearReward(
     progress: {
       ...save.progress,
       bossItems: Array.from(new Set([...save.progress.bossItems, ...rewardItemIds])),
+      ownedUfos: Array.from(new Set([...save.progress.ownedUfos, ...rewardUfoIds])),
+      equippedUfoId: save.progress.equippedUfoId ?? rewardUfoIds[0] ?? null,
       bossProgress: {
         ...save.progress.bossProgress,
         [bossId]: {
@@ -154,36 +174,81 @@ export function applyBossClearReward(
     },
   }
 
-  if (!hasAllFastClears(withDifficulty)) {
-    return {
-      save: withDifficulty,
-      firstClear,
-      rewardItemIds,
-      rewardTitles,
-    }
-  }
-
   const player = withDifficulty.player
   if (!player) {
     return {
       save: withDifficulty,
       firstClear,
       rewardItemIds,
+      rewardUfoIds,
       rewardTitles,
+      grandReward: false,
     }
   }
-  const titles = Array.from(new Set([...player.titles, legendaryBossTitle]))
+
+  const shouldGrantLegendary =
+    hasAllFastClears(withDifficulty) && !player.titles.includes(legendaryBossTitle)
+  const withLegendary: SaveData = shouldGrantLegendary
+    ? {
+        ...withDifficulty,
+        player: {
+          ...player,
+          titles: Array.from(new Set([...player.titles, legendaryBossTitle])),
+          currentTitle: legendaryBossTitle,
+        },
+      }
+    : withDifficulty
+  const legendaryTitles = shouldGrantLegendary ? [legendaryBossTitle] : []
+
+  const currentOwnedUfos = withLegendary.progress.ownedUfos
+  const shouldGrantGrandReward =
+    difficulty === 'gekimuzu' &&
+    hasAllGekimuzuClears(withLegendary) &&
+    !currentOwnedUfos.includes(specialUfoId)
+  if (!shouldGrantGrandReward) {
+    return {
+      save: withLegendary,
+      firstClear,
+      rewardItemIds,
+      rewardUfoIds,
+      rewardTitles: Array.from(new Set([...rewardTitles, ...legendaryTitles])),
+      grandReward: false,
+    }
+  }
+
+  const grandPlayer = withLegendary.player
+  if (!grandPlayer) {
+    return {
+      save: withLegendary,
+      firstClear,
+      rewardItemIds,
+      rewardUfoIds,
+      rewardTitles: Array.from(new Set([...rewardTitles, ...legendaryTitles])),
+      grandReward: false,
+    }
+  }
+  const allRewardTitles = Array.from(
+    new Set([...rewardTitles, ...legendaryTitles, allGekimuzuTitle]),
+  )
+  const allRewardUfos = Array.from(new Set([...rewardUfoIds, specialUfoId]))
   return {
     save: {
-      ...withDifficulty,
+      ...withLegendary,
       player: {
-        ...player,
-        titles,
-        currentTitle: legendaryBossTitle,
+        ...grandPlayer,
+        titles: Array.from(new Set([...grandPlayer.titles, allGekimuzuTitle])),
+        currentTitle: allGekimuzuTitle,
+      },
+      progress: {
+        ...withLegendary.progress,
+        ownedUfos: Array.from(new Set([...withLegendary.progress.ownedUfos, specialUfoId])),
+        equippedUfoId: withLegendary.progress.equippedUfoId ?? specialUfoId,
       },
     },
     firstClear,
     rewardItemIds,
-    rewardTitles: Array.from(new Set([...rewardTitles, legendaryBossTitle])),
+    rewardUfoIds: allRewardUfos,
+    rewardTitles: allRewardTitles,
+    grandReward: true,
   }
 }

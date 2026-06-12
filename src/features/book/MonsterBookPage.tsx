@@ -1,27 +1,46 @@
 import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
-import { bossDifficulties, bosses, bossLimitedItems } from '../../data/bosses'
+import { UfoBadge } from '../../components/collection/UfoBadge'
+import { bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
+import { ufoDefinitions } from '../../data/ufos'
 import { getDifficultyProgress } from '../../game-engine/bosses/bossEngine'
 import { getMasteredFacts, getMonsterFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { BossDifficultyId } from '../../types/save'
 
-const difficultyIds: BossDifficultyId[] = ['normal', 'hard', 'fast']
+const difficultyIds: BossDifficultyId[] = [...bossDifficultyIds]
 
 function formatBestTime(milliseconds: number | null): string {
   return milliseconds === null ? '記録なし' : `${(milliseconds / 1000).toFixed(1)}秒`
 }
 
 export function MonsterBookPage() {
-  const { saveData } = useSaveData()
+  const { saveData, updateSaveData } = useSaveData()
   const masteredFacts = getMasteredFacts(saveData.progress.facts)
   const activeMonsters = getMonsterFacts(saveData.progress.facts, 12)
   const registered = new Set(saveData.progress.monsterBook)
   const ownedBossItems = new Set(saveData.progress.bossItems)
+  const ownedUfos = new Set(saveData.progress.ownedUfos)
   const clearedBossCount = bosses.filter((boss) =>
     difficultyIds.some((difficulty) => getDifficultyProgress(saveData, boss.id, difficulty).cleared),
   ).length
   const ownedBossItemCount = bossLimitedItems.filter((item) => ownedBossItems.has(item.id)).length
+  const ownedUfoCount = ufoDefinitions.filter((ufo) => ownedUfos.has(ufo.id)).length
+
+  function equipUfo(ufoId: string) {
+    updateSaveData((current) => {
+      if (!current.progress.ownedUfos.includes(ufoId)) {
+        return current
+      }
+      return {
+        ...current,
+        progress: {
+          ...current.progress,
+          equippedUfoId: ufoId,
+        },
+      }
+    })
+  }
 
   return (
     <AppShell title="図かん" backTo="/home">
@@ -91,7 +110,7 @@ export function MonsterBookPage() {
                 {difficultyIds
                   .map((difficulty) =>
                     getDifficultyProgress(saveData, boss.id, difficulty).cleared
-                      ? bossDifficulties[difficulty].label
+                      ? getBossDifficulty(boss, difficulty).label
                       : '未',
                   )
                   .join(' / ')}
@@ -113,6 +132,43 @@ export function MonsterBookPage() {
                       ),
                 )}
               </small>
+            </article>
+          )
+        })}
+      </section>
+
+      <section className="book-command" aria-labelledby="ufo-book-title">
+        <p className="welcome">UFOコレクション</p>
+        <h2 id="ufo-book-title">
+          {ownedUfoCount}/{ufoDefinitions.length} き入手
+        </h2>
+        <p className="title-line">
+          コンプリートまで あと{ufoDefinitions.length - ownedUfoCount}き！
+        </p>
+      </section>
+
+      <section className="monster-grid book-grid" aria-label="UFO図鑑">
+        {ufoDefinitions.map((ufo) => {
+          const owned = ownedUfos.has(ufo.id)
+          const equipped = saveData.progress.equippedUfoId === ufo.id
+          return (
+            <article className={owned ? 'book-card ufo-book-card' : 'book-card silhouette ufo-book-card'} key={ufo.id}>
+              <span className="boss-no">No.{String(ufo.no).padStart(2, '0')}</span>
+              <UfoBadge ufo={ufo} locked={!owned} />
+              <h2>{owned ? ufo.name : '？？？'}</h2>
+              <p>{owned ? ufo.description : 'げきムズボスをクリアすると手に入ります。'}</p>
+              {owned ? (
+                <button
+                  className="secondary-action compact-action"
+                  type="button"
+                  onClick={() => equipUfo(ufo.id)}
+                  disabled={equipped}
+                >
+                  {equipped ? 'そうび中' : 'そうび'}
+                </button>
+              ) : (
+                <small>シルエット</small>
+              )}
             </article>
           )
         })}

@@ -4,6 +4,8 @@ import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
+import { UfoBadge } from '../../components/collection/UfoBadge'
+import { getUfoById } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
 
@@ -11,6 +13,7 @@ export function HomePage() {
   const { saveData, updateSaveData } = useSaveData()
   const player = saveData.player
   const weakFacts = getWeakFacts(saveData.progress.facts, 3)
+  const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
 
   function closeTutorial() {
@@ -59,6 +62,7 @@ export function HomePage() {
         </div>
 
         <aside className="character-window home-character-window" aria-label="くくっち">
+          {equippedUfo ? <UfoBadge ufo={equippedUfo} compact className="home-equipped-ufo" /> : null}
           <KukucchiCharacter level={player?.level ?? 1} mood="happy" />
           <div className="character-window-copy">
             <p className="welcome">クルー待機中</p>

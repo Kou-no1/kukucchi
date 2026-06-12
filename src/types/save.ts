@@ -40,7 +40,7 @@ export type GameHistoryEntry = {
   playedAt: string
 }
 
-export type BossDifficultyId = 'normal' | 'hard' | 'fast'
+export type BossDifficultyId = 'normal' | 'hard' | 'fast' | 'gekimuzu'
 
 export type BossDifficultyProgress = {
   cleared: boolean
@@ -64,6 +64,8 @@ export type ProgressData = {
   categoryCorrect: Record<string, number>
   bossProgress: Record<string, BossProgress>
   bossItems: string[]
+  ownedUfos: string[]
+  equippedUfoId: string | null
   ownedItems: string[]
   equippedItems: string[]
 }

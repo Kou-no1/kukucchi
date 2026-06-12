@@ -1,6 +1,6 @@
 import type { OnboardingInput, SaveData } from '../types/save'
 
-export const SAVE_DATA_VERSION = 2
+export const SAVE_DATA_VERSION = 3
 
 export function createDefaultSaveData(): SaveData {
   return {
@@ -21,6 +21,8 @@ export function createDefaultSaveData(): SaveData {
       categoryCorrect: {},
       bossProgress: {},
       bossItems: [],
+      ownedUfos: [],
+      equippedUfoId: null,
       ownedItems: ['basic-room'],
       equippedItems: ['basic-room'],
     },
@@ -73,6 +75,8 @@ export function migrateSaveData(raw: unknown): SaveData {
         categoryCorrect: candidate.progress?.categoryCorrect ?? {},
         bossProgress: candidate.progress?.bossProgress ?? {},
         bossItems: candidate.progress?.bossItems ?? [],
+        ownedUfos: candidate.progress?.ownedUfos ?? [],
+        equippedUfoId: candidate.progress?.equippedUfoId ?? null,
       },
       settings: {
         ...defaults.settings,
@@ -96,6 +100,8 @@ export function migrateSaveData(raw: unknown): SaveData {
       categoryCorrect: candidate.progress?.categoryCorrect ?? {},
       bossProgress: candidate.progress?.bossProgress ?? {},
       bossItems: candidate.progress?.bossItems ?? [],
+      ownedUfos: candidate.progress?.ownedUfos ?? [],
+      equippedUfoId: candidate.progress?.equippedUfoId ?? null,
     },
     settings: {
       ...defaults.settings,

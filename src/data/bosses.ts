@@ -3,14 +3,15 @@ import type { BossDifficultyId } from '../types/save'
 export type BossGroup = 'basic' | 'advanced'
 
 export type BossReward = {
-  itemId: string
+  itemId?: string
+  ufoId?: string
   title: string
 }
 
 export type BossDifficulty = {
   id: BossDifficultyId
   label: string
-  stars: 1 | 2 | 3
+  stars: 1 | 2 | 3 | 4
   timeLimitSeconds: number | null
   questionCount: number
   hp: number
@@ -26,6 +27,7 @@ export type BossDefinition = {
   description: string
   stages?: number[]
   advancedCategory?: 'square' | 'pi'
+  difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
   rewards: Record<BossDifficultyId, BossReward>
 }
 
@@ -40,6 +42,9 @@ export type BossLimitedItem = {
   kind: 'wear' | 'hat' | 'furniture' | 'background'
   tag: 'ボスげんてい'
 }
+
+export const bossDifficultyIds = ['normal', 'hard', 'fast', 'gekimuzu'] as const
+export const bossItemDifficultyIds = ['normal', 'hard', 'fast'] as const
 
 export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
   normal: {
@@ -65,6 +70,14 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     timeLimitSeconds: 3,
     questionCount: 15,
     hp: 11,
+  },
+  gekimuzu: {
+    id: 'gekimuzu',
+    label: 'げきムズ 🛸★★★★',
+    stars: 4,
+    timeLimitSeconds: 2.5,
+    questionCount: 18,
+    hp: 14,
   },
 }
 
@@ -92,6 +105,10 @@ function createRewards(seed: { id: string; shortLabel: string }): Record<BossDif
     fast: {
       itemId: `${seed.id}-fast-item`,
       title: `${seed.shortLabel}ボスマスター`,
+    },
+    gekimuzu: {
+      ufoId: `${seed.id}-ufo`,
+      title: `${seed.shortLabel}の ちょうじん`,
     },
   }
 }
@@ -123,6 +140,11 @@ export const bosses: BossDefinition[] = [
     emoji: '🔷',
     description: '11×11から20×20までの星を守る高学年ボス。',
     advancedCategory: 'square',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 8 },
+      fast: { timeLimitSeconds: 5 },
+      gekimuzu: { timeLimitSeconds: 3.5, questionCount: 15, hp: 12 },
+    },
     rewards: createRewards({ id: 'boss-square', shortLabel: '平方数' }),
   },
   {
@@ -134,6 +156,11 @@ export const bosses: BossDefinition[] = [
     emoji: '🌀',
     description: '3.14計算を使いこなすと出会える高学年ボス。',
     advancedCategory: 'pi',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 12 },
+      fast: { timeLimitSeconds: 8 },
+      gekimuzu: { timeLimitSeconds: 6, questionCount: 15, hp: 12 },
+    },
     rewards: createRewards({ id: 'boss-pi', shortLabel: '3.14' }),
   },
 ]
@@ -141,13 +168,13 @@ export const bosses: BossDefinition[] = [
 const itemKinds: BossLimitedItem['kind'][] = ['wear', 'hat', 'furniture', 'background']
 
 export const bossLimitedItems: BossLimitedItem[] = bosses.flatMap((boss) =>
-  (['normal', 'hard', 'fast'] as const).map((difficulty, difficultyIndex) => ({
-    id: boss.rewards[difficulty].itemId,
+  bossItemDifficultyIds.map((difficulty, difficultyIndex) => ({
+    id: boss.rewards[difficulty].itemId ?? `${boss.id}-${difficulty}-item`,
     bossId: boss.id,
     difficulty,
     no: (boss.no - 1) * 3 + difficultyIndex + 1,
-    name: `${boss.shortLabel} ${bossDifficulties[difficulty].label}トロフィー`,
-    description: `${boss.label}を${bossDifficulties[difficulty].label}でクリアした証です。`,
+    name: `${boss.shortLabel} ${getBossDifficulty(boss, difficulty).label}トロフィー`,
+    description: `${boss.label}を${getBossDifficulty(boss, difficulty).label}でクリアした証です。`,
     emoji: difficulty === 'normal' ? '🏅' : difficulty === 'hard' ? '🎖️' : '🏆',
     kind: itemKinds[(boss.no + difficultyIndex) % itemKinds.length],
     tag: 'ボスげんてい',
@@ -155,6 +182,18 @@ export const bossLimitedItems: BossLimitedItem[] = bosses.flatMap((boss) =>
 )
 
 export const legendaryBossTitle = 'でんせつのくくチャンピオン'
+export const allGekimuzuTitle = 'すべてをしるもの'
+
+export function getBossDifficulty(
+  boss: BossDefinition,
+  difficultyId: BossDifficultyId,
+): BossDifficulty {
+  return {
+    ...bossDifficulties[difficultyId],
+    ...boss.difficultyOverrides?.[difficultyId],
+    id: difficultyId,
+  }
+}
 
 export function getBossById(bossId: string): BossDefinition | undefined {
   return bosses.find((boss) => boss.id === bossId)

@@ -70,6 +70,36 @@ export function generateChoices(
   return shuffle([...candidates], rng)
 }
 
+function generateFactorChoices(
+  correctFactor: number,
+  partnerFactor: number,
+  rng: RandomSource,
+): number[] {
+  const candidates = new Set<number>([correctFactor])
+  const nearValues = [
+    correctFactor - 1,
+    correctFactor + 1,
+    partnerFactor,
+    partnerFactor - 1,
+    partnerFactor + 1,
+    correctFactor - 2,
+    correctFactor + 2,
+  ].filter((value) => value >= 1 && value <= 9 && value !== correctFactor)
+
+  for (const value of shuffle(nearValues, rng)) {
+    candidates.add(value)
+    if (candidates.size === 4) {
+      break
+    }
+  }
+
+  while (candidates.size < 4) {
+    candidates.add(Math.floor(rng() * 9) + 1)
+  }
+
+  return shuffle([...candidates], rng)
+}
+
 function generateNumberChoices(
   correctAnswer: number,
   nearValues: number[],
@@ -93,6 +123,38 @@ function generateNumberChoices(
   }
 
   return shuffle([...candidates], rng)
+}
+
+export function generateMissingFactorQuestion(
+  left: number,
+  right: number,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'answerMode'> = {},
+): Question {
+  const rng = options.rng ?? Math.random
+  const safeLeft = clamp(Math.round(left), 1, 9)
+  const safeRight = clamp(Math.round(right), 1, 9)
+  const product = safeLeft * safeRight
+  const hideLeft = rng() < 0.5
+  const missingFactor = hideLeft ? safeLeft : safeRight
+  const partnerFactor = hideLeft ? safeRight : safeLeft
+
+  return {
+    id: `missing-${safeLeft}x${safeRight}-${hideLeft ? 'left' : 'right'}`,
+    category: options.category ?? 'multiplication-basic',
+    prompt: hideLeft ? `□ × ${safeRight} = ${product}` : `${safeLeft} × □ = ${product}`,
+    answer: missingFactor,
+    choices: generateFactorChoices(missingFactor, partnerFactor, rng),
+    explanation: `${safeLeft} × ${safeRight} = ${product}`,
+    difficulty: Math.max(safeLeft, safeRight) + 1,
+    metadata: {
+      left: safeLeft,
+      right: safeRight,
+      product,
+      missingFactor: true,
+      missingPosition: hideLeft ? 'left' : 'right',
+      answerMode: 'choice',
+    },
+  }
 }
 
 export function generateMultiplicationFactQuestion(

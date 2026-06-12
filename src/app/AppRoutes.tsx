@@ -90,6 +90,14 @@ export function AppRoutes() {
         }
       />
       <Route
+        path="/monster-battle"
+        element={
+          <RequireProfile>
+            <MiniGamePage variant="battle" />
+          </RequireProfile>
+        }
+      />
+      <Route
         path="/treasure"
         element={
           <RequireProfile>
