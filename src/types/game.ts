@@ -17,7 +17,14 @@ export type QuestionCategory =
   | 'lcm'
 
 export type AnswerMode = 'choice' | 'input'
-export type GameMode = 'learn' | 'speed'
+export type GameMode =
+  | 'learn'
+  | 'speed'
+  | 'review'
+  | 'battle'
+  | 'treasure'
+  | 'rocket'
+  | 'advanced'
 
 export type Question = {
   id: string

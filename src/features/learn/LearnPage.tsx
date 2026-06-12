@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { QuestionVisual } from '../../components/game/QuestionVisual'
@@ -15,7 +16,7 @@ import { applySessionResult } from '../../services/resultService'
 import type { AnswerMode, AnswerResult, Question, ScoreState } from '../../types/game'
 import { createId } from '../../utils/id'
 
-const stages = [2, 3, 4, 5, 6, 7, 8, 9]
+const stages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const goalQuestions = 5
 
 type VisualMode = 'groups' | 'line' | 'addition' | 'reading'
@@ -41,8 +42,25 @@ export function LearnPage() {
     maxCombo: 0,
   })
   const startedAtRef = useRef(Date.now())
+  const autoAdvanceTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (autoAdvanceTimeoutRef.current !== null) {
+        window.clearTimeout(autoAdvanceTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  function clearAutoAdvanceTimeout() {
+    if (autoAdvanceTimeoutRef.current !== null) {
+      window.clearTimeout(autoAdvanceTimeoutRef.current)
+      autoAdvanceTimeoutRef.current = null
+    }
+  }
 
   function resetQuestion(nextStage = stage, nextMode = answerMode) {
+    clearAutoAdvanceTimeout()
     setQuestion(createQuestion(nextStage, nextMode))
     setInputValue('')
     setFeedback('idle')
@@ -80,6 +98,12 @@ export function LearnPage() {
     setFeedback(correct ? 'correct' : 'incorrect')
     if (correct) {
       playCorrectSound(saveData.settings.soundEnabled)
+      if (results.length + 1 < goalQuestions) {
+        clearAutoAdvanceTimeout()
+        autoAdvanceTimeoutRef.current = window.setTimeout(() => {
+          resetQuestion()
+        }, 700)
+      }
     }
   }
 
@@ -106,35 +130,46 @@ export function LearnPage() {
 
   return (
     <AppShell title="おぼえる" backTo="/games">
-      <section className="practice-tools" aria-label="練習設定">
-        <div className="stage-strip">
-          {stages.map((value) => (
+      <section className="learn-console" aria-label="練習設定">
+        <div className="stage-console">
+          <div className="stage-grid" aria-label="掛け算のだん">
+            {stages.map((value) => (
+              <button
+                className={stage === value ? 'stage-button selected' : 'stage-button'}
+                key={value}
+                type="button"
+                onClick={() => handleStageChange(value)}
+              >
+                <strong>{value}</strong>
+                <span>のだん</span>
+              </button>
+            ))}
+          </div>
+          <div className="segmented learn-mode-toggle">
             <button
-              className={stage === value ? 'selected' : ''}
-              key={value}
+              className={answerMode === 'choice' ? 'selected' : ''}
               type="button"
-              onClick={() => handleStageChange(value)}
+              onClick={() => handleModeChange('choice')}
             >
-              {value}のだん
+              4たく
             </button>
-          ))}
+            <button
+              className={answerMode === 'input' ? 'selected' : ''}
+              type="button"
+              onClick={() => handleModeChange('input')}
+            >
+              入力
+            </button>
+          </div>
         </div>
-        <div className="segmented">
-          <button
-            className={answerMode === 'choice' ? 'selected' : ''}
-            type="button"
-            onClick={() => handleModeChange('choice')}
-          >
-            4たく
-          </button>
-          <button
-            className={answerMode === 'input' ? 'selected' : ''}
-            type="button"
-            onClick={() => handleModeChange('input')}
-          >
-            入力
-          </button>
-        </div>
+
+        <aside className="character-window" aria-label="宇宙ぼうけん">
+          <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
+          <div className="character-window-copy">
+            <p className="welcome">くくっち号、しゅっぱつ！</p>
+            <h2>{stage}のだんステーション</h2>
+          </div>
+        </aside>
       </section>
 
       <section className="game-panel" aria-labelledby="question-title">
@@ -186,7 +221,7 @@ export function LearnPage() {
           disabled={feedback !== 'idle'}
         />
         <div className="game-actions">
-          {feedback !== 'idle' && results.length < goalQuestions ? (
+          {feedback === 'incorrect' && results.length < goalQuestions ? (
             <button className="primary-action" type="button" onClick={() => resetQuestion()}>
               つぎへ
             </button>

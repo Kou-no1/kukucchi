@@ -1,11 +1,16 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { AdvancedPage } from '../features/advanced/AdvancedPage'
+import { MonsterBookPage } from '../features/book/MonsterBookPage'
 import { GameSelectPage } from '../features/games/GameSelectPage'
 import { HomePage } from '../features/home/HomePage'
 import { LearnPage } from '../features/learn/LearnPage'
+import { MiniGamePage } from '../features/miniGames/MiniGamePage'
 import { OnboardingPage } from '../features/onboarding/OnboardingPage'
+import { ReviewPage } from '../features/review/ReviewPage'
 import { ResultPage } from '../features/results/ResultPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
+import { ShopPage } from '../features/shop/ShopPage'
 import { SpeedPage } from '../features/speed/SpeedPage'
 import { useSaveData } from '../hooks/useSaveData'
 
@@ -56,6 +61,62 @@ export function AppRoutes() {
         element={
           <RequireProfile>
             <SpeedPage />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/review"
+        element={
+          <RequireProfile>
+            <ReviewPage />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/battle"
+        element={
+          <RequireProfile>
+            <MiniGamePage variant="battle" />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/treasure"
+        element={
+          <RequireProfile>
+            <MiniGamePage variant="treasure" />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/rocket"
+        element={
+          <RequireProfile>
+            <MiniGamePage variant="rocket" />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/advanced"
+        element={
+          <RequireProfile>
+            <AdvancedPage />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/shop"
+        element={
+          <RequireProfile>
+            <ShopPage />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/book"
+        element={
+          <RequireProfile>
+            <MonsterBookPage />
           </RequireProfile>
         }
       />

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
@@ -46,9 +46,11 @@ describe('app flow', () => {
     for (let index = 0; index < 5; index += 1) {
       await answerCurrentQuestion(user)
       expect(await screen.findByText(/できた/)).toBeInTheDocument()
-      const nextButton = screen.queryByRole('button', { name: 'つぎへ' })
-      if (nextButton) {
-        await user.click(nextButton)
+      if (index < 4) {
+        await waitFor(
+          () => expect(screen.queryByText(/できた/)).not.toBeInTheDocument(),
+          { timeout: 2000 },
+        )
       }
     }
 

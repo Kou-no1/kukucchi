@@ -3,6 +3,28 @@ import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
 import type { GameSessionSummary } from '../../types/game'
 
+function replayPath(mode: GameSessionSummary['mode']): string {
+  if (mode === 'speed') {
+    return '/speed'
+  }
+  if (mode === 'review') {
+    return '/review'
+  }
+  if (mode === 'battle') {
+    return '/battle'
+  }
+  if (mode === 'treasure') {
+    return '/treasure'
+  }
+  if (mode === 'rocket') {
+    return '/rocket'
+  }
+  if (mode === 'advanced') {
+    return '/advanced'
+  }
+  return '/learn'
+}
+
 export function ResultPage() {
   const location = useLocation()
   const summary = (location.state as { summary?: GameSessionSummary } | null)?.summary
@@ -80,7 +102,7 @@ export function ResultPage() {
       </section>
 
       <section className="action-band">
-        <Link className="primary-action" to={summary.mode === 'speed' ? '/speed' : '/learn'}>
+        <Link className="primary-action" to={replayPath(summary.mode)}>
           もう一回
         </Link>
         <Link className="secondary-action" to="/home">

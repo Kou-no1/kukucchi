@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { isCorrectAnswer } from '../game-engine/questions/answer'
 import {
+  generateAdaptiveMultiplicationQuestion,
+  generateAdvancedQuestion,
   generateChoices,
   generateMultiplicationQuestion,
 } from '../game-engine/questions/questionGenerator'
@@ -56,6 +58,34 @@ describe('question generation', () => {
     const question = generateMultiplicationQuestion({ stage: 3, rng: () => 0.4 })
     expect(isCorrectAnswer(question, String(question.answer))).toBe(true)
     expect(isCorrectAnswer({ ...question, answer: 12 }, '１２')).toBe(true)
+  })
+
+  it('prioritizes review facts in adaptive generation', () => {
+    const weak = createFactProgress(8, 9)
+    const question = generateAdaptiveMultiplicationQuestion(
+      {
+        [weak.id]: {
+          ...weak,
+          correctCount: 1,
+          incorrectCount: 4,
+          averageResponseTimeMs: 6000,
+          nextReviewAt: '2025-12-31T00:00:00.000Z',
+        },
+      },
+      { rng: () => 0.1 },
+    )
+    expect(question.id).toBe('8x9')
+  })
+
+  it('generates advanced square and pi questions with choices', () => {
+    const square = generateAdvancedQuestion('square', () => 0.2)
+    const pi = generateAdvancedQuestion('pi', () => 0.2)
+    const development = generateAdvancedQuestion('development', () => 0.2)
+    expect(square.category).toBe('multiplication-square')
+    expect(pi.category).toBe('pi-multiplication')
+    expect(square.choices).toContain(square.answer)
+    expect(pi.choices).toContain(pi.answer)
+    expect(development.choices).toContain(development.answer)
   })
 })
 

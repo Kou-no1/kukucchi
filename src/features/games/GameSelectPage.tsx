@@ -2,12 +2,62 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 
 const modes = [
-  { label: 'おぼえる', href: '/learn', ready: true },
-  { label: 'スピード', href: '/speed', ready: true },
-  { label: 'ランダムゲーム', href: '/games', ready: false },
-  { label: 'にがてモンスター', href: '/games', ready: false },
-  { label: 'ボスバトル', href: '/games', ready: false },
-  { label: '高学年チャレンジ', href: '/games', ready: false },
+  {
+    label: 'おぼえる',
+    href: '/learn',
+    ready: true,
+    icon: '×',
+    badge: '01',
+    subtitle: 'まとまりを見てすすむ',
+  },
+  {
+    label: 'スピード',
+    href: '/speed',
+    ready: true,
+    icon: '+',
+    badge: '02',
+    subtitle: '30秒でワープ',
+  },
+  {
+    label: 'ロケット',
+    href: '/rocket',
+    ready: true,
+    icon: '🚀',
+    badge: '03',
+    subtitle: '燃料をためよう',
+  },
+  {
+    label: 'にがてモンスター',
+    href: '/review',
+    ready: true,
+    icon: '👾',
+    badge: '04',
+    subtitle: 'なかまにしよう',
+  },
+  {
+    label: 'ボスバトル',
+    href: '/battle',
+    ready: true,
+    icon: '🛡️',
+    badge: '05',
+    subtitle: 'だんボスに挑戦',
+  },
+  {
+    label: '宝箱',
+    href: '/treasure',
+    ready: true,
+    icon: '🗝️',
+    badge: '06',
+    subtitle: 'かぎを集める',
+  },
+  {
+    label: '高学年チャレンジ',
+    href: '/advanced',
+    ready: true,
+    icon: 'abc',
+    badge: '07',
+    subtitle: 'スーパー計算',
+  },
 ]
 
 export function GameSelectPage() {
@@ -17,12 +67,26 @@ export function GameSelectPage() {
         {modes.map((mode) =>
           mode.ready ? (
             <Link className="mode-card" key={mode.label} to={mode.href}>
+              <span className="mode-icon" aria-hidden="true">
+                {mode.icon}
+              </span>
+              <span className="mode-badge" aria-hidden="true">
+                {mode.badge}
+              </span>
               <strong>{mode.label}</strong>
+              <small>{mode.subtitle}</small>
               <span>スタート</span>
             </Link>
           ) : (
             <div className="mode-card locked" key={mode.label} aria-disabled="true">
+              <span className="mode-icon" aria-hidden="true">
+                {mode.icon}
+              </span>
+              <span className="mode-badge" aria-hidden="true">
+                {mode.badge}
+              </span>
               <strong>{mode.label}</strong>
+              <small>{mode.subtitle}</small>
               <span>じゅんび中</span>
             </div>
           ),

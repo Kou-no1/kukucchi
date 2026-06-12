@@ -17,6 +17,19 @@ export function expToLevel(exp: number): number {
   return Math.max(1, Math.floor(Math.sqrt(exp / 80)) + 1)
 }
 
+function modeExpBonus(mode: GameSessionSummary['mode']): number {
+  if (mode === 'speed') {
+    return 10
+  }
+  if (mode === 'review') {
+    return 8
+  }
+  if (mode === 'advanced' || mode === 'battle' || mode === 'treasure' || mode === 'rocket') {
+    return 14
+  }
+  return 4
+}
+
 export function buildSessionSummary(
   partial: Omit<
     GameSessionSummary,
@@ -46,7 +59,7 @@ export function buildSessionSummary(
     accuracy: total === 0 ? 0 : Math.round((correctCount / total) * 100),
     averageResponseTimeMs: total === 0 ? 0 : Math.round(totalTime / total),
     earnedCoins: calculateCoins(partial.results, partial.maxCombo),
-    earnedExp: calculateExp(partial.results, partial.mode === 'speed' ? 10 : 4),
+    earnedExp: calculateExp(partial.results, modeExpBonus(partial.mode)),
     newTitles: [],
     bestUpdated: false,
     weakFacts: [],

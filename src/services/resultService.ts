@@ -43,6 +43,12 @@ export function applySessionResult(
   const newTitles = judgeNewTitles(summary, interimSave)
   const titles = Array.from(new Set([...(save.player?.titles ?? []), ...newTitles]))
   const nextExp = (save.player?.exp ?? 0) + summary.earnedExp
+  const monsterBook = Array.from(
+    new Set([
+      ...save.progress.monsterBook,
+      ...getMasteredFacts(facts).map((fact) => fact.id),
+    ]),
+  )
   const missions = save.progress.missions.map((mission) => {
     let gained = 0
     if (mission.kind === 'correct-count') {
@@ -111,6 +117,7 @@ export function applySessionResult(
           }
         : save.progress.bests,
       missions,
+      monsterBook,
     },
   }
 

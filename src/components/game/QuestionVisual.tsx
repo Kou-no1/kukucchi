@@ -55,7 +55,6 @@ export function QuestionVisual({
           ))}
         </div>
       ))}
-      <span className="visual-answer">{hideAnswer ? '?' : answer}</span>
     </div>
   )
 }

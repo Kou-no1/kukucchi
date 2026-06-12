@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
-import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
+import {
+  generateAdaptiveMultiplicationQuestion,
+  generateMultiplicationQuestion,
+} from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -19,9 +23,12 @@ function createQuestion(): Question {
   return generateMultiplicationQuestion({ answerMode: 'choice' })
 }
 
+type SpeedPhase = 'ready' | 'running'
+
 export function SpeedPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const [phase, setPhase] = useState<SpeedPhase>('ready')
   const [timeLeft, setTimeLeft] = useState(durationSeconds)
   const [question, setQuestion] = useState(createQuestion)
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
@@ -34,8 +41,16 @@ export function SpeedPage() {
   const startedAtRef = useRef(Date.now())
   const finishedRef = useRef(false)
 
+  const createAdaptiveQuestion = useCallback(
+    () =>
+      generateAdaptiveMultiplicationQuestion(saveData.progress.facts, {
+        answerMode: 'choice',
+      }),
+    [saveData.progress.facts],
+  )
+
   const finish = useCallback(() => {
-    if (finishedRef.current) {
+    if (finishedRef.current || phase !== 'running') {
       return
     }
     finishedRef.current = true
@@ -50,29 +65,47 @@ export function SpeedPage() {
     const applied = applySessionResult(saveData, rawSummary)
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
-  }, [navigate, results, saveData, scoreState.maxCombo, scoreState.score, setSaveData])
+  }, [navigate, phase, results, saveData, scoreState.maxCombo, scoreState.score, setSaveData])
 
   useEffect(() => {
+    if (phase !== 'running') {
+      return undefined
+    }
     const interval = window.setInterval(() => {
       setTimeLeft((current) => Math.max(0, current - 1))
     }, 1000)
     return () => window.clearInterval(interval)
-  }, [])
+  }, [phase])
 
   useEffect(() => {
-    if (timeLeft === 0) {
+    if (phase === 'running' && timeLeft === 0) {
       finish()
     }
-  }, [finish, timeLeft])
+  }, [finish, phase, timeLeft])
+
+  function startGame() {
+    finishedRef.current = false
+    setPhase('running')
+    setTimeLeft(durationSeconds)
+    setQuestion(createAdaptiveQuestion())
+    setFeedback('idle')
+    setResults([])
+    setScoreState({
+      score: 0,
+      combo: 0,
+      maxCombo: 0,
+    })
+    startedAtRef.current = Date.now()
+  }
 
   function nextQuestion() {
-    setQuestion(createQuestion())
+    setQuestion(createAdaptiveQuestion())
     setFeedback('idle')
     startedAtRef.current = Date.now()
   }
 
   function handleAnswer(answer: number | string) {
-    if (feedback !== 'idle' || timeLeft <= 0) {
+    if (phase !== 'running' || feedback !== 'idle' || timeLeft <= 0) {
       return
     }
     const correct = isCorrectAnswer(question, answer)
@@ -97,38 +130,65 @@ export function SpeedPage() {
 
   return (
     <AppShell title="スピード" backTo="/games">
-      <section className="speed-summary" aria-label="スピード情報">
-        <div>
-          <span>のこり</span>
-          <strong>{timeLeft}</strong>
-        </div>
-        <div>
-          <span>スコア</span>
-          <strong>{scoreState.score}</strong>
-        </div>
-        <div>
-          <span>コンボ</span>
-          <strong>{scoreState.combo}</strong>
-        </div>
-      </section>
+      {phase === 'ready' ? (
+        <section className="speed-start-window" aria-labelledby="speed-start-title">
+          <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
+          <div className="speed-start-copy">
+            <p className="welcome">ワープ準備OK</p>
+            <h2 id="speed-start-title">30秒チャレンジ</h2>
+            <p className="title-line">スタートしたらカウントがはじまるよ</p>
+            <button className="primary-action speed-start-button" type="button" onClick={startGame}>
+              スタート
+            </button>
+          </div>
+        </section>
+      ) : (
+        <>
+          <section className="speed-command" aria-label="スピード情報">
+            <div className="speed-summary">
+              <div>
+                <span>のこり</span>
+                <strong>{timeLeft}</strong>
+              </div>
+              <div>
+                <span>スコア</span>
+                <strong>{scoreState.score}</strong>
+              </div>
+              <div>
+                <span>コンボ</span>
+                <strong>{scoreState.combo}</strong>
+              </div>
+            </div>
 
-      <section className="game-panel" aria-labelledby="speed-question">
-        <h2 id="speed-question" className="question-prompt">
-          {question.prompt}
-        </h2>
-        <GameFeedback state={feedback} correctAnswer={question.answer} />
-        <AnswerControls
-          question={question}
-          answerMode="choice"
-          inputValue=""
-          onInputChange={() => undefined}
-          onAnswer={handleAnswer}
-          disabled={feedback !== 'idle' || timeLeft <= 0}
-        />
-        <button className="secondary-action wide" type="button" onClick={finish}>
-          けっかへ
-        </button>
-      </section>
+            <aside className="mission-companion speed-companion" aria-label="宇宙ぼうけん">
+              <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
+              <div>
+                <p className="welcome">タイムワープ中</p>
+                <h2>30秒チャレンジ</h2>
+                <p className="title-line">コンボでエンジンをひからせよう</p>
+              </div>
+            </aside>
+          </section>
+
+          <section className="game-panel" aria-labelledby="speed-question">
+            <h2 id="speed-question" className="question-prompt">
+              {question.prompt}
+            </h2>
+            <GameFeedback state={feedback} correctAnswer={question.answer} />
+            <AnswerControls
+              question={question}
+              answerMode="choice"
+              inputValue=""
+              onInputChange={() => undefined}
+              onAnswer={handleAnswer}
+              disabled={feedback !== 'idle' || timeLeft <= 0}
+            />
+            <button className="secondary-action wide" type="button" onClick={finish}>
+              けっかへ
+            </button>
+          </section>
+        </>
+      )}
     </AppShell>
   )
 }
