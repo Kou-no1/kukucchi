@@ -47,12 +47,17 @@ function productReading(value: number): string {
   return `${digitReadings[tens]}じゅう${digitReadings[ones]}`
 }
 
-const overrides: Record<string, string> = {
-  '8x8': 'はっぱ ろくじゅうし',
-  '9x9': 'くく はちじゅういち',
+export type KukuReading = {
+  question: string
+  answer: string
 }
 
-export const kukuReadings: Record<string, string> = Object.fromEntries(
+const overrides: Record<string, KukuReading> = {
+  '8x8': { question: 'はっぱ', answer: 'ろくじゅうし' },
+  '9x9': { question: 'くく', answer: 'はちじゅういち' },
+}
+
+export const kukuReadings: Record<string, KukuReading> = Object.fromEntries(
   Array.from({ length: 9 }, (_, leftIndex) => leftIndex + 1).flatMap((left) =>
     Array.from({ length: 9 }, (_, rightIndex) => {
       const right = rightIndex + 1
@@ -61,12 +66,28 @@ export const kukuReadings: Record<string, string> = Object.fromEntries(
       const connector = product < 10 ? 'が' : ''
       const reading =
         overrides[id] ??
-        `${leftReadings[left]}${rightReadings[right]}${connector} ${productReading(product)}`
+        {
+          question: `${leftReadings[left]}${rightReadings[right]}${connector}`,
+          answer: productReading(product),
+        }
       return [id, reading]
     }),
   ),
 )
 
+export function getKukuReadingParts(left: number, right: number): KukuReading {
+  return kukuReadings[`${left}x${right}`] ?? { question: '', answer: '' }
+}
+
+export function formatKukuReading(
+  left: number,
+  right: number,
+  revealAnswer = true,
+): string {
+  const reading = getKukuReadingParts(left, right)
+  return `${reading.question} ${revealAnswer ? reading.answer : '？'}`
+}
+
 export function getKukuReading(left: number, right: number): string {
-  return kukuReadings[`${left}x${right}`] ?? ''
+  return formatKukuReading(left, right, true)
 }

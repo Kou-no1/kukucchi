@@ -1,4 +1,4 @@
-import { getKukuReading } from '../../data/kukuReadings'
+import { formatKukuReading } from '../../data/kukuReadings'
 import type { Question } from '../../types/game'
 
 function getNumbers(question: Question): { left: number; right: number } {
@@ -12,10 +12,12 @@ export function QuestionVisual({
   question,
   mode,
   hideAnswer,
+  revealReading = true,
 }: {
   question: Question
   mode: 'groups' | 'line' | 'addition' | 'reading'
   hideAnswer: boolean
+  revealReading?: boolean
 }) {
   const { left, right } = getNumbers(question)
   const answer = Number(question.answer)
@@ -43,7 +45,7 @@ export function QuestionVisual({
   }
 
   if (mode === 'reading') {
-    return <p className="visual-reading">{getKukuReading(left, right)}</p>
+    return <p className="visual-reading">{formatKukuReading(left, right, revealReading)}</p>
   }
 
   return (

@@ -13,6 +13,9 @@ function replayPath(mode: GameSessionSummary['mode']): string {
   if (mode === 'battle') {
     return '/battle'
   }
+  if (mode === 'boss') {
+    return '/battle'
+  }
   if (mode === 'treasure') {
     return '/treasure'
   }

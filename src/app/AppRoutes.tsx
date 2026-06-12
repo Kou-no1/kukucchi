@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import { AdvancedPage } from '../features/advanced/AdvancedPage'
+import { BossBattlePage } from '../features/bosses/BossBattlePage'
 import { MonsterBookPage } from '../features/book/MonsterBookPage'
 import { GameSelectPage } from '../features/games/GameSelectPage'
 import { HomePage } from '../features/home/HomePage'
@@ -76,7 +77,15 @@ export function AppRoutes() {
         path="/battle"
         element={
           <RequireProfile>
-            <MiniGamePage variant="battle" />
+            <BossBattlePage group="basic" />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/boss/:bossId"
+        element={
+          <RequireProfile>
+            <BossBattlePage />
           </RequireProfile>
         }
       />

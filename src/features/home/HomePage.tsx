@@ -1,14 +1,28 @@
 import { Link } from 'react-router-dom'
+import { useState } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
+import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
 
 export function HomePage() {
-  const { saveData } = useSaveData()
+  const { saveData, updateSaveData } = useSaveData()
   const player = saveData.player
   const weakFacts = getWeakFacts(saveData.progress.facts, 3)
+  const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
+
+  function closeTutorial() {
+    setTutorialOpen(false)
+    updateSaveData((current) => ({
+      ...current,
+      tutorial: {
+        ...current.tutorial,
+        homeSeen: true,
+      },
+    }))
+  }
 
   return (
     <AppShell title="ホーム">
@@ -18,6 +32,9 @@ export function HomePage() {
             <p className="welcome">またあえてうれしい！</p>
             <h2>{player?.nickname ?? 'くくとも'}</h2>
             <p className="title-line">{player?.currentTitle ?? 'はじめのいっぽ'}</p>
+            <button className="secondary-action compact-action" type="button" onClick={() => setTutorialOpen(true)}>
+              あそびかた
+            </button>
           </div>
 
           <section className="home-stats-mini" aria-label="プレイヤー情報">
@@ -127,6 +144,8 @@ export function HomePage() {
           </div>
         )}
       </section>
+
+      {tutorialOpen ? <TutorialModal onClose={closeTutorial} /> : null}
 
     </AppShell>
   )

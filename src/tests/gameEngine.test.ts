@@ -18,9 +18,17 @@ import {
 } from '../game-engine/mastery/mastery'
 import { getWeakFacts } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
-import { kukuReadings } from '../data/kukuReadings'
+import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
+import { bosses } from '../data/bosses'
+import {
+  applyBossClearReward,
+  getDifficultyProgress,
+  isBossUnlocked,
+  isDifficultyUnlocked,
+} from '../game-engine/bosses/bossEngine'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
+import type { SaveData } from '../types/save'
 
 function result(overrides: Partial<AnswerResult> = {}): AnswerResult {
   return {
@@ -160,16 +168,89 @@ describe('mastery, review, missions, and storage', () => {
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
-    expect(migrateSaveData({ version: 0 }).version).toBe(1)
+    const migrated = migrateSaveData({ version: 1 })
+    expect(migrated.version).toBe(2)
+    expect(migrated.tutorial.homeSeen).toBe(false)
+    expect(migrated.progress.bossProgress).toEqual({})
   })
 
-  it('defines all kuku readings as hiragana and spaces', () => {
+  it('defines all kuku readings as split hiragana parts and hides answers', () => {
     const values = Object.values(kukuReadings)
     expect(values).toHaveLength(81)
     expect(Object.keys(kukuReadings)).toContain('1x1')
     expect(Object.keys(kukuReadings)).toContain('9x9')
     for (const reading of values) {
-      expect(reading).toMatch(/^[ぁ-んー\s]+$/)
+      expect(reading.question).toMatch(/^[ぁ-んー\s]+$/)
+      expect(reading.answer).toMatch(/^[ぁ-んー\s]+$/)
     }
+    expect(formatKukuReading(2, 3, false)).toBe('にさんが ？')
+    expect(formatKukuReading(2, 3, true)).toBe('にさんが ろく')
+  })
+
+  it('unlocks bosses and higher difficulties in order', () => {
+    const boss = bosses.find((candidate) => candidate.id === 'boss-stage-2')
+    expect(boss).toBeTruthy()
+    if (!boss) {
+      return
+    }
+    const save = createDefaultSaveData()
+    expect(isBossUnlocked(boss, save)).toBe(false)
+    const unlockedSave = {
+      ...save,
+      progress: {
+        ...save.progress,
+        facts: {
+          '2x1': { ...createFactProgress(2, 1), correctCount: 20 },
+        },
+      },
+    }
+    expect(isBossUnlocked(boss, unlockedSave)).toBe(true)
+    expect(isDifficultyUnlocked(boss, 'hard', unlockedSave)).toBe(false)
+    const withPlayer = {
+      ...unlockedSave,
+      player: {
+        nickname: 'テスト',
+        icon: 'たまご',
+        learningLevel: 'first' as const,
+        level: 1,
+        exp: 0,
+        coins: 0,
+        titles: [],
+        currentTitle: 'はじめのいっぽ',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        lastPlayedAt: null,
+      },
+    }
+    const cleared = applyBossClearReward(withPlayer, boss.id, 'normal', 12000).save
+    expect(getDifficultyProgress(cleared, boss.id, 'normal').cleared).toBe(true)
+    expect(isDifficultyUnlocked(boss, 'hard', cleared)).toBe(true)
+  })
+
+  it('grants fixed boss rewards only on first clear', () => {
+    const boss = bosses[0]
+    let save: SaveData = {
+      ...createDefaultSaveData(),
+      player: {
+        nickname: 'テスト',
+        icon: 'たまご',
+        learningLevel: 'first' as const,
+        level: 1,
+        exp: 0,
+        coins: 0,
+        titles: [],
+        currentTitle: 'はじめのいっぽ',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        lastPlayedAt: null,
+      },
+    }
+    const first = applyBossClearReward(save, boss.id, 'normal', 10000)
+    save = first.save
+    const second = applyBossClearReward(save, boss.id, 'normal', 9000)
+    expect(first.firstClear).toBe(true)
+    expect(first.rewardItemIds).toEqual([boss.rewards.normal.itemId])
+    expect(first.rewardTitles).toContain(boss.rewards.normal.title)
+    expect(second.firstClear).toBe(false)
+    expect(second.rewardItemIds).toEqual([])
+    expect(second.rewardTitles).toEqual([])
   })
 })

@@ -1,8 +1,10 @@
 import { useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
+import { bosses } from '../../data/bosses'
+import { getClearedStars, isBossUnlocked } from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdvancedQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
@@ -126,6 +128,31 @@ export function AdvancedPage() {
             発展
           </button>
         </div>
+      </section>
+
+      <section className="boss-list compact" aria-label="高学年ボス">
+        {bosses
+          .filter((boss) => boss.group === 'advanced')
+          .map((boss) => {
+            const unlocked = isBossUnlocked(boss, saveData)
+            const stars = getClearedStars(saveData, boss.id)
+            return (
+              <Link
+                className={unlocked ? 'boss-card' : 'boss-card locked'}
+                key={boss.id}
+                to={unlocked ? `/boss/${boss.id}` : '#'}
+                aria-disabled={!unlocked}
+              >
+                <span className="boss-no">No.{boss.no}</span>
+                <span className="boss-emoji" aria-hidden="true">
+                  {unlocked ? boss.emoji : '◆'}
+                </span>
+                <h2>{unlocked ? boss.label : '？？？'}</h2>
+                <p>{unlocked ? boss.description : 'このカテゴリで20もん正解すると解放'}</p>
+                <strong>{'★'.repeat(stars) || '未クリア'}</strong>
+              </Link>
+            )
+          })}
       </section>
 
       <section className="game-panel" aria-labelledby="advanced-question">

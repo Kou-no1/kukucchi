@@ -22,6 +22,7 @@ export type GameMode =
   | 'speed'
   | 'review'
   | 'battle'
+  | 'boss'
   | 'treasure'
   | 'rocket'
   | 'advanced'

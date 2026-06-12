@@ -4,6 +4,7 @@ import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
+import { KukuReadingRuby } from '../../components/game/KukuReadingRuby'
 import { QuestionVisual } from '../../components/game/QuestionVisual'
 import { getKukuReading } from '../../data/kukuReadings'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
@@ -31,7 +32,7 @@ export function LearnPage() {
   const [stage, setStage] = useState(2)
   const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
   const [visualMode, setVisualMode] = useState<VisualMode>('groups')
-  const [hideAnswer, setHideAnswer] = useState(false)
+  const [showReading, setShowReading] = useState(true)
   const [question, setQuestion] = useState(() => createQuestion(2, 'choice'))
   const [inputValue, setInputValue] = useState('')
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
@@ -98,6 +99,9 @@ export function LearnPage() {
     setFeedback(correct ? 'correct' : 'incorrect')
     if (correct) {
       playCorrectSound(saveData.settings.soundEnabled)
+      const left = Number(question.metadata?.left ?? 2)
+      const right = Number(question.metadata?.right ?? 1)
+      speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
       if (results.length + 1 < goalQuestions) {
         clearAutoAdvanceTimeout()
         autoAdvanceTimeoutRef.current = window.setTimeout(() => {
@@ -113,6 +117,10 @@ export function LearnPage() {
     speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
     setVisualMode('reading')
   }
+
+  const left = Number(question.metadata?.left ?? 2)
+  const right = Number(question.metadata?.right ?? 1)
+  const revealReading = feedback === 'correct' || visualMode === 'reading'
 
   function finish() {
     const rawSummary = buildSessionSummary({
@@ -182,9 +190,20 @@ export function LearnPage() {
           </button>
         </div>
         <h2 id="question-title" className="question-prompt">
+          <KukuReadingRuby
+            left={left}
+            right={right}
+            revealAnswer={revealReading}
+            visible={showReading}
+          />
           {question.prompt}
         </h2>
-        <QuestionVisual question={question} mode={visualMode} hideAnswer={hideAnswer} />
+        <QuestionVisual
+          question={question}
+          mode={visualMode}
+          hideAnswer={feedback === 'idle'}
+          revealReading={revealReading}
+        />
         <div className="visual-switches" aria-label="表示を変える">
           {(['groups', 'line', 'addition', 'reading'] as const).map((mode) => (
             <button
@@ -205,10 +224,10 @@ export function LearnPage() {
           <label className="mini-toggle">
             <input
               type="checkbox"
-              checked={hideAnswer}
-              onChange={(event) => setHideAnswer(event.target.checked)}
+              checked={showReading}
+              onChange={(event) => setShowReading(event.target.checked)}
             />
-            答えをかくす
+            九九の読み方
           </label>
         </div>
         <GameFeedback state={feedback} correctAnswer={question.answer} />

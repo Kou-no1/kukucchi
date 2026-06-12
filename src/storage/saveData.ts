@@ -1,6 +1,6 @@
 import type { OnboardingInput, SaveData } from '../types/save'
 
-export const SAVE_DATA_VERSION = 1
+export const SAVE_DATA_VERSION = 2
 
 export function createDefaultSaveData(): SaveData {
   return {
@@ -18,8 +18,15 @@ export function createDefaultSaveData(): SaveData {
       missions: [],
       missionDate: null,
       monsterBook: [],
+      categoryCorrect: {},
+      bossProgress: {},
+      bossItems: [],
       ownedItems: ['basic-room'],
       equippedItems: ['basic-room'],
+    },
+    tutorial: {
+      homeSeen: false,
+      modeTipsSeen: [],
     },
   }
 }
@@ -54,34 +61,49 @@ export function migrateSaveData(raw: unknown): SaveData {
   }
 
   const candidate = raw as Partial<SaveData>
+  const defaults = createDefaultSaveData()
   if (candidate.version === SAVE_DATA_VERSION) {
     return {
-      ...createDefaultSaveData(),
+      ...defaults,
       ...candidate,
       progress: {
-        ...createDefaultSaveData().progress,
+        ...defaults.progress,
         ...candidate.progress,
         facts: candidate.progress?.facts ?? {},
+        categoryCorrect: candidate.progress?.categoryCorrect ?? {},
+        bossProgress: candidate.progress?.bossProgress ?? {},
+        bossItems: candidate.progress?.bossItems ?? [],
       },
       settings: {
-        ...createDefaultSaveData().settings,
+        ...defaults.settings,
         ...candidate.settings,
+      },
+      tutorial: {
+        ...defaults.tutorial,
+        ...candidate.tutorial,
       },
     }
   }
 
   return {
-    ...createDefaultSaveData(),
+    ...defaults,
     ...candidate,
     version: SAVE_DATA_VERSION,
     progress: {
-      ...createDefaultSaveData().progress,
+      ...defaults.progress,
       ...candidate.progress,
       facts: candidate.progress?.facts ?? {},
+      categoryCorrect: candidate.progress?.categoryCorrect ?? {},
+      bossProgress: candidate.progress?.bossProgress ?? {},
+      bossItems: candidate.progress?.bossItems ?? [],
     },
     settings: {
-      ...createDefaultSaveData().settings,
+      ...defaults.settings,
       ...candidate.settings,
+    },
+    tutorial: {
+      ...defaults.tutorial,
+      ...candidate.tutorial,
     },
   }
 }

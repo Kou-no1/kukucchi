@@ -16,6 +16,27 @@ function extractFact(result: AnswerResult): { left: number; right: number } | nu
   return { left: Number(match[1]), right: Number(match[2]) }
 }
 
+function extractCategoryKey(result: AnswerResult): string | null {
+  if (result.questionId.startsWith('square-')) {
+    return 'multiplication-square'
+  }
+  if (result.questionId.startsWith('pi-')) {
+    return 'pi-multiplication'
+  }
+  if (
+    result.questionId.startsWith('td1-') ||
+    result.questionId.startsWith('td2-') ||
+    result.questionId.startsWith('divisor-') ||
+    result.questionId.startsWith('multiple-') ||
+    result.questionId.startsWith('prime-') ||
+    result.questionId.startsWith('gcd-') ||
+    result.questionId.startsWith('lcm-')
+  ) {
+    return 'development'
+  }
+  return null
+}
+
 export function applySessionResult(
   save: SaveData,
   summary: GameSessionSummary,
@@ -30,6 +51,16 @@ export function applySessionResult(
     const current = facts[result.questionId] ?? createFactProgress(fact.left, fact.right)
     facts[result.questionId] = updateFactProgress(current, result)
   }
+  const categoryCorrect = { ...save.progress.categoryCorrect }
+  for (const result of summary.results) {
+    if (!result.correct) {
+      continue
+    }
+    const category = extractCategoryKey(result)
+    if (category) {
+      categoryCorrect[category] = (categoryCorrect[category] ?? 0) + 1
+    }
+  }
 
   const best = save.progress.bests[summary.mode]
   const bestUpdated = !best || summary.score > best.score
@@ -38,6 +69,7 @@ export function applySessionResult(
     progress: {
       ...save.progress,
       facts,
+      categoryCorrect,
     },
   }
   const newTitles = judgeNewTitles(summary, interimSave)
@@ -93,6 +125,7 @@ export function applySessionResult(
     progress: {
       ...save.progress,
       facts,
+      categoryCorrect,
       history: [
         {
           id: summary.id,

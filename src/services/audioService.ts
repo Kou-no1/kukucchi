@@ -29,10 +29,10 @@ export function playCorrectSound(enabled: boolean): void {
 }
 
 export function speakJapanese(text: string, enabled: boolean): boolean {
-  if (!enabled || !('speechSynthesis' in window)) {
+  if (!enabled || !('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) {
     return false
   }
-  const utterance = new SpeechSynthesisUtterance(text)
+  const utterance = new window.SpeechSynthesisUtterance(text)
   utterance.lang = 'ja-JP'
   window.speechSynthesis.cancel()
   window.speechSynthesis.speak(utterance)

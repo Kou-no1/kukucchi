@@ -2974,6 +2974,227 @@ legend {
   font-weight: 900;
 }
 
+.kuku-ruby {
+  display: block;
+  margin-bottom: 4px;
+  color: #9ff8ff;
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.68);
+}
+
+.kuku-ruby span + span {
+  margin-left: 0.5em;
+}
+
+.compact-action {
+  min-width: 0;
+  width: fit-content;
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 0.92rem;
+}
+
+.tutorial-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(2, 10, 24, 0.72);
+  backdrop-filter: blur(10px);
+}
+
+.tutorial-modal {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 520px);
+  padding: 22px;
+  border: 2px solid rgba(91, 233, 244, 0.78);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(8, 34, 68, 0.96), rgba(3, 16, 39, 0.98)),
+    radial-gradient(circle at 18% 8%, rgba(91, 233, 244, 0.24), transparent 12rem);
+  box-shadow:
+    0 0 34px rgba(91, 233, 244, 0.36),
+    inset 0 0 22px rgba(91, 233, 244, 0.14);
+  text-align: center;
+}
+
+.tutorial-icon {
+  display: grid;
+  width: 74px;
+  height: 74px;
+  place-items: center;
+  margin: 0 auto;
+  border: 2px solid rgba(91, 233, 244, 0.58);
+  border-radius: 50%;
+  background: rgba(91, 233, 244, 0.14);
+  font-size: 2.4rem;
+}
+
+.tutorial-modal h2 {
+  margin: 0;
+  color: #dffcff;
+  font-size: clamp(1.7rem, 6vw, 2.8rem);
+  text-shadow: 0 0 16px rgba(91, 233, 244, 0.72);
+}
+
+.tutorial-modal p {
+  margin: 0;
+  color: rgba(232, 251, 255, 0.82);
+  font-weight: 900;
+}
+
+.tutorial-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.tutorial-dots span {
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(91, 233, 244, 0.58);
+  border-radius: 50%;
+}
+
+.tutorial-dots .selected {
+  background: #68f4ff;
+  box-shadow: 0 0 12px rgba(91, 233, 244, 0.84);
+}
+
+.tutorial-actions,
+.boss-difficulty-row,
+.boss-hud,
+.boss-reward-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.tutorial-actions {
+  justify-content: center;
+}
+
+.boss-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.boss-list.compact {
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.boss-card,
+.boss-arena,
+.boss-result {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid rgba(91, 233, 244, 0.68);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(8, 34, 68, 0.92), rgba(3, 16, 39, 0.95)),
+    radial-gradient(circle at 18% 0%, rgba(91, 233, 244, 0.22), transparent 11rem);
+  box-shadow:
+    0 0 22px rgba(91, 233, 244, 0.24),
+    inset 0 0 18px rgba(91, 233, 244, 0.12);
+}
+
+.boss-card.locked,
+.book-card.silhouette {
+  opacity: 0.68;
+  filter: saturate(0.55);
+}
+
+.boss-no {
+  color: #68f4ff;
+  font-weight: 950;
+}
+
+.boss-emoji {
+  font-size: 2.6rem;
+}
+
+.boss-card h2,
+.boss-result h2 {
+  margin: 0;
+  color: #dffcff;
+  text-shadow: 0 0 14px rgba(91, 233, 244, 0.66);
+}
+
+.boss-card p,
+.boss-result p {
+  margin: 0;
+}
+
+.boss-difficulty-row button {
+  flex: 1 1 112px;
+  min-height: 44px;
+  border: 2px solid rgba(91, 233, 244, 0.58);
+  border-radius: 8px;
+  background: rgba(5, 20, 48, 0.82);
+  color: #e8fbff;
+  font-weight: 950;
+}
+
+.boss-difficulty-row button.selected {
+  background: linear-gradient(145deg, rgba(80, 231, 255, 0.92), rgba(55, 98, 255, 0.9));
+  color: #061525;
+}
+
+.boss-difficulty-row button:disabled {
+  opacity: 0.45;
+}
+
+.boss-arena,
+.boss-result {
+  margin-top: 14px;
+}
+
+.boss-hud {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.boss-time {
+  display: grid;
+  gap: 6px;
+  color: #e8fbff;
+  font-weight: 950;
+}
+
+.boss-time > div {
+  height: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(91, 233, 244, 0.6);
+  border-radius: 999px;
+  background: rgba(4, 17, 42, 0.9);
+}
+
+.boss-time i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #68f4ff, #7d8dff);
+  box-shadow: 0 0 14px rgba(91, 233, 244, 0.68);
+}
+
+.boss-reward-list span {
+  flex: 1 1 180px;
+  padding: 10px;
+  border: 2px solid rgba(91, 233, 244, 0.5);
+  border-radius: 8px;
+  background: rgba(91, 233, 244, 0.12);
+  font-weight: 900;
+}
+
 @media (max-width: 760px) {
   .speed-command {
     grid-template-columns: 1fr;

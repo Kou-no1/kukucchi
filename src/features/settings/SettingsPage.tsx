@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { TutorialModal } from '../../components/common/TutorialModal'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
@@ -9,6 +10,7 @@ import { parseSaveData } from '../../storage/saveData'
 export function SettingsPage() {
   const { saveData, setSaveData, updateSaveData, resetSaveData } = useSaveData()
   const [importText, setImportText] = useState('')
+  const [tutorialOpen, setTutorialOpen] = useState(false)
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
 
   function updateSetting(key: 'soundEnabled' | 'speechEnabled' | 'reduceMotion') {
@@ -83,6 +85,9 @@ export function SettingsPage() {
     <AppShell title="せってい" backTo="/home">
       <section className="settings-section" aria-labelledby="sound-title">
         <h2 id="sound-title">音と動き</h2>
+        <button className="secondary-action wide" type="button" onClick={() => setTutorialOpen(true)}>
+          あそびかた
+        </button>
         <label className="switch-row">
           <input
             type="checkbox"
@@ -170,6 +175,7 @@ export function SettingsPage() {
       <Link className="primary-action wide" to="/home">
         ホームへ
       </Link>
+      {tutorialOpen ? <TutorialModal onClose={() => setTutorialOpen(false)} /> : null}
     </AppShell>
   )
 }

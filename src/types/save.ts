@@ -40,6 +40,20 @@ export type GameHistoryEntry = {
   playedAt: string
 }
 
+export type BossDifficultyId = 'normal' | 'hard' | 'fast'
+
+export type BossDifficultyProgress = {
+  cleared: boolean
+  clearCount: number
+  firstClearedAt: string | null
+  bestTimeMs: number | null
+}
+
+export type BossProgress = {
+  bossId: string
+  difficulties: Partial<Record<BossDifficultyId, BossDifficultyProgress>>
+}
+
 export type ProgressData = {
   facts: Record<string, MultiplicationFactProgress>
   history: GameHistoryEntry[]
@@ -47,8 +61,16 @@ export type ProgressData = {
   missions: DailyMission[]
   missionDate: string | null
   monsterBook: string[]
+  categoryCorrect: Record<string, number>
+  bossProgress: Record<string, BossProgress>
+  bossItems: string[]
   ownedItems: string[]
   equippedItems: string[]
+}
+
+export type TutorialData = {
+  homeSeen: boolean
+  modeTipsSeen: string[]
 }
 
 export type SaveData = {
@@ -56,6 +78,7 @@ export type SaveData = {
   player: PlayerData | null
   progress: ProgressData
   settings: SettingsData
+  tutorial: TutorialData
 }
 
 export type OnboardingInput = {
