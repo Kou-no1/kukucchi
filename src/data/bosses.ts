@@ -1,4 +1,5 @@
 import type { BossDifficultyId } from '../types/save'
+import { defaultMinDifficultyByBossDifficulty } from './factDifficulty'
 
 export type BossGroup = 'basic' | 'advanced'
 
@@ -15,6 +16,7 @@ export type BossDifficulty = {
   timeLimitSeconds: number | null
   questionCount: number
   hp: number
+  minDifficulty: number
 }
 
 export type BossDefinition = {
@@ -54,6 +56,7 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     timeLimitSeconds: null,
     questionCount: 10,
     hp: 7,
+    minDifficulty: defaultMinDifficultyByBossDifficulty.normal,
   },
   hard: {
     id: 'hard',
@@ -62,6 +65,7 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     timeLimitSeconds: 6,
     questionCount: 12,
     hp: 9,
+    minDifficulty: defaultMinDifficultyByBossDifficulty.hard,
   },
   fast: {
     id: 'fast',
@@ -70,6 +74,7 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     timeLimitSeconds: 3,
     questionCount: 15,
     hp: 11,
+    minDifficulty: defaultMinDifficultyByBossDifficulty.fast,
   },
   gekimuzu: {
     id: 'gekimuzu',
@@ -78,6 +83,7 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     timeLimitSeconds: 2.5,
     questionCount: 18,
     hp: 14,
+    minDifficulty: defaultMinDifficultyByBossDifficulty.gekimuzu,
   },
 }
 

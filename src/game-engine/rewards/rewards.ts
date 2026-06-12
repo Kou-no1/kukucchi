@@ -8,9 +8,11 @@ export function calculateCoins(results: AnswerResult[], maxCombo: number): numbe
 }
 
 export function calculateExp(results: AnswerResult[], modeBonus = 0): number {
-  const correctCount = results.filter((result) => result.correct).length
+  const difficultyExp = results
+    .filter((result) => result.correct)
+    .reduce((sum, result) => sum + Math.max(1, result.difficulty ?? 1) * (8 / 3), 0)
   const attemptBonus = Math.ceil(results.length * 2)
-  return correctCount * 8 + attemptBonus + modeBonus
+  return Math.round(difficultyExp) + attemptBonus + modeBonus
 }
 
 export function expToLevel(exp: number): number {

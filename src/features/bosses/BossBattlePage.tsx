@@ -9,6 +9,7 @@ import type { BossDefinition, BossDifficulty } from '../../data/bosses'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
 import { applyBossClearReward, getClearedStars, getDifficultyProgress, isBossUnlocked, isDifficultyUnlocked } from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
+import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import {
   generateAdvancedQuestion,
   generateMissingFactorQuestion,
@@ -48,12 +49,15 @@ function createBossQuestion(boss: BossDefinition, difficulty: BossDifficulty): Q
   if (boss.advancedCategory) {
     return generateAdvancedQuestion(boss.advancedCategory)
   }
-  const stage = pick(boss.stages ?? [2])
-  const right = Math.floor(Math.random() * 9) + 1
+  const pool = createMultiplicationFactPool({
+    stages: boss.stages ?? [2],
+    minDifficulty: difficulty.minDifficulty,
+  })
+  const fact = pick(pool)
   if (difficulty.id === 'gekimuzu' && Math.random() < 0.3) {
-    return generateMissingFactorQuestion(stage, right)
+    return generateMissingFactorQuestion(fact.left, fact.right)
   }
-  return generateMultiplicationFactQuestion(stage, right)
+  return generateMultiplicationFactQuestion(fact.left, fact.right)
 }
 
 function formatSeconds(milliseconds: number): string {
@@ -154,6 +158,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         expectedAnswer: question.answer,
         givenAnswer: answer,
         correct,
+        difficulty: question.difficulty,
         responseTimeMs,
         answeredAt: new Date().toISOString(),
       }

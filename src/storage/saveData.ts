@@ -1,6 +1,7 @@
 import type { OnboardingInput, SaveData } from '../types/save'
+import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 
-export const SAVE_DATA_VERSION = 3
+export const SAVE_DATA_VERSION = 4
 
 export function createDefaultSaveData(): SaveData {
   return {
@@ -25,6 +26,12 @@ export function createDefaultSaveData(): SaveData {
       equippedUfoId: null,
       ownedItems: ['basic-room'],
       equippedItems: ['basic-room'],
+      speedSettings: {
+        selectedStages: [...defaultSpeedStages],
+        durationSeconds: speedDurations[0],
+      },
+      rocketBestDistance: 0,
+      rocketBadges: [],
     },
     tutorial: {
       homeSeen: false,
@@ -77,6 +84,18 @@ export function migrateSaveData(raw: unknown): SaveData {
         bossItems: candidate.progress?.bossItems ?? [],
         ownedUfos: candidate.progress?.ownedUfos ?? [],
         equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+        speedSettings: {
+          ...defaults.progress.speedSettings,
+          ...candidate.progress?.speedSettings,
+          selectedStages:
+            candidate.progress?.speedSettings?.selectedStages ??
+            defaults.progress.speedSettings.selectedStages,
+          durationSeconds:
+            candidate.progress?.speedSettings?.durationSeconds ??
+            defaults.progress.speedSettings.durationSeconds,
+        },
+        rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
+        rocketBadges: candidate.progress?.rocketBadges ?? [],
       },
       settings: {
         ...defaults.settings,
@@ -102,6 +121,18 @@ export function migrateSaveData(raw: unknown): SaveData {
       bossItems: candidate.progress?.bossItems ?? [],
       ownedUfos: candidate.progress?.ownedUfos ?? [],
       equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+      speedSettings: {
+        ...defaults.progress.speedSettings,
+        ...candidate.progress?.speedSettings,
+        selectedStages:
+          candidate.progress?.speedSettings?.selectedStages ??
+          defaults.progress.speedSettings.selectedStages,
+        durationSeconds:
+          candidate.progress?.speedSettings?.durationSeconds ??
+          defaults.progress.speedSettings.durationSeconds,
+      },
+      rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
+      rocketBadges: candidate.progress?.rocketBadges ?? [],
     },
     settings: {
       ...defaults.settings,

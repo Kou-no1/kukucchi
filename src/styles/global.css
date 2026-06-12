@@ -3373,6 +3373,142 @@ legend {
   font-weight: 900;
 }
 
+.mode-start-screen {
+  display: grid;
+  grid-template-columns: minmax(140px, 0.55fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 18px;
+  border: 2px solid rgba(91, 233, 244, 0.7);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(8, 34, 68, 0.94), rgba(3, 16, 39, 0.96)),
+    radial-gradient(circle at 15% 0%, rgba(91, 233, 244, 0.24), transparent 12rem);
+  box-shadow:
+    0 0 24px rgba(91, 233, 244, 0.22),
+    inset 0 0 18px rgba(91, 233, 244, 0.12);
+}
+
+.mode-start-screen .kukucchi {
+  justify-self: center;
+  max-width: 180px;
+}
+
+.mode-start-copy {
+  display: grid;
+  gap: 8px;
+}
+
+.mode-start-copy h2 {
+  margin: 0;
+  color: #e8fbff;
+  font-size: clamp(2rem, 6vw, 4rem);
+  line-height: 1.05;
+  text-shadow: 0 0 18px rgba(91, 233, 244, 0.82);
+}
+
+.mode-start-options,
+.mode-start-actions {
+  grid-column: 1 / -1;
+}
+
+.mode-start-options {
+  display: grid;
+  gap: 14px;
+}
+
+.mode-start-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.stage-select-panel,
+.duration-select-panel,
+.treasure-chest-stage {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 2px solid rgba(91, 233, 244, 0.42);
+  border-radius: 8px;
+  background: rgba(4, 18, 45, 0.68);
+}
+
+.start-option-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #e8fbff;
+}
+
+.stage-chip-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stage-chip {
+  min-height: 58px;
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  justify-items: center;
+  border: 2px solid rgba(91, 233, 244, 0.5);
+  border-radius: 8px;
+  background: rgba(5, 20, 48, 0.86);
+  color: #dffcff;
+  font-weight: 900;
+}
+
+.stage-chip span {
+  color: #68f4ff;
+  letter-spacing: 0;
+}
+
+.stage-chip small {
+  color: #fff2a8;
+  font-size: 0.72rem;
+}
+
+.stage-chip.selected {
+  background: linear-gradient(145deg, rgba(80, 231, 255, 0.92), rgba(55, 98, 255, 0.9));
+  color: #061525;
+}
+
+.stage-chip.selected span,
+.stage-chip.selected small {
+  color: #061525;
+}
+
+.treasure-chest-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.treasure-chest-card {
+  min-height: 150px;
+  display: grid;
+  gap: 8px;
+  place-items: center;
+  padding: 14px;
+  border: 2px solid rgba(91, 233, 244, 0.54);
+  border-radius: 8px;
+  background: rgba(5, 20, 48, 0.86);
+  color: #e8fbff;
+  font-weight: 900;
+}
+
+.treasure-chest-card span {
+  font-size: 2.4rem;
+}
+
+.treasure-chest-card small {
+  color: #a7f7ff;
+}
+
 @keyframes ufo-float {
   0%,
   100% {
@@ -3414,6 +3550,15 @@ legend {
 }
 
 @media (max-width: 760px) {
+  .mode-start-screen {
+    grid-template-columns: 1fr;
+  }
+
+  .mode-start-actions,
+  .treasure-chest-grid {
+    grid-template-columns: 1fr;
+  }
+
   .speed-command {
     grid-template-columns: 1fr;
   }
@@ -3464,6 +3609,10 @@ legend {
 }
 
 @media (max-width: 430px) {
+  .stage-chip-grid {
+    grid-template-columns: 1fr;
+  }
+
   .home-command {
     grid-template-columns: 1fr;
   }

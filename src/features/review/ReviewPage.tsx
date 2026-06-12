@@ -88,6 +88,7 @@ export function ReviewPage() {
       expectedAnswer: question.answer,
       givenAnswer: answer,
       correct,
+      difficulty: question.difficulty,
       responseTimeMs,
       answeredAt: new Date().toISOString(),
     }

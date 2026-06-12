@@ -91,6 +91,7 @@ export function LearnPage() {
       expectedAnswer: question.answer,
       givenAnswer: answer,
       correct,
+      difficulty: question.difficulty,
       responseTimeMs,
       answeredAt,
     }

@@ -5,13 +5,16 @@ import type {
   QuestionCategory,
 } from '../../types/game'
 import { getReviewQueue } from '../review/weakFacts'
+import { createMultiplicationFactPool, factDifficulty } from './factDifficulty'
 
 export type RandomSource = () => number
 
 export type GenerateQuestionOptions = {
   category?: QuestionCategory
   stage?: number
+  stages?: number[]
   answerMode?: AnswerMode
+  minDifficulty?: number
   rng?: RandomSource
 }
 
@@ -145,7 +148,7 @@ export function generateMissingFactorQuestion(
     answer: missingFactor,
     choices: generateFactorChoices(missingFactor, partnerFactor, rng),
     explanation: `${safeLeft} × ${safeRight} = ${product}`,
-    difficulty: Math.max(safeLeft, safeRight) + 1,
+    difficulty: factDifficulty(safeLeft, safeRight),
     metadata: {
       left: safeLeft,
       right: safeRight,
@@ -176,7 +179,7 @@ export function generateMultiplicationFactQuestion(
     choices:
       answerMode === 'choice' ? generateChoices(answer, safeLeft, safeRight, rng) : undefined,
     explanation: `${safeLeft}こずつのまとまりが ${safeRight}くみで ${answer} です`,
-    difficulty: Math.max(safeLeft, safeRight),
+    difficulty: factDifficulty(safeLeft, safeRight),
     metadata: { left: safeLeft, right: safeRight, answerMode },
   }
 }
@@ -185,9 +188,13 @@ export function generateMultiplicationQuestion(
   options: GenerateQuestionOptions = {},
 ): Question {
   const rng = options.rng ?? Math.random
-  const stage = options.stage ?? pick([2, 3, 4, 5, 6, 7, 8, 9], rng)
-  const right = Math.floor(rng() * 9) + 1
-  return generateMultiplicationFactQuestion(stage, right, options)
+  const stages = options.stage ? [options.stage] : options.stages
+  const pool = createMultiplicationFactPool({
+    stages: stages ?? [2, 3, 4, 5, 6, 7, 8, 9],
+    minDifficulty: options.minDifficulty ?? 1,
+  })
+  const fact = pick(pool, rng)
+  return generateMultiplicationFactQuestion(fact.left, fact.right, options)
 }
 
 export function generateAdaptiveMultiplicationQuestion(

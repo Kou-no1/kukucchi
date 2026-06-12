@@ -24,7 +24,7 @@ const modes = [
     ready: true,
     icon: '🚀',
     badge: '03',
-    subtitle: '燃料をためよう',
+    subtitle: 'スピードで うちゅうのはてへ！',
   },
   {
     label: 'にがてモンスター',
@@ -40,7 +40,7 @@ const modes = [
     ready: true,
     icon: '👾',
     badge: '05',
-    subtitle: 'ミニゲームでアタック',
+    subtitle: 'コンボで ひっさつわざ！',
   },
   {
     label: 'ボスバトル',
@@ -56,7 +56,7 @@ const modes = [
     ready: true,
     icon: '🗝️',
     badge: '07',
-    subtitle: 'かぎを集める',
+    subtitle: 'ゆっくり おたからゲット',
   },
   {
     label: '高学年チャレンジ',

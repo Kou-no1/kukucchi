@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
+import { rocketBadges } from '../../data/rocketBadges'
 import { ufoDefinitions } from '../../data/ufos'
 import { getDifficultyProgress } from '../../game-engine/bosses/bossEngine'
 import { getMasteredFacts, getMonsterFacts } from '../../game-engine/review/weakFacts'
@@ -21,11 +22,13 @@ export function MonsterBookPage() {
   const registered = new Set(saveData.progress.monsterBook)
   const ownedBossItems = new Set(saveData.progress.bossItems)
   const ownedUfos = new Set(saveData.progress.ownedUfos)
+  const ownedRocketBadges = new Set(saveData.progress.rocketBadges)
   const clearedBossCount = bosses.filter((boss) =>
     difficultyIds.some((difficulty) => getDifficultyProgress(saveData, boss.id, difficulty).cleared),
   ).length
   const ownedBossItemCount = bossLimitedItems.filter((item) => ownedBossItems.has(item.id)).length
   const ownedUfoCount = ufoDefinitions.filter((ufo) => ownedUfos.has(ufo.id)).length
+  const ownedRocketBadgeCount = rocketBadges.filter((badge) => ownedRocketBadges.has(badge.id)).length
 
   function equipUfo(ufoId: string) {
     updateSaveData((current) => {
@@ -169,6 +172,32 @@ export function MonsterBookPage() {
               ) : (
                 <small>シルエット</small>
               )}
+            </article>
+          )
+        })}
+      </section>
+
+      <section className="book-command" aria-labelledby="rocket-book-title">
+        <p className="welcome">ロケット到達バッジ</p>
+        <h2 id="rocket-book-title">
+          {ownedRocketBadgeCount}/{rocketBadges.length} こ入手
+        </h2>
+        <p className="title-line">
+          自己ベスト {saveData.progress.rocketBestDistance}m / コンプリートまで あと
+          {rocketBadges.length - ownedRocketBadgeCount}こ！
+        </p>
+      </section>
+
+      <section className="monster-grid book-grid" aria-label="ロケット到達バッジ">
+        {rocketBadges.map((badge) => {
+          const owned = ownedRocketBadges.has(badge.id)
+          return (
+            <article className={owned ? 'book-card' : 'book-card silhouette'} key={badge.id}>
+              <span className="boss-no">R-{String(badge.no).padStart(2, '0')}</span>
+              <span aria-hidden="true">{owned ? badge.emoji : '◆'}</span>
+              <h2>{owned ? badge.name : '？？？'}</h2>
+              <p>{owned ? badge.description : `${badge.distance}mにとどくと入手できます。`}</p>
+              <small>{badge.distance}m</small>
             </article>
           )
         })}

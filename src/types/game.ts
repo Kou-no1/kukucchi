@@ -44,6 +44,7 @@ export type AnswerResult = {
   expectedAnswer: number | string
   givenAnswer: number | string
   correct: boolean
+  difficulty?: number
   responseTimeMs: number
   answeredAt: string
 }

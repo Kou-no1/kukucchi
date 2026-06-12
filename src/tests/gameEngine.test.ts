@@ -8,6 +8,10 @@ import {
   generateMultiplicationQuestion,
 } from '../game-engine/questions/questionGenerator'
 import {
+  createMultiplicationFactPool,
+  factDifficulty,
+} from '../game-engine/questions/factDifficulty'
+import {
   applyAnswerToScore,
   calculateSpeedBonus,
 } from '../game-engine/scoring/score'
@@ -39,6 +43,7 @@ function result(overrides: Partial<AnswerResult> = {}): AnswerResult {
     expectedAnswer: 56,
     givenAnswer: 56,
     correct: true,
+    difficulty: 5,
     responseTimeMs: 1200,
     answeredAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
@@ -64,6 +69,43 @@ function createSaveWithPlayer(): SaveData {
 }
 
 describe('question generation', () => {
+  it('maps multiplication facts to teacher-adjustable difficulty stars', () => {
+    const expectations: Array<[number, number, number]> = [
+      [2, 1, 1],
+      [9, 1, 1],
+      [2, 5, 2],
+      [2, 3, 2],
+      [5, 5, 2],
+      [5, 4, 2],
+      [3, 4, 3],
+      [2, 7, 3],
+      [5, 9, 3],
+      [4, 4, 3],
+      [3, 6, 3],
+      [6, 6, 4],
+      [4, 7, 4],
+      [9, 9, 4],
+      [3, 8, 4],
+      [6, 9, 4],
+      [6, 7, 5],
+      [7, 8, 5],
+      [8, 6, 5],
+      [7, 7, 5],
+      [7, 9, 5],
+      [8, 9, 5],
+    ]
+    for (const [left, right, difficulty] of expectations) {
+      expect(factDifficulty(left, right)).toBe(difficulty)
+    }
+
+    const allFacts = createMultiplicationFactPool({
+      stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      minDifficulty: 1,
+    })
+    expect(allFacts.filter((fact) => fact.difficulty === 1)).toHaveLength(17)
+    expect(allFacts.filter((fact) => fact.difficulty === 5)).toHaveLength(12)
+  })
+
   it('generates multiplication questions with unique choices', () => {
     const question = generateMultiplicationQuestion({
       stage: 7,
@@ -73,6 +115,28 @@ describe('question generation', () => {
     expect(question.prompt).toContain('7 ×')
     expect(new Set(question.choices).size).toBe(4)
     expect(question.choices).toContain(question.answer)
+  })
+
+  it('filters multiplication pools by minDifficulty and relaxes empty pools', () => {
+    const hardPool = createMultiplicationFactPool({ stages: [7], minDifficulty: 5 })
+    expect(hardPool.length).toBeGreaterThan(0)
+    expect(hardPool.every((fact) => fact.left === 7 && fact.difficulty >= 5)).toBe(true)
+
+    const relaxedPool = createMultiplicationFactPool({ stages: [1], minDifficulty: 5 })
+    expect(relaxedPool.length).toBe(9)
+    expect(relaxedPool.every((fact) => fact.left === 1 && fact.difficulty === 1)).toBe(true)
+  })
+
+  it('generates speed questions only from selected stages', () => {
+    const questions = Array.from({ length: 20 }, () =>
+      generateMultiplicationQuestion({
+        stages: [4],
+        answerMode: 'choice',
+        minDifficulty: 1,
+        rng: () => 0.35,
+      }),
+    )
+    expect(questions.every((question) => question.metadata?.left === 4)).toBe(true)
   })
 
   it('keeps generated choices unique and includes close mistakes', () => {
@@ -165,6 +229,14 @@ describe('scoring and rewards', () => {
     }
     expect(judgeNewTitles(summary, save)).toContain('くくファイター')
   })
+
+  it('scales earned exp with question difficulty without changing coins', () => {
+    const easy = result({ questionId: '2x1', difficulty: 1 })
+    const hard = result({ questionId: '7x8', difficulty: 5 })
+    expect(calculateExp([hard])).toBeGreaterThan(calculateExp([easy]))
+    expect(calculateExp([easy, hard])).toBe(20)
+    expect(calculateCoins([easy, hard], 2)).toBe(6)
+  })
 })
 
 describe('mastery, review, missions, and storage', () => {
@@ -199,27 +271,33 @@ describe('mastery, review, missions, and storage', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(3)
+    expect(migrated.version).toBe(4)
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
     expect(migrated.progress.equippedUfoId).toBeNull()
+    expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    expect(migrated.progress.rocketBestDistance).toBe(0)
+    expect(migrated.progress.rocketBadges).toEqual([])
   })
 
-  it('migrates v2 save data into v3 UFO fields', () => {
-    const v2Save = {
+  it('migrates v3 save data into v4 speed and rocket fields', () => {
+    const v3Save = {
       ...createDefaultSaveData(),
-      version: 2,
+      version: 3,
       progress: {
         ...createDefaultSaveData().progress,
-        ownedUfos: undefined,
-        equippedUfoId: undefined,
+        speedSettings: undefined,
+        rocketBestDistance: undefined,
+        rocketBadges: undefined,
       },
     }
-    const migrated = migrateSaveData(v2Save)
-    expect(migrated.version).toBe(3)
-    expect(migrated.progress.ownedUfos).toEqual([])
-    expect(migrated.progress.equippedUfoId).toBeNull()
+    const migrated = migrateSaveData(v3Save)
+    expect(migrated.version).toBe(4)
+    expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
+    expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
+    expect(migrated.progress.rocketBestDistance).toBe(0)
+    expect(migrated.progress.rocketBadges).toEqual([])
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {
