@@ -5,6 +5,7 @@ import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { UfoBadge } from '../../components/collection/UfoBadge'
+import { equipmentSlots, getEquippedItemForSlot } from '../../data/shopItems'
 import { getUfoById } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -15,6 +16,7 @@ export function HomePage() {
   const weakFacts = getWeakFacts(saveData.progress.facts, 3)
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
+  const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
 
   function closeTutorial() {
     setTutorialOpen(false)
@@ -24,6 +26,18 @@ export function HomePage() {
         ...current.tutorial,
         homeSeen: true,
       },
+    }))
+  }
+
+  function chooseTitle(title: string) {
+    updateSaveData((current) => ({
+      ...current,
+      player: current.player
+        ? {
+            ...current.player,
+            currentTitle: title,
+          }
+        : current.player,
     }))
   }
 
@@ -58,6 +72,19 @@ export function HomePage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="home-equipment-slots" aria-label="そうび">
+            {equipmentSlots.map((slot) => {
+              const item = getEquippedItemForSlot(saveData.progress.equippedItems, slot.id)
+              return (
+                <div className={item ? 'equipment-slot equipped' : 'equipment-slot'} key={slot.id}>
+                  <span aria-hidden="true">{item?.emoji ?? '◇'}</span>
+                  <small>{slot.label}</small>
+                  <strong>{item?.name ?? slot.emptyLabel}</strong>
+                </div>
+              )
+            })}
           </section>
         </div>
 
@@ -132,6 +159,27 @@ export function HomePage() {
           <strong>せってい</strong>
           <small>音と表示</small>
         </Link>
+      </section>
+
+      <section className="title-card-section" aria-labelledby="title-card-heading">
+        <h2 id="title-card-heading">しょうごうカード</h2>
+        <div className="title-card-strip">
+          {titles.slice(0, 6).map((title) => {
+            const selected = player?.currentTitle === title
+            return (
+              <button
+                className={selected ? 'title-card selected' : 'title-card'}
+                type="button"
+                key={title}
+                onClick={() => chooseTitle(title)}
+                aria-pressed={selected}
+              >
+                <span aria-hidden="true">🏷️</span>
+                <strong>{title}</strong>
+              </button>
+            )
+          })}
+        </div>
       </section>
 
       <section className="weak-section" aria-labelledby="weak-title">

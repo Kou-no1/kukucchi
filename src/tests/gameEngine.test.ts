@@ -25,7 +25,7 @@ import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/r
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { bosses } from '../data/bosses'
-import { isShopTier2Unlocked, shopItems } from '../data/shopItems'
+import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import {
   applyBossClearReward,
@@ -406,6 +406,22 @@ describe('mastery, review, missions, and storage', () => {
     expect(Math.max(...prices)).toBe(10000)
     expect(isShopTier2Unlocked(shopItems.slice(0, 9).map((item) => item.id))).toBe(false)
     expect(isShopTier2Unlocked(shopItems.slice(0, 10).map((item) => item.id))).toBe(true)
+  })
+
+  it('keeps one equipped shop item per home equipment slot', () => {
+    const equipped = equipShopItem(
+      equipShopItem(['green-cape', 'star-cap', 'starry-seat'], 'rainbow-suit'),
+      'pico-pet',
+    )
+    expect(equipped).toContain('rainbow-suit')
+    expect(equipped).toContain('star-cap')
+    expect(equipped).toContain('starry-seat')
+    expect(equipped).toContain('pico-pet')
+    expect(equipped).not.toContain('green-cape')
+    expect(getEquippedItemForSlot(equipped, 'wear')?.id).toBe('rainbow-suit')
+    expect(getEquippedItemForSlot(equipped, 'hat')?.id).toBe('star-cap')
+    expect(getEquippedItemForSlot(equipped, 'room')?.id).toBe('starry-seat')
+    expect(getEquippedItemForSlot(equipped, 'buddy')?.id).toBe('pico-pet')
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {

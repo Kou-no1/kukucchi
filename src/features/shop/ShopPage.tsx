@@ -1,5 +1,6 @@
 import { AppShell } from '../../components/common/AppShell'
 import {
+  equipShopItem,
   isShopTier2Unlocked,
   purchasedShopItemCount,
   shopItems,
@@ -63,7 +64,7 @@ export function ShopPage() {
         ...current,
         progress: {
           ...current.progress,
-          equippedItems: [itemId],
+          equippedItems: equipShopItem(current.progress.equippedItems, itemId),
         },
       }
     })

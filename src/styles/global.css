@@ -2616,6 +2616,49 @@ legend {
   font-size: 0.9rem;
 }
 
+.home-equipment-slots {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.equipment-slot {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 6px;
+  min-height: 54px;
+  padding: 7px 8px;
+  border: 1px solid rgba(91, 233, 244, 0.36);
+  border-radius: 8px;
+  background: rgba(8, 23, 45, 0.72);
+  color: #dffcff;
+  box-shadow: inset 0 0 18px rgba(91, 233, 244, 0.1);
+}
+
+.equipment-slot span {
+  grid-row: 1 / 3;
+  align-self: center;
+  font-size: 1.25rem;
+}
+
+.equipment-slot small {
+  color: rgba(198, 242, 255, 0.76);
+  font-size: 0.68rem;
+}
+
+.equipment-slot strong {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.equipment-slot.equipped {
+  border-color: rgba(91, 233, 244, 0.7);
+  background: linear-gradient(135deg, rgba(20, 69, 110, 0.86), rgba(9, 24, 50, 0.86));
+}
+
 .home-character-window {
   justify-self: end;
   width: 100%;
@@ -2687,6 +2730,52 @@ legend {
 .home-sub-actions .home-menu-card strong {
   grid-column: 1 / -1;
   white-space: nowrap;
+}
+
+.title-card-section {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.title-card-section h2 {
+  margin: 0;
+  color: #dffcff;
+  font-size: 1.1rem;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.7);
+}
+
+.title-card-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+}
+
+.title-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid rgba(91, 233, 244, 0.36);
+  border-radius: 8px;
+  background: rgba(241, 254, 255, 0.92);
+  color: #12203a;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(4, 12, 28, 0.18);
+}
+
+.title-card strong {
+  overflow-wrap: anywhere;
+  font-size: 0.9rem;
+}
+
+.title-card.selected {
+  border-color: rgba(91, 233, 244, 0.9);
+  background: linear-gradient(135deg, #bff9ff, #eefbff);
+  box-shadow:
+    0 0 0 2px rgba(91, 233, 244, 0.18),
+    0 0 20px rgba(91, 233, 244, 0.42);
 }
 
 .home-sub-actions .home-card-emoji {

@@ -17,7 +17,43 @@ export type ShopItem = {
   kind: ShopItemKind
 }
 
+export type EquipmentSlotId = 'wear' | 'hat' | 'room' | 'buddy'
+
+export type EquipmentSlot = {
+  id: EquipmentSlotId
+  label: string
+  emptyLabel: string
+  kinds: ShopItemKind[]
+}
+
 export const shopTier2UnlockPurchaseCount = 10
+
+export const equipmentSlots: EquipmentSlot[] = [
+  {
+    id: 'wear',
+    label: 'ふく',
+    emptyLabel: 'ふくなし',
+    kinds: ['wear'],
+  },
+  {
+    id: 'hat',
+    label: 'ぼうし',
+    emptyLabel: 'ぼうしなし',
+    kinds: ['hat'],
+  },
+  {
+    id: 'room',
+    label: 'へや',
+    emptyLabel: 'へやそのまま',
+    kinds: ['furniture', 'wallpaper', 'background'],
+  },
+  {
+    id: 'buddy',
+    label: 'なかま',
+    emptyLabel: 'なかまなし',
+    kinds: ['effect', 'pet'],
+  },
+]
 
 export const shopItems: ShopItem[] = [
   {
@@ -209,4 +245,38 @@ export function purchasedShopItemCount(ownedItems: string[]): number {
 
 export function isShopTier2Unlocked(ownedItems: string[]): boolean {
   return purchasedShopItemCount(ownedItems) >= shopTier2UnlockPurchaseCount
+}
+
+export function getShopItemById(itemId: string): ShopItem | undefined {
+  return shopItems.find((item) => item.id === itemId)
+}
+
+export function getEquipmentSlotForKind(kind: ShopItemKind): EquipmentSlot {
+  return equipmentSlots.find((slot) => slot.kinds.includes(kind)) ?? equipmentSlots[0]
+}
+
+export function getEquippedItemForSlot(
+  equippedItems: string[],
+  slotId: EquipmentSlotId,
+): ShopItem | undefined {
+  const slot = equipmentSlots.find((candidate) => candidate.id === slotId)
+  if (!slot) {
+    return undefined
+  }
+  return equippedItems.map(getShopItemById).find((item) => item && slot.kinds.includes(item.kind))
+}
+
+export function equipShopItem(currentEquippedItems: string[], itemId: string): string[] {
+  const item = getShopItemById(itemId)
+  if (!item) {
+    return currentEquippedItems
+  }
+  const slot = getEquipmentSlotForKind(item.kind)
+  return [
+    ...currentEquippedItems.filter((equippedId) => {
+      const equippedItem = getShopItemById(equippedId)
+      return equippedItem ? !slot.kinds.includes(equippedItem.kind) : false
+    }),
+    item.id,
+  ]
 }
