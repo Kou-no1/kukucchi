@@ -24,6 +24,7 @@ import {
 import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
+import { danPalette, getDanSpriteColors } from '../data/danPalette'
 import { bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
@@ -38,6 +39,11 @@ import {
 } from '../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
+import {
+  buildMonsterSprite,
+  buildTrophySprite,
+  getTrophyKindForDifficulty,
+} from '../game-engine/collection/pixelSprites'
 import {
   createSeededRandom,
   getTreasurePoolForChest,
@@ -115,6 +121,48 @@ describe('question generation', () => {
     })
     expect(allFacts.filter((fact) => fact.difficulty === 1)).toHaveLength(17)
     expect(allFacts.filter((fact) => fact.difficulty === 5)).toHaveLength(12)
+  })
+
+  it('builds deterministic pixel monsters from multiplication facts', () => {
+    const allFacts = createMultiplicationFactPool({
+      stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+      minDifficulty: 1,
+    })
+    expect(allFacts).toHaveLength(81)
+    expect(new Set(allFacts.map((fact) => `${fact.left}x${fact.right}`))).toHaveLength(81)
+
+    const sprite = buildMonsterSprite(2, 3)
+    const same = buildMonsterSprite(2, 3)
+    const reversed = buildMonsterSprite(3, 2)
+    expect(sprite.signature).toBe(same.signature)
+    expect(sprite.signature).not.toBe(reversed.signature)
+    expect(sprite.colors.base).toBe(danPalette[2].base)
+    expect(reversed.colors.base).toBe(danPalette[3].base)
+    expect(sprite.body.length).toBeGreaterThan(20)
+    expect(sprite.outline.length).toBeGreaterThan(0)
+  })
+
+  it('builds deterministic pixel trophies with dan colors and difficulty metals', () => {
+    const normal = buildTrophySprite({
+      danLabel: '1・2',
+      accentDan: 2,
+      difficulty: 'normal',
+    })
+    const fast = buildTrophySprite({
+      danLabel: '7',
+      accentDan: 7,
+      difficulty: 'fast',
+    })
+    expect(normal.signature).toBe(
+      buildTrophySprite({ danLabel: '1・2', accentDan: 2, difficulty: 'normal' }).signature,
+    )
+    expect(normal.kind).toBe('medal')
+    expect(fast.kind).toBe('trophy')
+    expect(getTrophyKindForDifficulty('hard')).toBe('medal')
+    expect(getTrophyKindForDifficulty('fast')).toBe('trophy')
+    expect(normal.colors.accent).toBe(danPalette[2].base)
+    expect(fast.colors.accent).toBe(danPalette[7].base)
+    expect(getDanSpriteColors(1).outline).not.toBe(getDanSpriteColors(1).base)
   })
 
   it('generates multiplication questions with unique choices', () => {

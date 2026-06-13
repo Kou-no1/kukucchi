@@ -55,7 +55,7 @@ const gameConfig: Record<
     startDescription: 'れんぞくせいかいでゲージをためて、ひっさつわざ！',
     goal: battleGoal,
     statLabel: 'もんすたーたいりょく',
-    icon: '👾',
+    icon: 'VS',
   },
   treasure: {
     title: 'たからばこ',

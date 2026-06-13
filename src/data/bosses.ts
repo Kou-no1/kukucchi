@@ -40,7 +40,6 @@ export type BossLimitedItem = {
   no: number
   name: string
   description: string
-  emoji: string
   kind: 'wear' | 'hat' | 'furniture' | 'background'
   tag: 'ボスげんてい'
 }
@@ -181,7 +180,6 @@ export const bossLimitedItems: BossLimitedItem[] = bosses.flatMap((boss) =>
     no: (boss.no - 1) * 3 + difficultyIndex + 1,
     name: `${boss.shortLabel} ${getBossDifficulty(boss, difficulty).label}トロフィー`,
     description: `${boss.label}を${getBossDifficulty(boss, difficulty).label}でクリアした証です。`,
-    emoji: difficulty === 'normal' ? '🏅' : difficulty === 'hard' ? '🎖️' : '🏆',
     kind: itemKinds[(boss.no + difficultyIndex) % itemKinds.length],
     tag: 'ボスげんてい',
   })),

@@ -2,9 +2,12 @@ import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import { KeyIcon } from '../../components/collection/KeyIcon'
+import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
+import { TrophySprite } from '../../components/collection/TrophySprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
+import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
 import { keyTypes } from '../../data/keys'
 import { rocketBadges } from '../../data/rocketBadges'
 import { rarityStars, treasureItems, treasureThemeLabels } from '../../data/treasureItems'
@@ -16,7 +19,7 @@ import { getCollectionRecord } from '../../game-engine/collection/collectionReco
 import type { BookTabId } from '../../game-engine/collection/bookProgress'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import { useSaveData } from '../../hooks/useSaveData'
-import type { BossDifficultyId } from '../../types/save'
+import type { BossDifficultyId, SaveData } from '../../types/save'
 
 const difficultyIds: BossDifficultyId[] = [...bossDifficultyIds]
 const tabs: Array<{ id: BookTabId; label: string }> = [
@@ -51,6 +54,41 @@ function keyActivate(event: KeyboardEvent<HTMLElement>, action: () => void) {
     event.preventDefault()
     action()
   }
+}
+
+function bossDanLabel(boss: BossDefinition): string {
+  if (boss.advancedCategory === 'square') {
+    return '平'
+  }
+  if (boss.advancedCategory === 'pi') {
+    return '3.14'
+  }
+  if (!boss.stages?.length) {
+    return String(boss.no)
+  }
+  return boss.stages.length > 3 ? '全' : boss.stages.join('・')
+}
+
+function bossAccentDan(boss: BossDefinition): number {
+  if (boss.advancedCategory === 'square') {
+    return 8
+  }
+  if (boss.advancedCategory === 'pi') {
+    return 3
+  }
+  return boss.stages?.at(-1) ?? 9
+}
+
+function highestClearedDifficulty(saveData: SaveData, boss: BossDefinition): BossDifficultyId {
+  return (
+    [...difficultyIds]
+      .reverse()
+      .find((difficulty) => getDifficultyProgress(saveData, boss.id, difficulty).cleared) ?? 'normal'
+  )
+}
+
+function getBossForItem(item: BossLimitedItem): BossDefinition | undefined {
+  return bosses.find((boss) => boss.id === item.bossId)
 }
 
 export function MonsterBookPage() {
@@ -217,7 +255,12 @@ export function MonsterBookPage() {
                 })}
               >
                 <span className="boss-no">No.{String(index + 1).padStart(2, '0')}</span>
-                <span aria-hidden="true">{owned ? '👾' : '◆'}</span>
+                <MonsterSprite
+                  left={fact.left}
+                  right={fact.right}
+                  locked={!owned}
+                  className="book-pixel-icon"
+                />
                 <h2>{owned ? `${fact.left} × ${fact.right}` : '？？？'}</h2>
                 <p>{owned ? 'なかま' : 'まだ出会っていません'}</p>
               </article>
@@ -281,6 +324,7 @@ export function MonsterBookPage() {
             const firstClearedAt = difficultyIds
               .map((difficulty) => getDifficultyProgress(saveData, boss.id, difficulty).firstClearedAt)
               .find((date): date is string => Boolean(date)) ?? null
+            const displayDifficulty = highestClearedDifficulty(saveData, boss)
             return (
               <article
                 className={cleared ? 'book-card' : 'book-card silhouette'}
@@ -294,7 +338,14 @@ export function MonsterBookPage() {
                 })}
               >
                 <span className="boss-no">B-{String(boss.no).padStart(2, '0')}</span>
-                <span aria-hidden="true">{cleared ? boss.emoji : '◆'}</span>
+                <TrophySprite
+                  danLabel={bossDanLabel(boss)}
+                  accentDan={bossAccentDan(boss)}
+                  difficulty={displayDifficulty}
+                  kind="trophy"
+                  locked={!cleared}
+                  className="book-pixel-icon"
+                />
                 <h2>{cleared ? boss.label : '？？？'}</h2>
                 <small>
                   {difficultyIds
@@ -311,6 +362,7 @@ export function MonsterBookPage() {
           {bossLimitedItems.map((item) => {
             const owned = ownedBossItems.has(item.id)
             const record = getCollectionRecord(saveData.progress.collectionRecords, 'boss-item', item.id)
+            const boss = getBossForItem(item)
             return (
               <article
                 className={owned ? 'book-card' : 'book-card silhouette'}
@@ -324,7 +376,13 @@ export function MonsterBookPage() {
                 })}
               >
                 <span className="boss-no">T-{String(item.no).padStart(2, '0')}</span>
-                <span aria-hidden="true">{owned ? item.emoji : '◆'}</span>
+                <TrophySprite
+                  danLabel={boss ? bossDanLabel(boss) : String(item.no)}
+                  accentDan={boss ? bossAccentDan(boss) : 9}
+                  difficulty={item.difficulty}
+                  locked={!owned}
+                  className="book-pixel-icon"
+                />
                 <h2>{owned ? item.name : '？？？'}</h2>
                 <p>{owned ? item.description : 'ボスげんてい'}</p>
               </article>

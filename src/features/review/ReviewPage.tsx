@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
@@ -123,8 +124,11 @@ export function ReviewPage() {
           <div className="monster-grid" aria-label="出現中のモンスター">
             {(monsters.length > 0 ? monsters : reviewQueue).slice(0, 6).map((fact) => (
               <span className="monster-chip" key={fact.id}>
-                👾 {fact.left} × {fact.right}
-                <small>Lv {fact.masteryLevel}</small>
+                <MonsterSprite left={fact.left} right={fact.right} className="monster-chip-sprite" />
+                <span>
+                  {fact.left} × {fact.right}
+                  <small>Lv {fact.masteryLevel}</small>
+                </span>
               </span>
             ))}
             {monsters.length === 0 && reviewQueue.length === 0 ? (
