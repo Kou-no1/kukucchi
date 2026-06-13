@@ -6,8 +6,9 @@ export type RandomSource = () => number
 
 export type TreasureOpenResult = {
   chestId: string
-  item: TreasureItem
+  item: TreasureItem | null
   duplicate: boolean
+  poolExhausted: boolean
   convertedCoins: number
   acquiredAt: string
   method: string
@@ -28,15 +29,29 @@ export function getTreasurePoolForChest(chestId: string): TreasureItem[] {
   )
 }
 
-export function chooseTreasureItem(chestId: string, rng: RandomSource = Math.random): TreasureItem {
-  const pool = getTreasurePoolForChest(chestId)
-  const safePool = pool.length > 0 ? pool : treasureItems
-  const index = Math.min(safePool.length - 1, Math.floor(rng() * safePool.length))
-  return safePool[index]
+export function getUnownedTreasurePoolForChest(
+  chestId: string,
+  ownedItemIds: string[],
+): TreasureItem[] {
+  const owned = new Set(ownedItemIds)
+  return getTreasurePoolForChest(chestId).filter((item) => !owned.has(item.id))
 }
 
-export function duplicateCoinsForRarity(rarity: TreasureItem['rarity']): number {
-  return rarity * 18
+export function chooseTreasureItem(
+  chestId: string,
+  rng: RandomSource = Math.random,
+  ownedItemIds: string[] = [],
+): TreasureItem | null {
+  const pool = getUnownedTreasurePoolForChest(chestId, ownedItemIds)
+  if (pool.length === 0) {
+    return null
+  }
+  const index = Math.min(pool.length - 1, Math.floor(rng() * pool.length))
+  return pool[index]
+}
+
+export function exhaustedCoinsForChest(chestId: string): number {
+  return (getTreasureChestById(chestId) ?? treasureChestTypes[0]).exhaustedCoins
 }
 
 export function openTreasureChest({
@@ -50,15 +65,17 @@ export function openTreasureChest({
   rng?: RandomSource
   openedAt?: string
 }): TreasureOpenResult {
-  const item = chooseTreasureItem(chestId, rng)
-  const duplicate = ownedItemIds.includes(item.id)
+  const chest = getTreasureChestById(chestId) ?? treasureChestTypes[0]
+  const item = chooseTreasureItem(chestId, rng, ownedItemIds)
+  const poolExhausted = item === null
   return {
     chestId,
     item,
-    duplicate,
-    convertedCoins: duplicate ? duplicateCoinsForRarity(item.rarity) : 0,
+    duplicate: false,
+    poolExhausted,
+    convertedCoins: poolExhausted ? chest.exhaustedCoins : 0,
     acquiredAt: openedAt,
-    method: `${getTreasureChestById(chestId)?.name ?? 'たからばこ'}から入手`,
+    method: poolExhausted ? `${chest.name}をぜんぶあつめた` : `${chest.name}から入手`,
   }
 }
 

@@ -36,7 +36,11 @@ import {
   isDifficultyUnlocked,
 } from '../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
-import { createSeededRandom, openTreasureChest } from '../game-engine/treasure/treasureEngine'
+import {
+  createSeededRandom,
+  getTreasurePoolForChest,
+  openTreasureChest,
+} from '../game-engine/treasure/treasureEngine'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
@@ -418,7 +422,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
-  it('opens treasure chests deterministically with rarity bands and duplicate coins', () => {
+  it('opens treasure chests deterministically with rarity bands and no duplicate while pool remains', () => {
     const first = openTreasureChest({
       chestId: 'rainbow-chest',
       ownedItemIds: [],
@@ -431,18 +435,32 @@ describe('mastery, review, missions, and storage', () => {
       rng: createSeededRandom(123),
       openedAt: '2026-01-03T00:00:00.000Z',
     })
-    expect(first.item.id).toBe(repeat.item.id)
-    expect(first.item.rarity).toBeGreaterThanOrEqual(3)
-    expect(first.item.rarity).toBeLessThanOrEqual(4)
+    expect(first.item?.id).toBe(repeat.item?.id)
+    expect(first.item?.rarity).toBeGreaterThanOrEqual(3)
+    expect(first.item?.rarity).toBeLessThanOrEqual(4)
     expect(first.item).toBeTruthy()
 
-    const duplicate = openTreasureChest({
+    const next = openTreasureChest({
       chestId: 'rainbow-chest',
-      ownedItemIds: [first.item.id],
+      ownedItemIds: first.item ? [first.item.id] : [],
       rng: createSeededRandom(123),
     })
-    expect(duplicate.duplicate).toBe(true)
-    expect(duplicate.convertedCoins).toBeGreaterThan(0)
+    expect(next.duplicate).toBe(false)
+    expect(next.poolExhausted).toBe(false)
+    expect(next.item?.id).not.toBe(first.item?.id)
+    expect(next.convertedCoins).toBe(0)
+  })
+
+  it('converts to fixed coins when a chest rarity pool is exhausted', () => {
+    const rainbowPoolIds = getTreasurePoolForChest('rainbow-chest').map((item) => item.id)
+    const exhausted = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: rainbowPoolIds,
+      rng: createSeededRandom(999),
+    })
+    expect(exhausted.item).toBeNull()
+    expect(exhausted.poolExhausted).toBe(true)
+    expect(exhausted.convertedCoins).toBe(110)
   })
 
   it('defines key and chest mapping without misses', () => {
@@ -453,6 +471,38 @@ describe('mastery, review, missions, and storage', () => {
     }
     expect(canKeyOpenChest('bronze', 'star-chest')).toBe(false)
     expect(treasureItems).toHaveLength(20)
+    expect(treasureChestTypes.map((chest) => chest.rarityRange)).toEqual([
+      [1, 1],
+      [1, 2],
+      [2, 3],
+      [3, 4],
+      [4, 4],
+    ])
+    expect(treasureChestTypes.map((chest) => chest.exhaustedCoins)).toEqual([
+      20,
+      40,
+      70,
+      110,
+      160,
+    ])
+  })
+
+  it('keeps treasure rarity balanced as five themes by four rarities', () => {
+    const themes = ['star', 'space', 'sparkle', 'creature', 'sweets'] as const
+    const rarities = [1, 2, 3, 4] as const
+    for (const rarity of rarities) {
+      expect(treasureItems.filter((item) => item.rarity === rarity)).toHaveLength(5)
+    }
+    for (const theme of themes) {
+      for (const rarity of rarities) {
+        expect(
+          treasureItems.filter((item) => item.theme === theme && item.rarity === rarity),
+        ).toHaveLength(1)
+      }
+    }
+    expect(new Set(getTreasurePoolForChest('star-chest').map((item) => item.theme))).toEqual(
+      new Set(themes),
+    )
   })
 
   it('calculates book collection progress by tab and overall', () => {

@@ -157,6 +157,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         treasureBonusCoins?: number
         treasureChestLabels?: string[]
         treasureDuplicate?: boolean
+        treasurePoolExhausted?: boolean
         treasureItemId?: string
         treasureItemName?: string
         treasureKeyIds?: string[]
@@ -190,6 +191,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         details.chestLabels = options.treasureChestLabels ?? []
         details.treasureBonusCoins = options.treasureBonusCoins ?? 0
         details.treasureDuplicate = options.treasureDuplicate ?? false
+        details.treasurePoolExhausted = options.treasurePoolExhausted ?? false
         details.treasureItemName = options.treasureItemName ?? null
         details.treasureKeyNames = (options.treasureKeyIds ?? earnedKeyIds)
           .map((keyId) => getKeyTypeById(keyId)?.name)
@@ -415,8 +417,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       treasureBonusCoins: reward.convertedCoins,
       treasureChestLabels: [chest.name],
       treasureDuplicate: reward.duplicate,
-      treasureItemId: reward.item.id,
-      treasureItemName: reward.item.name,
+      treasurePoolExhausted: reward.poolExhausted,
+      treasureItemId: reward.item?.id,
+      treasureItemName: reward.item?.name,
       treasureKeyIds: earnedKeyIds,
       treasureKeys: keys,
       treasureMethod: reward.method,

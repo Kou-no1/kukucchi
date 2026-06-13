@@ -21,10 +21,10 @@ export const treasureThemeLabels: Record<TreasureTheme, string> = {
 
 export const treasureItems: TreasureItem[] = [
   { id: 'tiny-star-chip', no: 1, name: 'ちびほしチップ', theme: 'star', rarity: 1, description: 'ちいさなほしのかけら', placeable: true },
-  { id: 'moon-drop', no: 2, name: 'つきのしずく', theme: 'star', rarity: 1, description: 'まるいつきからおちたひかり', placeable: true },
+  { id: 'moon-drop', no: 2, name: 'ほしのおうかん', theme: 'star', rarity: 4, description: 'きらきらひかるほしのかんむり', placeable: true },
   { id: 'star-bell', no: 3, name: 'ほしのベル', theme: 'star', rarity: 2, description: 'ちりんとひかるベル', placeable: true },
   { id: 'milky-star', no: 4, name: 'あまのがわほし', theme: 'star', rarity: 3, description: 'ながれるほしのしるし', placeable: true },
-  { id: 'mini-planet', no: 5, name: 'みにわくせい', theme: 'space', rarity: 1, description: 'てのひらサイズのわくせい', placeable: true },
+  { id: 'mini-planet', no: 5, name: 'リングわくせい', theme: 'space', rarity: 3, description: 'わっかをもつちいさなわくせい', placeable: true },
   { id: 'rocket-bolt', no: 6, name: 'ろけっとねじ', theme: 'space', rarity: 1, description: 'ろけっとからみつけたねじ', placeable: true },
   { id: 'comet-bottle', no: 7, name: 'すいせいびん', theme: 'space', rarity: 2, description: 'すいせいのしっぽをいれたびん', placeable: true },
   { id: 'galaxy-map', no: 8, name: 'ぎんがちず', theme: 'space', rarity: 4, description: 'ひみつのほしみちがひかる', placeable: true },

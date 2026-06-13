@@ -106,6 +106,8 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
     const keyNames = detailStrings(summary, 'treasureKeyNames')
     const itemName = detailString(summary, 'treasureItemName')
     const duplicate = summary.details?.treasureDuplicate === true
+    const poolExhausted = summary.details?.treasurePoolExhausted === true
+    const treasureBonusCoins = detailNumber(summary, 'treasureBonusCoins') ?? 0
     return (
       <section className="mode-result-card" aria-labelledby="mode-result-title">
         <h2 id="mode-result-title">たからばこ</h2>
@@ -115,7 +117,9 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
           <StatPill label="コイン" value={`+${summary.earnedCoins}`} />
         </div>
         {keyNames.length > 0 ? <p className="title-line">カギ: {keyNames.join('、')}</p> : null}
-        {itemName ? (
+        {poolExhausted ? (
+          <p className="title-line">ぜんぶ あつめた！ {treasureBonusCoins}コインに なったよ</p>
+        ) : itemName ? (
           <p className="title-line">
             {duplicate ? `ダブった！ ${itemName} が コインになったよ` : `${itemName} をみつけたよ`}
           </p>
