@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { StatPill } from '../../components/common/StatPill'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
@@ -298,6 +299,15 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             {battleResult.damage}/{battleResult.difficulty.hp} ダメージ
           </h2>
           <p className="title-line">タイム {formatSeconds(battleResult.elapsedMs)}</p>
+          <div className="stats-row compact-stats">
+            <StatPill label="しょうぶ" value={battleResult.cleared ? 'かち' : 'おしい'} />
+            <StatPill
+              label="ボスHP"
+              value={`${Math.max(0, battleResult.difficulty.hp - battleResult.damage)}`}
+            />
+            <StatPill label="くくっちHP" value="げんき" />
+            <StatPill label="むずかしさ" value={battleResult.difficulty.label} />
+          </div>
           {hasRewards ? (
             <div className="boss-reward-list">
               {battleResult.rewardItemIds.map((itemId) => (
@@ -312,7 +322,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             </div>
           ) : (
             <p className="quiet-text">
-              {battleResult.cleared ? 'クリアコインをもらったよ。' : '叱られないから大丈夫。もう一回いこう！'}
+              {battleResult.cleared ? 'クリアコインをもらったよ。' : 'おこられないからだいじょうぶ。もう一回いこう！'}
             </p>
           )}
           <div className="action-band">

@@ -37,6 +37,23 @@ describe('app flow', () => {
     expect(sound).not.toBeChecked()
   })
 
+  it('hides learning level setup and reflects player icon changes on home', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    expect(screen.queryByText('れべる')).not.toBeInTheDocument()
+    expect(screen.queryByText('九九にちょうせん')).not.toBeInTheDocument()
+    await user.type(screen.getByLabelText('よびな'), 'みらい')
+    await user.click(screen.getByRole('button', { name: /ほし/ }))
+    await user.click(screen.getByRole('button', { name: 'はじめる' }))
+    expect(await screen.findByLabelText('ほしアイコン')).toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('link', { name: 'せってい' })[0])
+    expect(await screen.findByRole('heading', { name: 'せってい' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /はな/ }))
+    await user.click(screen.getByRole('link', { name: 'ホームへ' }))
+    expect(await screen.findByLabelText('はなアイコン')).toBeInTheDocument()
+  })
+
   it('starts learn mode, answers, shows result, and persists progress', async () => {
     const user = await completeOnboarding()
     await user.click(screen.getByRole('link', { name: 'あそぶ' }))
@@ -57,6 +74,7 @@ describe('app flow', () => {
     await user.click(screen.getByRole('button', { name: 'けっかへ' }))
     expect(await screen.findByRole('heading', { name: 'けっか' })).toBeInTheDocument()
     expect(screen.getByText('正答率')).toBeInTheDocument()
+    expect(screen.getByText(/つぎのレベルまで/)).toBeInTheDocument()
     await user.click(screen.getByRole('link', { name: 'ホームへ' }))
     expect(await screen.findByText('みらい')).toBeInTheDocument()
 

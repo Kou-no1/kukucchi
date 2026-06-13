@@ -5,6 +5,7 @@ import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { UfoBadge } from '../../components/collection/UfoBadge'
+import { getPlayerIcon } from '../../data/playerIcons'
 import { equipmentSlots, getEquippedItemForSlot } from '../../data/shopItems'
 import { getUfoById } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
@@ -17,6 +18,7 @@ export function HomePage() {
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
   const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
+  const playerIcon = getPlayerIcon(player?.icon)
 
   function closeTutorial() {
     setTutorialOpen(false)
@@ -47,7 +49,12 @@ export function HomePage() {
         <div className="home-profile">
           <div className="home-title-block">
             <p className="welcome">またあえてうれしい！</p>
-            <h2>{player?.nickname ?? 'くくとも'}</h2>
+            <div className="home-name-row">
+              <span className="player-icon-badge" aria-label={`${playerIcon.label}アイコン`}>
+                {playerIcon.emoji}
+              </span>
+              <h2>{player?.nickname ?? 'くくとも'}</h2>
+            </div>
             <p className="title-line">{player?.currentTitle ?? 'はじめのいっぽ'}</p>
             <button className="secondary-action compact-action" type="button" onClick={() => setTutorialOpen(true)}>
               あそびかた

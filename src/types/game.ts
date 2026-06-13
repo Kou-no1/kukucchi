@@ -79,6 +79,7 @@ export type GameSessionSummary = {
   bestUpdated: boolean
   weakFacts: MultiplicationFactProgress[]
   masteredFacts: MultiplicationFactProgress[]
+  details?: Record<string, number | string | boolean | string[] | null>
   results: AnswerResult[]
   finishedAt: string
 }

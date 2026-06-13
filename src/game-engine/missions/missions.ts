@@ -6,12 +6,8 @@ export function generateDailyMissions(
   save: SaveData,
   date = new Date(),
 ): DailyMission[] {
-  const stage =
-    save.player?.learningLevel === 'first'
-      ? 2
-      : save.player?.learningLevel === 'challenge'
-        ? 7
-        : 5
+  void save
+  const stage = 2
   const missions: DailyMission[] = [
     {
       id: `${getLocalDateKey(date)}-correct-10`,

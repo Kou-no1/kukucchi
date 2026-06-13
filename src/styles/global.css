@@ -574,6 +574,61 @@ legend {
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
+.result-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 8px;
+}
+
+.exp-progress-card,
+.mode-result-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid rgba(91, 233, 244, 0.38);
+  border-radius: 8px;
+  background: rgba(8, 23, 45, 0.76);
+  color: #e8fbff;
+  box-shadow: inset 0 0 22px rgba(91, 233, 244, 0.1);
+}
+
+.exp-progress-card > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.exp-progress-card h2,
+.mode-result-card h2 {
+  margin: 0;
+  color: #dffcff;
+  font-size: 1.05rem;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.64);
+}
+
+.exp-progress-track {
+  overflow: hidden;
+  height: 14px;
+  border: 1px solid rgba(91, 233, 244, 0.44);
+  border-radius: 999px;
+  background: rgba(3, 12, 28, 0.82);
+}
+
+.exp-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #5be9f4, #4d75ff);
+  box-shadow: 0 0 16px rgba(91, 233, 244, 0.58);
+}
+
+.compact-stats {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+}
+
 .stat-pill {
   display: grid;
   min-height: 74px;
@@ -2532,6 +2587,27 @@ legend {
   text-align: left;
 }
 
+.home-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.player-icon-badge {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgba(91, 233, 244, 0.72);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 25%, #ffffff, #c9fbff 42%, #5be9f4);
+  box-shadow:
+    0 0 0 4px rgba(91, 233, 244, 0.12),
+    0 0 24px rgba(91, 233, 244, 0.44);
+  font-size: 1.55rem;
+}
+
 .home-title-block h2,
 .home-mission-compact h2,
 .mission-section h2,
@@ -2547,6 +2623,7 @@ legend {
 
 .home-title-block h2 {
   font-size: 3rem;
+  margin: 0;
 }
 
 .home-stats-mini {
@@ -2776,6 +2853,14 @@ legend {
   box-shadow:
     0 0 0 2px rgba(91, 233, 244, 0.18),
     0 0 20px rgba(91, 233, 244, 0.42);
+}
+
+.icon-picker button {
+  min-height: 48px;
+}
+
+.icon-picker span {
+  margin-right: 4px;
 }
 
 .home-sub-actions .home-card-emoji {

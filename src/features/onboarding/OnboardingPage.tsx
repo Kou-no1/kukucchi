@@ -1,25 +1,16 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { playerIcons } from '../../data/playerIcons'
 import { initializeAudio } from '../../services/audioService'
 import { createPlayerFromOnboarding } from '../../storage/saveData'
-import type { LearningLevel } from '../../types/game'
 import { useSaveData } from '../../hooks/useSaveData'
-
-const iconOptions = ['たまご', 'ほし', 'はな', 'そら']
-const levelOptions: Array<{ value: LearningLevel; label: string }> = [
-  { value: 'first', label: 'はじめて' },
-  { value: 'practicing', label: 'れんしゅう中' },
-  { value: 'challenge', label: '九九にちょうせん' },
-  { value: 'advanced', label: '高学年チャレンジ' },
-]
 
 export function OnboardingPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
   const [nickname, setNickname] = useState('')
-  const [icon, setIcon] = useState(iconOptions[0])
-  const [learningLevel, setLearningLevel] = useState<LearningLevel>('first')
+  const [icon, setIcon] = useState(playerIcons[0].id)
   const [soundEnabled, setSoundEnabled] = useState(true)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -29,7 +20,7 @@ export function OnboardingPage() {
       createPlayerFromOnboarding({
         nickname,
         icon,
-        learningLevel,
+        learningLevel: 'first',
         soundEnabled,
       }),
     )
@@ -61,34 +52,17 @@ export function OnboardingPage() {
           <fieldset>
             <legend>アイコン</legend>
             <div className="segmented">
-              {iconOptions.map((option) => (
+              {playerIcons.map((option) => (
                 <button
-                  className={option === icon ? 'selected' : ''}
-                  key={option}
+                  className={option.id === icon ? 'selected' : ''}
+                  key={option.id}
                   type="button"
-                  onClick={() => setIcon(option)}
-                  aria-pressed={option === icon}
+                  onClick={() => setIcon(option.id)}
+                  aria-pressed={option.id === icon}
                 >
-                  {option}
+                  <span aria-hidden="true">{option.emoji}</span>
+                  {option.label}
                 </button>
-              ))}
-            </div>
-          </fieldset>
-
-          <fieldset>
-            <legend>れべる</legend>
-            <div className="level-list">
-              {levelOptions.map((option) => (
-                <label key={option.value} className="radio-card">
-                  <input
-                    type="radio"
-                    name="learning-level"
-                    value={option.value}
-                    checked={learningLevel === option.value}
-                    onChange={() => setLearningLevel(option.value)}
-                  />
-                  <span>{option.label}</span>
-                </label>
               ))}
             </div>
           </fieldset>

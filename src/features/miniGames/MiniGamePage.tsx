@@ -16,7 +16,7 @@ import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
-import type { AnswerResult, GameMode, Question, ScoreState } from '../../types/game'
+import type { AnswerResult, GameMode, GameSessionSummary, Question, ScoreState } from '../../types/game'
 import { createId } from '../../utils/id'
 
 type MiniGameVariant = Extract<GameMode, 'battle' | 'treasure' | 'rocket'>
@@ -103,6 +103,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const [hearts, setHearts] = useState(3)
   const [enemyHp, setEnemyHp] = useState(100)
   const [specialGauge, setSpecialGauge] = useState(0)
+  const [specialUses, setSpecialUses] = useState(0)
   const [keys, setKeys] = useState(0)
   const [treasureStreak, setTreasureStreak] = useState(0)
   const [fuel, setFuel] = useState(35)
@@ -122,6 +123,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     setHearts(3)
     setEnemyHp(100)
     setSpecialGauge(0)
+    setSpecialUses(0)
     setKeys(0)
     setTreasureStreak(0)
     setFuel(35)
@@ -146,7 +148,15 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     (
       nextResults = results,
       nextScoreState = scoreState,
-      options: { treasureBonusCoins?: number; rocketDistance?: number } = {},
+      options: {
+        battleEnemyHp?: number
+        battleHearts?: number
+        rocketDistance?: number
+        specialUses?: number
+        treasureBonusCoins?: number
+        treasureChestLabels?: string[]
+        treasureKeys?: number
+      } = {},
     ) => {
       if (finishedRef.current) {
         return
@@ -162,9 +172,23 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         results: nextResults,
         finishedAt: new Date().toISOString(),
       })
+      const details: NonNullable<GameSessionSummary['details']> = {}
+      if (variant === 'battle') {
+        details.heartsLeft = options.battleHearts ?? hearts
+        details.specialUses = options.specialUses ?? specialUses
+        details.enemyHpLeft = Math.max(0, options.battleEnemyHp ?? enemyHp)
+      } else if (variant === 'treasure') {
+        details.keys = options.treasureKeys ?? keys
+        details.openedChests = options.treasureChestLabels?.length ?? 0
+        details.chestLabels = options.treasureChestLabels ?? []
+        details.treasureBonusCoins = options.treasureBonusCoins ?? 0
+      } else {
+        details.rocketDistance = Math.round(options.rocketDistance ?? distance)
+      }
       const summary = {
         ...rawSummary,
         earnedCoins: rawSummary.earnedCoins + (options.treasureBonusCoins ?? 0),
+        details,
       }
       const applied = applySessionResult(saveData, summary)
       let nextSave = applied.save
@@ -186,12 +210,23 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         nextSummary = {
           ...nextSummary,
           bestUpdated: nextSummary.bestUpdated || rocketBestUpdated,
+          details: {
+            ...nextSummary.details,
+            rocketBadges: newlyEarnedBadges
+              .map((badgeId) => rocketBadges.find((badge) => badge.id === badgeId)?.name)
+              .filter((badgeName): badgeName is string => Boolean(badgeName)),
+            nextRocketBadgeName:
+              rocketBadges.find((badge) => finalDistance < badge.distance)?.name ?? null,
+            nextRocketBadgeDistance:
+              rocketBadges.find((badge) => finalDistance < badge.distance)?.distance ?? null,
+            rocketBestUpdated,
+          },
         }
       }
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [distance, navigate, results, saveData, scoreState, setSaveData, variant],
+    [distance, enemyHp, hearts, keys, navigate, results, saveData, scoreState, setSaveData, specialUses, variant],
   )
 
   const recordAnswer = useCallback(
@@ -228,7 +263,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         setSpecialGauge((current) => (correct ? Math.min(specialGaugeMax, current + 1) : 0))
         window.setTimeout(() => {
           if (nextEnemyHp <= 0 || nextHearts <= 0 || nextResults.length >= battleGoal) {
-            finish(nextResults, nextScoreState)
+            finish(nextResults, nextScoreState, {
+              battleEnemyHp: nextEnemyHp,
+              battleHearts: nextHearts,
+              specialUses,
+            })
           } else {
             nextQuestion()
           }
@@ -276,6 +315,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       results,
       saveData.settings.soundEnabled,
       scoreState,
+      specialUses,
       treasureStreak,
       variant,
     ],
@@ -301,15 +341,25 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       return
     }
     const nextEnemyHp = Math.max(0, enemyHp - 34)
+    const nextSpecialUses = specialUses + 1
     setEnemyHp(nextEnemyHp)
     setSpecialGauge(0)
+    setSpecialUses(nextSpecialUses)
     if (nextEnemyHp <= 0) {
-      finish(results, scoreState)
+      finish(results, scoreState, {
+        battleEnemyHp: nextEnemyHp,
+        battleHearts: hearts,
+        specialUses: nextSpecialUses,
+      })
     }
   }
 
-  function openChest(bonusCoins: number) {
-    finish(results, scoreState, { treasureBonusCoins: bonusCoins })
+  function openChest(chest: (typeof treasureChests)[number]) {
+    finish(results, scoreState, {
+      treasureBonusCoins: keys > 0 ? chest.coins * keys : 0,
+      treasureChestLabels: [chest.label],
+      treasureKeys: keys,
+    })
   }
 
   if (phase === 'ready') {
@@ -340,7 +390,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
                 className="treasure-chest-card"
                 key={chest.id}
                 type="button"
-                onClick={() => openChest(keys > 0 ? chest.coins * keys : 0)}
+                onClick={() => openChest(chest)}
               >
                 <span aria-hidden="true">{chest.icon}</span>
                 <strong>{chest.label}</strong>

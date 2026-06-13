@@ -15,7 +15,7 @@ import {
   applyAnswerToScore,
   calculateSpeedBonus,
 } from '../game-engine/scoring/score'
-import { calculateCoins, calculateExp } from '../game-engine/rewards/rewards'
+import { calculateCoins, calculateExp, expProgressToNextLevel } from '../game-engine/rewards/rewards'
 import { judgeNewTitles } from '../game-engine/rewards/titles'
 import {
   createFactProgress,
@@ -237,6 +237,19 @@ describe('scoring and rewards', () => {
     expect(calculateExp([hard])).toBeGreaterThan(calculateExp([easy]))
     expect(calculateExp([easy, hard])).toBe(20)
     expect(calculateCoins([easy, hard], 2)).toBe(6)
+  })
+
+  it('calculates level progress around level boundaries', () => {
+    expect(expProgressToNextLevel(79)).toMatchObject({
+      level: 1,
+      remainingExp: 1,
+      percent: 99,
+    })
+    expect(expProgressToNextLevel(80)).toMatchObject({
+      level: 2,
+      remainingExp: 240,
+      percent: 0,
+    })
   })
 })
 

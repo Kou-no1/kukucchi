@@ -19,6 +19,16 @@ type AdvancedCategory = 'mixed' | 'square' | 'pi' | 'development'
 
 const advancedGoal = 8
 
+function categoryFromQuestionId(questionId: string): string {
+  if (questionId.startsWith('square-')) {
+    return '平方数'
+  }
+  if (questionId.startsWith('pi-')) {
+    return '3.14'
+  }
+  return '発展'
+}
+
 export function AdvancedPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
@@ -45,12 +55,29 @@ export function AdvancedPage() {
   }
 
   function finish(nextResults = results, nextScoreState = scoreState) {
+    const categoryScores = nextResults.reduce<Record<string, { correct: number; total: number }>>(
+      (scores, result) => {
+        const label = categoryFromQuestionId(result.questionId)
+        const current = scores[label] ?? { correct: 0, total: 0 }
+        scores[label] = {
+          correct: current.correct + (result.correct ? 1 : 0),
+          total: current.total + 1,
+        }
+        return scores
+      },
+      {},
+    )
     const rawSummary = buildSessionSummary({
       id: createId('advanced'),
       mode: 'advanced',
       maxCombo: nextScoreState.maxCombo,
       score: nextScoreState.score,
       results: nextResults,
+      details: {
+        advancedCategoryRates: Object.entries(categoryScores).map(
+          ([label, score]) => `${label} ${Math.round((score.correct / score.total) * 100)}%`,
+        ),
+      },
       finishedAt: new Date().toISOString(),
     })
     const applied = applySessionResult(saveData, rawSummary)
@@ -93,11 +120,11 @@ export function AdvancedPage() {
 
   return (
     <AppShell title="スーパー計算" backTo="/home" className="game-shell">
-      <section className="advanced-command" aria-label="高学年メニュー">
+      <section className="advanced-command" aria-label="スーパー計算メニュー">
         <div>
-          <p className="welcome">高学年チャレンジ</p>
+          <p className="welcome">スーパー計算</p>
           <h2>平方数と3.14を攻略</h2>
-          <p className="title-line">低学年モードと分けた、少しむずかしい計算ステージです。</p>
+          <p className="title-line">すこしむずかしい計算ステージです。</p>
         </div>
         <div className="segmented">
           <button

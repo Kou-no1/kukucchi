@@ -42,6 +42,7 @@ export function applySessionResult(
   summary: GameSessionSummary,
 ): { save: SaveData; summary: GameSessionSummary } {
   const facts = { ...save.progress.facts }
+  const previousMasteredIds = new Set(getMasteredFacts(save.progress.facts).map((fact) => fact.id))
 
   for (const result of summary.results) {
     const fact = extractFact(result)
@@ -80,6 +81,9 @@ export function applySessionResult(
       ...save.progress.monsterBook,
       ...getMasteredFacts(facts).map((fact) => fact.id),
     ]),
+  )
+  const newlyMasteredFacts = getMasteredFacts(facts).filter(
+    (fact) => !previousMasteredIds.has(fact.id),
   )
   const missions = save.progress.missions.map((mission) => {
     let gained = 0
@@ -161,7 +165,7 @@ export function applySessionResult(
       newTitles,
       bestUpdated,
       weakFacts: getMonsterFacts(facts),
-      masteredFacts: getMasteredFacts(facts),
+      masteredFacts: newlyMasteredFacts,
     },
   }
 }

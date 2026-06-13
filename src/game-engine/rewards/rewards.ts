@@ -19,6 +19,34 @@ export function expToLevel(exp: number): number {
   return Math.max(1, Math.floor(Math.sqrt(exp / 80)) + 1)
 }
 
+export function expRequiredForLevel(level: number): number {
+  return Math.max(0, (level - 1) ** 2 * 80)
+}
+
+export function expProgressToNextLevel(exp: number): {
+  level: number
+  currentLevelExp: number
+  nextLevelExp: number
+  gainedInLevel: number
+  remainingExp: number
+  percent: number
+} {
+  const level = expToLevel(exp)
+  const currentLevelExp = expRequiredForLevel(level)
+  const nextLevelExp = expRequiredForLevel(level + 1)
+  const levelSpan = Math.max(1, nextLevelExp - currentLevelExp)
+  const gainedInLevel = Math.max(0, exp - currentLevelExp)
+  const remainingExp = Math.max(0, nextLevelExp - exp)
+  return {
+    level,
+    currentLevelExp,
+    nextLevelExp,
+    gainedInLevel,
+    remainingExp,
+    percent: Math.min(100, Math.round((gainedInLevel / levelSpan) * 100)),
+  }
+}
+
 function modeExpBonus(mode: GameSessionSummary['mode']): number {
   if (mode === 'speed') {
     return 10

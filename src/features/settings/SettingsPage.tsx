@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
+import { playerIcons } from '../../data/playerIcons'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
@@ -20,6 +21,18 @@ export function SettingsPage() {
         ...current.settings,
         [key]: !current.settings[key],
       },
+    }))
+  }
+
+  function updateIcon(icon: string) {
+    updateSaveData((current) => ({
+      ...current,
+      player: current.player
+        ? {
+            ...current.player,
+            icon,
+          }
+        : current.player,
     }))
   }
 
@@ -83,6 +96,24 @@ export function SettingsPage() {
 
   return (
     <AppShell title="せってい" backTo="/home">
+      <section className="settings-section" aria-labelledby="icon-title">
+        <h2 id="icon-title">アイコン</h2>
+        <div className="segmented icon-picker">
+          {playerIcons.map((icon) => (
+            <button
+              className={saveData.player?.icon === icon.id ? 'selected' : ''}
+              type="button"
+              key={icon.id}
+              onClick={() => updateIcon(icon.id)}
+              aria-pressed={saveData.player?.icon === icon.id}
+            >
+              <span aria-hidden="true">{icon.emoji}</span>
+              {icon.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="settings-section" aria-labelledby="sound-title">
         <h2 id="sound-title">音と動き</h2>
         <button className="secondary-action wide" type="button" onClick={() => setTutorialOpen(true)}>
