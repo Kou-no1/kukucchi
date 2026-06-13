@@ -358,7 +358,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const limitPercent = Math.max(0, Math.round((timeLeftMs / battleTimeLimitMs) * 100))
 
   return (
-    <AppShell title={config.title} backTo="/games">
+    <AppShell title={config.title} backTo="/games" className="game-shell">
       <section className="mission-companion mini-game-command" aria-label={config.title}>
         {variant === 'rocket' && equippedUfo ? (
           <UfoBadge ufo={equippedUfo} compact className="mini-equipped-ufo" />

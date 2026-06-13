@@ -92,7 +92,7 @@ export function AdvancedPage() {
   }
 
   return (
-    <AppShell title="スーパー計算" backTo="/home">
+    <AppShell title="スーパー計算" backTo="/home" className="game-shell">
       <section className="advanced-command" aria-label="高学年メニュー">
         <div>
           <p className="welcome">高学年チャレンジ</p>

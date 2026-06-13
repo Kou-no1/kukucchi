@@ -234,7 +234,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     const limitMs = activeDifficulty.timeLimitSeconds ? activeDifficulty.timeLimitSeconds * 1000 : 0
     const timePercent = limitMs ? Math.max(0, Math.round((timeLeftMs / limitMs) * 100)) : 100
     return (
-      <AppShell title={activeBoss.label} backTo={activeBoss.group === 'advanced' ? '/advanced' : '/battle'}>
+      <AppShell
+        title={activeBoss.label}
+        backTo={activeBoss.group === 'advanced' ? '/advanced' : '/battle'}
+        className="game-shell"
+      >
         <section className="boss-arena" aria-labelledby="boss-question">
           <div className="boss-hud">
             <strong>

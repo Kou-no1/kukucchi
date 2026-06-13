@@ -3769,3 +3769,249 @@ legend {
     display: none;
   }
 }
+
+/* Phase 10: game screens fit in one viewport without scrolling. */
+.game-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px clamp(8px, 2.4vw, 18px) calc(8px + env(safe-area-inset-bottom));
+}
+
+.game-shell .top-bar {
+  flex: 0 0 auto;
+  grid-template-columns: 44px 1fr 44px;
+  min-height: 48px;
+  padding: 4px;
+}
+
+.game-shell .top-bar h1 {
+  font-size: clamp(1rem, 4vw, 1.45rem);
+}
+
+.game-shell .brand-mark,
+.game-shell .icon-button {
+  width: 40px;
+  height: 40px;
+}
+
+.game-shell main {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+
+.game-shell .learn-console,
+.game-shell .speed-command,
+.game-shell .mini-game-command,
+.game-shell .advanced-command {
+  flex: 0 0 auto;
+  min-height: 0;
+  max-height: clamp(74px, 18dvh, 138px);
+  overflow: hidden;
+  padding: 8px;
+  gap: 8px;
+}
+
+.game-shell .learn-console {
+  grid-template-columns: minmax(0, 1.35fr) minmax(96px, 0.65fr);
+}
+
+.game-shell .stage-grid {
+  grid-template-columns: repeat(9, minmax(34px, 1fr));
+  gap: 5px;
+}
+
+.game-shell .stage-button {
+  min-height: 44px;
+  padding: 4px;
+}
+
+.game-shell .stage-button strong {
+  font-size: 1rem;
+}
+
+.game-shell .stage-button span,
+.game-shell .character-window-copy,
+.game-shell .advanced-command .title-line,
+.game-shell .mini-game-command .title-line,
+.game-shell .speed-companion .title-line {
+  font-size: 0.78rem;
+}
+
+.game-shell .character-window,
+.game-shell .speed-companion,
+.game-shell .mini-game-command {
+  min-height: 0;
+}
+
+.game-shell .character-window .kukucchi,
+.game-shell .mini-game-command .kukucchi,
+.game-shell .speed-companion .kukucchi {
+  max-height: 82px;
+  transform: scale(0.72);
+  transform-origin: center;
+}
+
+.game-shell .boss-list.compact {
+  display: none;
+}
+
+.game-shell .game-panel,
+.game-shell .boss-arena {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 7px;
+  margin-top: 0;
+  padding: clamp(8px, 2vh, 14px);
+  overflow: hidden;
+}
+
+.game-shell .question-header,
+.game-shell .boss-hud,
+.game-shell .speed-summary {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+.game-shell .question-prompt {
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: clamp(2rem, 9vw, 4rem);
+  line-height: 1;
+}
+
+.game-shell .visual-groups {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 24dvh;
+  gap: clamp(2px, 0.8vh, 6px);
+  overflow: hidden;
+}
+
+.game-shell .dot-row {
+  gap: clamp(2px, 0.7vw, 6px);
+}
+
+.game-shell .dot {
+  width: clamp(8px, 2.4vw, 18px);
+  height: clamp(8px, 2.4vw, 18px);
+}
+
+.game-shell .visual-line,
+.game-shell .visual-addition,
+.game-shell .visual-reading {
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: clamp(1rem, 4vw, 1.8rem);
+}
+
+.game-shell .visual-switches {
+  flex: 0 0 auto;
+  gap: 5px;
+}
+
+.game-shell .visual-switches button,
+.game-shell .mini-toggle {
+  min-height: 36px;
+  padding: 5px 8px;
+  font-size: 0.82rem;
+}
+
+.game-shell .feedback {
+  flex: 0 0 auto;
+  min-height: 34px;
+  margin: 0;
+  padding: 6px 8px;
+  font-size: 0.9rem;
+}
+
+.game-shell .choice-grid {
+  flex: 0 0 auto;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.game-shell .choice-button {
+  min-height: clamp(58px, 13dvh, 92px);
+  font-size: clamp(1.8rem, 8vw, 3rem);
+}
+
+.game-shell .keypad {
+  flex: 0 0 auto;
+  gap: 6px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.game-shell .key-grid {
+  gap: 6px;
+}
+
+.game-shell .key-button {
+  min-height: clamp(44px, 8dvh, 62px);
+}
+
+.game-shell .primary-action,
+.game-shell .secondary-action {
+  min-height: 44px;
+}
+
+.game-shell .boss-time {
+  gap: 4px;
+}
+
+.game-shell .boss-time > div {
+  height: 12px;
+}
+
+.shop-unlock-message {
+  margin: 0;
+  color: #dffcff;
+  font-weight: 900;
+}
+
+.shop-card.silhouette {
+  filter: saturate(0.45);
+}
+
+.shop-card.silhouette .shop-emoji {
+  color: #68f4ff;
+  text-shadow: 0 0 14px rgba(104, 244, 255, 0.58);
+}
+
+.shop-teaser {
+  margin-top: 12px;
+  text-align: center;
+}
+
+@media (max-width: 420px) {
+  .game-shell .learn-console,
+  .game-shell .speed-command,
+  .game-shell .mini-game-command,
+  .game-shell .advanced-command {
+    max-height: 104px;
+  }
+
+  .game-shell .learn-console {
+    grid-template-columns: 1fr;
+  }
+
+  .game-shell .learn-console .character-window {
+    display: none;
+  }
+
+  .game-shell .stage-grid {
+    grid-template-columns: repeat(9, minmax(28px, 1fr));
+  }
+}

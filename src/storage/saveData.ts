@@ -1,7 +1,26 @@
+import type { MultiplicationFactProgress } from '../types/game'
 import type { OnboardingInput, SaveData } from '../types/save'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 
-export const SAVE_DATA_VERSION = 4
+export const SAVE_DATA_VERSION = 5
+
+function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
+  const attempts = fact.correctCount + fact.incorrectCount
+  return (
+    attempts >= 2 &&
+    fact.incorrectCount === 0 &&
+    fact.masteryLevel < 4 &&
+    fact.averageResponseTimeMs >= 4800
+  )
+}
+
+function cleanTimeOnlyMonsterFacts(
+  facts: Record<string, MultiplicationFactProgress>,
+): Record<string, MultiplicationFactProgress> {
+  return Object.fromEntries(
+    Object.entries(facts).filter(([, fact]) => !shouldRemoveTimeOnlyMonsterFact(fact)),
+  )
+}
 
 export function createDefaultSaveData(): SaveData {
   return {
@@ -78,7 +97,7 @@ export function migrateSaveData(raw: unknown): SaveData {
       progress: {
         ...defaults.progress,
         ...candidate.progress,
-        facts: candidate.progress?.facts ?? {},
+        facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
         categoryCorrect: candidate.progress?.categoryCorrect ?? {},
         bossProgress: candidate.progress?.bossProgress ?? {},
         bossItems: candidate.progress?.bossItems ?? [],
@@ -115,7 +134,7 @@ export function migrateSaveData(raw: unknown): SaveData {
     progress: {
       ...defaults.progress,
       ...candidate.progress,
-      facts: candidate.progress?.facts ?? {},
+      facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
       categoryCorrect: candidate.progress?.categoryCorrect ?? {},
       bossProgress: candidate.progress?.bossProgress ?? {},
       bossItems: candidate.progress?.bossItems ?? [],

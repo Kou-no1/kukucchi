@@ -75,7 +75,7 @@ export function ResultPage() {
       ) : null}
 
       <section className="weak-section" aria-labelledby="result-weak">
-        <h2 id="result-weak">にがてになった問題</h2>
+        <h2 id="result-weak">まちがえたモンスター</h2>
         {summary.weakFacts.length === 0 ? (
           <p className="quiet-text">今はありません</p>
         ) : (

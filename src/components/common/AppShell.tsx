@@ -5,16 +5,18 @@ export function AppShell({
   children,
   title,
   backTo = '/home',
+  className = '',
 }: {
   children: ReactNode
   title: string
   backTo?: string
+  className?: string
 }) {
   const location = useLocation()
   const showBack = location.pathname !== '/home'
 
   return (
-    <div className="app-shell">
+    <div className={['app-shell', className].filter(Boolean).join(' ')}>
       <header className="top-bar">
         {showBack ? (
           <Link className="icon-button" to={backTo} aria-label="もどる">

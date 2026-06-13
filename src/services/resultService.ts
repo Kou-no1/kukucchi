@@ -2,7 +2,7 @@ import {
   createFactProgress,
   updateFactProgress,
 } from '../game-engine/mastery/mastery'
-import { getMasteredFacts, getWeakFacts } from '../game-engine/review/weakFacts'
+import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
 import { judgeNewTitles } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
@@ -160,7 +160,7 @@ export function applySessionResult(
       ...summary,
       newTitles,
       bestUpdated,
-      weakFacts: getWeakFacts(facts),
+      weakFacts: getMonsterFacts(facts),
       masteredFacts: getMasteredFacts(facts),
     },
   }

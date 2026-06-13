@@ -138,7 +138,7 @@ export function LearnPage() {
   }
 
   return (
-    <AppShell title="おぼえる" backTo="/games">
+    <AppShell title="おぼえる" backTo="/games" className="game-shell learn-game-shell">
       <section className="learn-console" aria-label="練習設定">
         <div className="stage-console">
           <div className="stage-grid" aria-label="掛け算のだん">

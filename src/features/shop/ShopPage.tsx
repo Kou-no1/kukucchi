@@ -1,10 +1,32 @@
 import { AppShell } from '../../components/common/AppShell'
-import { shopItems } from '../../data/shopItems'
+import {
+  isShopTier2Unlocked,
+  purchasedShopItemCount,
+  shopItems,
+  shopTier2UnlockPurchaseCount,
+} from '../../data/shopItems'
 import { useSaveData } from '../../hooks/useSaveData'
+
+function kindLabel(kind: string): string {
+  const labels: Record<string, string> = {
+    wear: 'ふく',
+    hat: 'ぼうし',
+    furniture: 'かぐ',
+    wallpaper: 'かべがみ',
+    background: 'はいけい',
+    effect: 'ひかり',
+    pet: 'なかま',
+  }
+  return labels[kind] ?? kind
+}
 
 export function ShopPage() {
   const { saveData, updateSaveData } = useSaveData()
   const coins = saveData.player?.coins ?? 0
+  const purchasedCount = purchasedShopItemCount(saveData.progress.ownedItems)
+  const tier2Unlocked = isShopTier2Unlocked(saveData.progress.ownedItems)
+  const visibleItems = shopItems.filter((item) => item.no <= 10 || tier2Unlocked)
+  const unlockRemaining = Math.max(0, shopTier2UnlockPurchaseCount - purchasedCount)
 
   function buyItem(itemId: string) {
     const item = shopItems.find((candidate) => candidate.id === itemId)
@@ -48,26 +70,39 @@ export function ShopPage() {
   }
 
   return (
-    <AppShell title="ショップ" backTo="/home">
-      <section className="shop-command" aria-label="ショップ情報">
-        <p className="welcome">くくっち号カスタム</p>
+    <AppShell title="しょっぷ" backTo="/home">
+      <section className="shop-command" aria-label="しょっぷじょうほう">
+        <p className="welcome">くくっちごうカスタム</p>
         <h2>{coins} コイン</h2>
-        <p className="title-line">ゲームで集めたコインで、船内アイテムをふやせます。</p>
+        <p className="title-line">ゲームであつめたコインで、そうびをふやせます。</p>
+        {tier2Unlocked ? (
+          <p className="shop-unlock-message">あたらしい おみせが ひらいたよ！</p>
+        ) : (
+          <p className="shop-unlock-message">
+            あと{unlockRemaining}こ かうと あたらしい おみせが ひらく！
+          </p>
+        )}
       </section>
 
-      <section className="shop-grid" aria-label="商品">
-        {shopItems.map((item) => {
+      <section className="shop-grid" aria-label="しょうひん">
+        {visibleItems.map((item) => {
           const owned = saveData.progress.ownedItems.includes(item.id)
           const equipped = saveData.progress.equippedItems.includes(item.id)
           const canBuy = coins >= item.price
+          const hiddenTier2 = item.no > 10 && !owned
           return (
-            <article className="shop-card" key={item.id}>
+            <article className={hiddenTier2 ? 'shop-card silhouette' : 'shop-card'} key={item.id}>
               <span className="shop-emoji" aria-hidden="true">
-                {item.emoji}
+                {hiddenTier2 ? '◆' : item.emoji}
               </span>
               <div>
-                <h2>{item.name}</h2>
-                <p>{item.description}</p>
+                <h2>{hiddenTier2 ? '？？？' : item.name}</h2>
+                <p>
+                  {hiddenTier2
+                    ? 'なかみは きまっているよ。かったら しょうたいが わかるよ。'
+                    : item.description}
+                </p>
+                <small>{kindLabel(item.kind)}</small>
               </div>
               <strong>{item.price} コイン</strong>
               {owned ? (
@@ -86,13 +121,17 @@ export function ShopPage() {
                   onClick={() => buyItem(item.id)}
                   disabled={!canBuy}
                 >
-                  買う
+                  かう
                 </button>
               )}
             </article>
           )
         })}
       </section>
+
+      {!tier2Unlocked ? (
+        <p className="quiet-text shop-teaser">？？？が ねむっている…</p>
+      ) : null}
     </AppShell>
   )
 }

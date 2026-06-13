@@ -21,10 +21,11 @@ import {
   createFactProgress,
   updateFactProgress,
 } from '../game-engine/mastery/mastery'
-import { getWeakFacts } from '../game-engine/review/weakFacts'
+import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { bosses } from '../data/bosses'
+import { isShopTier2Unlocked, shopItems } from '../data/shopItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import {
   applyBossClearReward,
@@ -267,11 +268,85 @@ describe('mastery, review, missions, and storage', () => {
     expect(getWeakFacts(facts, 1)[0]?.id).toBe('6x7')
   })
 
+  it('registers visible nigate monsters only from wrong answers', () => {
+    const slowCorrect = {
+      ...createFactProgress(7, 8),
+      correctCount: 2,
+      incorrectCount: 0,
+      averageResponseTimeMs: 7000,
+      masteryLevel: 2 as const,
+      recentResults: [
+        result({ correct: true, responseTimeMs: 7200 }),
+        result({ correct: true, responseTimeMs: 6800 }),
+      ],
+    }
+    const wrong = {
+      ...createFactProgress(6, 7),
+      correctCount: 0,
+      incorrectCount: 1,
+      averageResponseTimeMs: 1300,
+      masteryLevel: 1 as const,
+      recentResults: [result({ correct: false, questionId: '6x7', expectedAnswer: 42, givenAnswer: 41 })],
+    }
+    expect(isMonsterFact(slowCorrect)).toBe(false)
+    expect(isMonsterFact(wrong)).toBe(true)
+  })
+
+  it('overcomes nigate monsters with three correct answers across another day', () => {
+    let progress = createFactProgress(6, 7)
+    progress = updateFactProgress(
+      progress,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 41,
+        correct: false,
+        answeredAt: '2026-01-01T09:00:00.000Z',
+      }),
+    )
+    progress = updateFactProgress(
+      progress,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 42,
+        correct: true,
+        responseTimeMs: 9000,
+        answeredAt: '2026-01-01T10:00:00.000Z',
+      }),
+    )
+    progress = updateFactProgress(
+      progress,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 42,
+        correct: true,
+        responseTimeMs: 9000,
+        answeredAt: '2026-01-01T11:00:00.000Z',
+      }),
+    )
+    expect(isMonsterOvercome(progress)).toBe(false)
+    progress = updateFactProgress(
+      progress,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 42,
+        correct: true,
+        responseTimeMs: 9000,
+        answeredAt: '2026-01-02T09:00:00.000Z',
+      }),
+    )
+    expect(isMonsterOvercome(progress)).toBe(true)
+    expect(isMonsterFact(progress)).toBe(false)
+  })
+
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(4)
+    expect(migrated.version).toBe(5)
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
@@ -281,23 +356,56 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.rocketBadges).toEqual([])
   })
 
-  it('migrates v3 save data into v4 speed and rocket fields', () => {
-    const v3Save = {
+  it('migrates v4 save data into v5 and removes time-only monsters', () => {
+    const timeOnly = {
+      ...createFactProgress(8, 8),
+      correctCount: 2,
+      incorrectCount: 0,
+      averageResponseTimeMs: 6200,
+      masteryLevel: 2 as const,
+      recentResults: [
+        result({ questionId: '8x8', expectedAnswer: 64, givenAnswer: 64, correct: true, responseTimeMs: 6400 }),
+        result({ questionId: '8x8', expectedAnswer: 64, givenAnswer: 64, correct: true, responseTimeMs: 6000 }),
+      ],
+    }
+    const wrong = {
+      ...createFactProgress(7, 8),
+      correctCount: 0,
+      incorrectCount: 1,
+      averageResponseTimeMs: 1200,
+      masteryLevel: 1 as const,
+      recentResults: [result({ questionId: '7x8', expectedAnswer: 56, givenAnswer: 54, correct: false })],
+    }
+    const v4Save = {
       ...createDefaultSaveData(),
-      version: 3,
+      version: 4,
       progress: {
         ...createDefaultSaveData().progress,
-        speedSettings: undefined,
-        rocketBestDistance: undefined,
-        rocketBadges: undefined,
+        facts: {
+          [timeOnly.id]: timeOnly,
+          [wrong.id]: wrong,
+        },
       },
     }
-    const migrated = migrateSaveData(v3Save)
-    expect(migrated.version).toBe(4)
+    const migrated = migrateSaveData(v4Save)
+    expect(migrated.version).toBe(5)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
+    expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
+    expect(migrated.progress.facts[wrong.id]).toBeTruthy()
+  })
+
+  it('validates shop prices and tier unlock rules', () => {
+    expect(shopItems).toHaveLength(20)
+    const prices = shopItems.map((item) => item.price)
+    expect(prices.at(0)).toBe(50)
+    expect(prices.at(-1)).toBe(10000)
+    expect(prices.every((price, index) => index === 0 || price >= prices[index - 1])).toBe(true)
+    expect(Math.max(...prices)).toBe(10000)
+    expect(isShopTier2Unlocked(shopItems.slice(0, 9).map((item) => item.id))).toBe(false)
+    expect(isShopTier2Unlocked(shopItems.slice(0, 10).map((item) => item.id))).toBe(true)
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {

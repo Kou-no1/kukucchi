@@ -50,14 +50,14 @@ export function MonsterBookPage() {
       <section className="book-command" aria-labelledby="book-title">
         <p className="welcome">なかまになったモンスター</p>
         <h2 id="book-title">{registered.size} たい登録</h2>
-        <p className="title-line">苦手な式を克服すると、ここに仲間として記録されます。</p>
+        <p className="title-line">まちがえた もんだいを ふくしゅうして、なかまにしよう。</p>
       </section>
 
       <section className="monster-grid book-grid" aria-label="図鑑リスト">
         {masteredFacts.length === 0 ? (
           <div className="empty-card">
             <strong>まだ登録はありません</strong>
-            <p>にがてモンスターを復習して、なかまをふやそう。</p>
+            <p>まちがえた もんだいを ふくしゅうして、なかまをふやそう。</p>
             <Link className="primary-action" to="/review">
               復習へ
             </Link>
