@@ -9,6 +9,28 @@ function accuracyOf(fact: MultiplicationFactProgress): number {
   return attempts === 0 ? 1 : fact.correctCount / attempts
 }
 
+function firstWrongDate(fact: MultiplicationFactProgress): string | null {
+  const wrongs = fact.recentResults.filter((result) => !result.correct)
+  return wrongs.at(-1)?.answeredAt ?? null
+}
+
+function isDifferentDay(left: string, right: string): boolean {
+  return new Date(left).toDateString() !== new Date(right).toDateString()
+}
+
+export function isMonsterOvercome(fact: MultiplicationFactProgress): boolean {
+  if (fact.incorrectCount <= 0 || fact.correctCount < 3) {
+    return false
+  }
+  const registeredAt = firstWrongDate(fact)
+  if (!registeredAt) {
+    return false
+  }
+  return fact.recentResults.some(
+    (result) => result.correct && isDifferentDay(registeredAt, result.answeredAt),
+  )
+}
+
 export function getWeakFacts(
   facts: Record<string, MultiplicationFactProgress>,
   limit = 5,
@@ -49,13 +71,7 @@ export function getDueReviewFacts(
 }
 
 export function isMonsterFact(fact: MultiplicationFactProgress): boolean {
-  const attempts = attemptsOf(fact)
-  const latestWrong = fact.recentResults[0]?.correct === false
-  return (
-    attempts >= 2 &&
-    fact.masteryLevel < 4 &&
-    (accuracyOf(fact) < 0.72 || fact.averageResponseTimeMs >= 4800 || latestWrong)
-  )
+  return fact.incorrectCount > 0 && !isMonsterOvercome(fact)
 }
 
 export function getMonsterFacts(

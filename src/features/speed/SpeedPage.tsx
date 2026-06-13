@@ -187,11 +187,11 @@ export function SpeedPage() {
   }
 
   return (
-    <AppShell title="スピード" backTo="/games">
+    <AppShell title="すぴーど" backTo="/games">
       {phase === 'ready' ? (
         <ModeStartScreen
-          title={`${durationSeconds}秒チャレンジ`}
-          eyebrow="ワープ準備OK"
+          title={`${durationSeconds}びょうちゃれんじ`}
+          eyebrow="わーぷじゅんびOK"
           description="だんをえらんで、じぶんのきろくにちょうせん！"
           level={saveData.player?.level ?? 1}
           backTo="/games"
@@ -199,7 +199,7 @@ export function SpeedPage() {
         >
           <div className="stage-select-panel" aria-label="だんをえらぶ">
             <div className="start-option-header">
-              <strong>だん選択</strong>
+              <strong>だんをえらぶ</strong>
               <button className="secondary-action compact-action" type="button" onClick={toggleAllStages}>
                 ぜんぶ
               </button>
@@ -224,8 +224,8 @@ export function SpeedPage() {
               })}
             </div>
           </div>
-          <div className="duration-select-panel" aria-label="チャレンジ時間">
-            <strong>チャレンジ</strong>
+          <div className="duration-select-panel" aria-label="ちゃれんじじかん">
+            <strong>ちゃれんじ</strong>
             <div className="segmented">
               {speedDurations.map((duration) => (
                 <button
@@ -234,7 +234,7 @@ export function SpeedPage() {
                   type="button"
                   onClick={() => changeDuration(duration)}
                 >
-                  {duration}秒
+                  {duration}びょう
                 </button>
               ))}
             </div>
@@ -242,7 +242,7 @@ export function SpeedPage() {
         </ModeStartScreen>
       ) : (
         <>
-          <section className="speed-command" aria-label="スピード情報">
+          <section className="speed-command" aria-label="すぴーどじょうほう">
             <div className="speed-summary">
               <div>
                 <span>のこり</span>
@@ -253,17 +253,17 @@ export function SpeedPage() {
                 <strong>{scoreState.score}</strong>
               </div>
               <div>
-                <span>コンボ</span>
+                <span>れんぞく</span>
                 <strong>{scoreState.combo}</strong>
               </div>
             </div>
 
-            <aside className="mission-companion speed-companion" aria-label="宇宙ぼうけん">
+            <aside className="mission-companion speed-companion" aria-label="うちゅうぼうけん">
               <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
               <div>
-                <p className="welcome">タイムワープ中</p>
-                <h2>{durationSeconds}秒チャレンジ</h2>
-                <p className="title-line">{sortedStages.join('・')}のだんから出題中</p>
+                <p className="welcome">たいむわーぷちゅう</p>
+                <h2>{durationSeconds}びょうちゃれんじ</h2>
+                <p className="title-line">{sortedStages.join('・')}のだんからしゅつだいちゅう</p>
               </div>
             </aside>
           </section>

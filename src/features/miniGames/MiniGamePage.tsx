@@ -25,13 +25,13 @@ type MiniGamePhase = 'ready' | 'running' | 'chests'
 const battleGoal = 12
 const battleTimeLimitMs = 6000
 const treasureGoal = 9
-const rocketGoal = 12
+const rocketGoal = 14
 const specialGaugeMax = 3
 
 const treasureChests = [
-  { id: 'small', label: '小さな宝箱', hint: 'コインすこし', coins: 8, icon: '🪙' },
-  { id: 'middle', label: '星の宝箱', hint: 'コインふつう', coins: 12, icon: '⭐' },
-  { id: 'large', label: '光る宝箱', hint: 'コインたっぷり', coins: 16, icon: '💎' },
+  { id: 'small', label: 'ちいさなたからばこ', hint: 'こいんすこし', coins: 8, icon: '🪙' },
+  { id: 'middle', label: 'ほしのたからばこ', hint: 'こいんふつう', coins: 12, icon: '⭐' },
+  { id: 'large', label: 'ひかるたからばこ', hint: 'こいんたっぷり', coins: 16, icon: '💎' },
 ]
 
 const gameConfig: Record<
@@ -48,33 +48,33 @@ const gameConfig: Record<
   }
 > = {
   battle: {
-    title: 'モンスターバトル',
-    eyebrow: 'コンボで ひっさつわざ！',
-    heading: 'ハートをまもってアタック',
+    title: 'もんすたーばとる',
+    eyebrow: 'れんぞくで ひっさつわざ！',
+    heading: 'はーとをまもってあたっく',
     description: '3ハートで、ひっさつわざをねらおう',
     startDescription: 'れんぞくせいかいでゲージをためて、ひっさつわざ！',
     goal: battleGoal,
-    statLabel: 'モンスターHP',
+    statLabel: 'もんすたーたいりょく',
     icon: '👾',
   },
   treasure: {
-    title: '宝箱',
-    eyebrow: 'ゆっくりかんがえて おたからゲット',
-    heading: '3もんれんぞくでカギ',
-    description: '時間制限なし。カギで宝箱をあけよう',
-    startDescription: 'あせらず正確に。3もんれんぞくでカギ1本！',
+    title: 'たからばこ',
+    eyebrow: 'ゆっくりかんがえて おたからげっと',
+    heading: '3もんれんぞくでかぎ',
+    description: 'じかんせいげんなし。かぎでたからばこをあけよう',
+    startDescription: 'あせらずせいかくに。3もんれんぞくでかぎ1ぽん！',
     goal: treasureGoal,
-    statLabel: 'カギ',
+    statLabel: 'かぎ',
     icon: '🗝️',
   },
   rocket: {
-    title: 'ロケット',
-    eyebrow: 'スピードで うちゅうのはてへ！',
-    heading: '燃料をためて遠くへ',
-    description: '速い正解ほどぐんぐん加速',
-    startDescription: '燃料を切らさず、自己ベスト距離にちょうせん！',
+    title: 'ろけっと',
+    eyebrow: 'はやさで うちゅうのはてへ！',
+    heading: 'ねんりょうをためてとおくへ',
+    description: 'はやいせいかいほどぐんぐんかそく',
+    startDescription: 'ねんりょうをきらさず、じぶんのきろくにちょうせん！',
     goal: rocketGoal,
-    statLabel: '距離',
+    statLabel: 'きょり',
     icon: '🚀',
   },
 }
@@ -251,9 +251,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         return
       }
 
-      const speedBonus = correct && responseTimeMs <= 1500 ? 16 : correct && responseTimeMs <= 2500 ? 10 : 4
+      const speedBonus = correct && responseTimeMs <= 1500 ? 26 : correct && responseTimeMs <= 2500 ? 16 : 8
       const nextFuel = Math.max(0, fuel + (correct ? 8 : -12))
-      const nextDistance = distance + (correct ? 28 + speedBonus : 8)
+      const nextDistance = distance + (correct ? 40 + speedBonus : 10)
       setFuel(nextFuel)
       setDistance(nextDistance)
       window.setTimeout(() => {
@@ -290,7 +290,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       setTimeLeftMs(Math.max(0, remaining))
       if (remaining <= 0) {
         window.clearInterval(interval)
-        recordAnswer('時間切れ', true)
+        recordAnswer('じかんぎれ', true)
       }
     }, 100)
     return () => window.clearInterval(interval)
@@ -329,11 +329,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'chests') {
     return (
-      <AppShell title="宝箱" backTo="/games">
+      <AppShell title="たからばこ" backTo="/games">
         <section className="treasure-chest-stage" aria-labelledby="treasure-open-title">
-          <p className="welcome">カギ {keys}本</p>
-          <h2 id="treasure-open-title">ひらく宝箱をえらぼう</h2>
-          <p className="title-line">どれもコイン入り。ハズレはありません。</p>
+          <p className="welcome">かぎ {keys}ほん</p>
+          <h2 id="treasure-open-title">ひらくたからばこをえらぼう</h2>
+          <p className="title-line">どれもこいんいり。はずれはありません。</p>
           <div className="treasure-chest-grid">
             {treasureChests.map((chest) => (
               <button
@@ -382,13 +382,13 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
           <span>
             {results.length}/{config.goal}
           </span>
-          {variant === 'battle' ? <span>ハート {'♥'.repeat(hearts) || '0'}</span> : null}
+          {variant === 'battle' ? <span>はーと {'♥'.repeat(hearts) || '0'}</span> : null}
           {variant === 'treasure' ? <span>れんぞく {treasureStreak}/3</span> : null}
-          {variant === 'rocket' ? <span>燃料 {fuel}</span> : null}
+          {variant === 'rocket' ? <span>ねんりょう {fuel}</span> : null}
         </div>
         {variant === 'battle' ? (
-          <div className="boss-time" aria-label={`のこり ${(timeLeftMs / 1000).toFixed(1)}秒`}>
-            <span>{attackWarning ? 'こうげき予告！正解で防御' : 'のこり'} {(timeLeftMs / 1000).toFixed(1)}秒</span>
+          <div className="boss-time" aria-label={`のこり ${(timeLeftMs / 1000).toFixed(1)}びょう`}>
+            <span>{attackWarning ? 'こうげきよこく！せいかいでまもる' : 'のこり'} {(timeLeftMs / 1000).toFixed(1)}びょう</span>
             <div>
               <i style={{ width: `${limitPercent}%` }} />
             </div>
@@ -410,8 +410,8 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         ) : null}
         {variant === 'rocket' ? (
           <p className="quiet-text">
-            自己ベスト {saveData.progress.rocketBestDistance} / 次のバッジ{' '}
-            {rocketBadges.find((badge) => distance < badge.distance)?.name ?? 'ぜんぶ達成'}
+            じぶんのきろく {saveData.progress.rocketBestDistance} / つぎのばっじ{' '}
+            {rocketBadges.find((badge) => distance < badge.distance)?.name ?? 'ぜんぶたっせい'}
           </p>
         ) : null}
         <AnswerControls

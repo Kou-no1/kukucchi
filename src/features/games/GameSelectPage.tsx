@@ -8,26 +8,26 @@ const modes = [
     ready: true,
     icon: '×',
     badge: '01',
-    subtitle: 'まとまりを見てすすむ',
+    subtitle: 'まとまりをみてすすむ',
   },
   {
-    label: 'スピード',
+    label: 'すぴーど',
     href: '/speed',
     ready: true,
     icon: '+',
     badge: '02',
-    subtitle: '30秒でワープ',
+    subtitle: '30びょうでわーぷ',
   },
   {
-    label: 'ロケット',
+    label: 'ろけっと',
     href: '/rocket',
     ready: true,
     icon: '🚀',
     badge: '03',
-    subtitle: 'スピードで うちゅうのはてへ！',
+    subtitle: 'はやさで うちゅうのはてへ！',
   },
   {
-    label: 'にがてモンスター',
+    label: 'にがてもんすたー',
     href: '/review',
     ready: true,
     icon: '👾',
@@ -35,36 +35,36 @@ const modes = [
     subtitle: 'なかまにしよう',
   },
   {
-    label: 'モンスターバトル',
+    label: 'もんすたーばとる',
     href: '/monster-battle',
     ready: true,
     icon: '👾',
     badge: '05',
-    subtitle: 'コンボで ひっさつわざ！',
+    subtitle: 'れんぞくで ひっさつわざ！',
   },
   {
-    label: 'ボスバトル',
+    label: 'ぼすばとる',
     href: '/battle',
     ready: true,
     icon: '🛡️',
     badge: '06',
-    subtitle: 'だんボスに挑戦',
+    subtitle: 'だんぼすにちょうせん',
   },
   {
-    label: '宝箱',
+    label: 'たからばこ',
     href: '/treasure',
     ready: true,
     icon: '🗝️',
     badge: '07',
-    subtitle: 'ゆっくり おたからゲット',
+    subtitle: 'ゆっくり おたからげっと',
   },
   {
-    label: '高学年チャレンジ',
+    label: 'こうがくねんちゃれんじ',
     href: '/advanced',
     ready: true,
     icon: 'abc',
     badge: '08',
-    subtitle: 'スーパー計算',
+    subtitle: 'すーぱーけいさん',
   },
 ]
 
@@ -83,7 +83,7 @@ export function GameSelectPage() {
               </span>
               <strong>{mode.label}</strong>
               <small>{mode.subtitle}</small>
-              <span>スタート</span>
+              <span>すたーと</span>
             </Link>
           ) : (
             <div className="mode-card locked" key={mode.label} aria-disabled="true">
@@ -95,7 +95,7 @@ export function GameSelectPage() {
               </span>
               <strong>{mode.label}</strong>
               <small>{mode.subtitle}</small>
-              <span>じゅんび中</span>
+              <span>じゅんびちゅう</span>
             </div>
           ),
         )}
