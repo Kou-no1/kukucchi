@@ -1,8 +1,9 @@
 import type { MultiplicationFactProgress } from '../types/game'
 import type { OnboardingInput, SaveData } from '../types/save'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
+import { keyTypes } from '../data/keys'
 
-export const SAVE_DATA_VERSION = 5
+export const SAVE_DATA_VERSION = 6
 
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount
@@ -19,6 +20,29 @@ function cleanTimeOnlyMonsterFacts(
 ): Record<string, MultiplicationFactProgress> {
   return Object.fromEntries(
     Object.entries(facts).filter(([, fact]) => !shouldRemoveTimeOnlyMonsterFact(fact)),
+  )
+}
+
+function defaultTreasureKeys(): SaveData['progress']['treasureKeys'] {
+  return Object.fromEntries(
+    keyTypes.map((key) => [key.id, { count: 0, firstAcquiredAt: null }]),
+  )
+}
+
+function normalizeTreasureKeys(
+  keys: Partial<SaveData['progress']['treasureKeys']> | undefined,
+): SaveData['progress']['treasureKeys'] {
+  return Object.fromEntries(
+    keyTypes.map((key) => {
+      const current = keys?.[key.id]
+      return [
+        key.id,
+        {
+          count: Math.max(0, current?.count ?? 0),
+          firstAcquiredAt: current?.firstAcquiredAt ?? null,
+        },
+      ]
+    }),
   )
 }
 
@@ -51,6 +75,8 @@ export function createDefaultSaveData(): SaveData {
       },
       rocketBestDistance: 0,
       rocketBadges: [],
+      ownedTreasureItems: [],
+      treasureKeys: defaultTreasureKeys(),
     },
     tutorial: {
       homeSeen: false,
@@ -115,6 +141,8 @@ export function migrateSaveData(raw: unknown): SaveData {
         },
         rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
         rocketBadges: candidate.progress?.rocketBadges ?? [],
+        ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
+        treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
       },
       settings: {
         ...defaults.settings,
@@ -152,6 +180,8 @@ export function migrateSaveData(raw: unknown): SaveData {
       },
       rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
       rocketBadges: candidate.progress?.rocketBadges ?? [],
+      ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
+      treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
     },
     settings: {
       ...defaults.settings,

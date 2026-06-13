@@ -25,7 +25,9 @@ import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/r
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { bosses } from '../data/bosses'
+import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
+import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import {
   applyBossClearReward,
@@ -33,6 +35,8 @@ import {
   isBossUnlocked,
   isDifficultyUnlocked,
 } from '../game-engine/bosses/bossEngine'
+import { calculateBookProgress } from '../game-engine/collection/bookProgress'
+import { createSeededRandom, openTreasureChest } from '../game-engine/treasure/treasureEngine'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
@@ -359,7 +363,7 @@ describe('mastery, review, missions, and storage', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(5)
+    expect(migrated.version).toBe(6)
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
@@ -367,9 +371,11 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
+    expect(migrated.progress.ownedTreasureItems).toEqual([])
+    expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
   })
 
-  it('migrates v4 save data into v5 and removes time-only monsters', () => {
+  it('migrates v4 save data into v6 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -401,13 +407,75 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(5)
+    expect(migrated.version).toBe(6)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
+    expect(migrated.progress.ownedTreasureItems).toEqual([])
+    expect(migrated.progress.treasureKeys.bronze.count).toBe(0)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
+  })
+
+  it('opens treasure chests deterministically with rarity bands and duplicate coins', () => {
+    const first = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: [],
+      rng: createSeededRandom(123),
+      openedAt: '2026-01-03T00:00:00.000Z',
+    })
+    const repeat = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: [],
+      rng: createSeededRandom(123),
+      openedAt: '2026-01-03T00:00:00.000Z',
+    })
+    expect(first.item.id).toBe(repeat.item.id)
+    expect(first.item.rarity).toBeGreaterThanOrEqual(3)
+    expect(first.item.rarity).toBeLessThanOrEqual(4)
+    expect(first.item).toBeTruthy()
+
+    const duplicate = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: [first.item.id],
+      rng: createSeededRandom(123),
+    })
+    expect(duplicate.duplicate).toBe(true)
+    expect(duplicate.convertedCoins).toBeGreaterThan(0)
+  })
+
+  it('defines key and chest mapping without misses', () => {
+    expect(keyTypes).toHaveLength(5)
+    expect(treasureChestTypes).toHaveLength(5)
+    for (const key of keyTypes) {
+      expect(canKeyOpenChest(key.id, key.chestId)).toBe(true)
+    }
+    expect(canKeyOpenChest('bronze', 'star-chest')).toBe(false)
+    expect(treasureItems).toHaveLength(20)
+  })
+
+  it('calculates book collection progress by tab and overall', () => {
+    const save = createSaveWithPlayer()
+    const withCollection: SaveData = {
+      ...save,
+      progress: {
+        ...save.progress,
+        monsterBook: ['2x2'],
+        ownedTreasureItems: [
+          { id: treasureItems[0].id, acquiredAt: '2026-01-03T00:00:00.000Z', method: 'どうのたからばこから入手' },
+        ],
+        treasureKeys: {
+          ...save.progress.treasureKeys,
+          bronze: { count: 1, firstAcquiredAt: '2026-01-03T00:00:00.000Z' },
+        },
+      },
+    }
+    const progress = calculateBookProgress(withCollection)
+    expect(progress.tabs.monsters.owned).toBe(1)
+    expect(progress.tabs.collection.owned).toBe(2)
+    expect(progress.tabs.collection.total).toBe(25)
+    expect(progress.overall.owned).toBeGreaterThanOrEqual(3)
   })
 
   it('validates shop prices and tier unlock rules', () => {

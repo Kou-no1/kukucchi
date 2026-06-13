@@ -1,0 +1,65 @@
+import { bossLimitedItems, bosses, bossDifficultyIds } from '../../data/bosses'
+import { keyTypes } from '../../data/keys'
+import { rocketBadges } from '../../data/rocketBadges'
+import { treasureItems } from '../../data/treasureItems'
+import { ufoDefinitions } from '../../data/ufos'
+import type { SaveData } from '../../types/save'
+import { createMultiplicationFactPool } from '../questions/factDifficulty'
+import { getDifficultyProgress } from '../bosses/bossEngine'
+
+export type BookTabId = 'kukucchi' | 'monsters' | 'ufos' | 'treasures' | 'collection'
+
+export type BookProgressCount = {
+  owned: number
+  total: number
+  percent: number
+}
+
+export type BookProgressSummary = {
+  tabs: Record<BookTabId, BookProgressCount>
+  overall: BookProgressCount
+}
+
+export const kukucchiRecordTotal = 3
+
+function countPercent(owned: number, total: number): BookProgressCount {
+  return {
+    owned,
+    total,
+    percent: total === 0 ? 0 : Math.round((owned / total) * 100),
+  }
+}
+
+export function countKukucchiRecords(save: SaveData): number {
+  const level = save.player?.level ?? 1
+  const milestones = [level >= 1, level >= 5, level >= 10].filter(Boolean).length
+  const rocket = rocketBadges.filter((badge) => save.progress.rocketBadges.includes(badge.id)).length
+  return milestones + rocket
+}
+
+export function calculateBookProgress(save: SaveData): BookProgressSummary {
+  const monsterTotal = createMultiplicationFactPool({
+    stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
+    minDifficulty: 1,
+  }).length
+  const bossOwned = bosses.filter((boss) =>
+    bossDifficultyIds.some((difficulty) => getDifficultyProgress(save, boss.id, difficulty).cleared),
+  ).length
+  const tabs: Record<BookTabId, BookProgressCount> = {
+    kukucchi: countPercent(countKukucchiRecords(save), kukucchiRecordTotal + rocketBadges.length),
+    monsters: countPercent(new Set(save.progress.monsterBook).size, monsterTotal),
+    ufos: countPercent(new Set(save.progress.ownedUfos).size, ufoDefinitions.length),
+    treasures: countPercent(new Set(save.progress.bossItems).size + bossOwned, bossLimitedItems.length + bosses.length),
+    collection: countPercent(
+      new Set(save.progress.ownedTreasureItems.map((item) => item.id)).size +
+        keyTypes.filter((key) => (save.progress.treasureKeys[key.id]?.count ?? 0) > 0).length,
+      treasureItems.length + keyTypes.length,
+    ),
+  }
+  const overallTotal = Object.values(tabs).reduce((sum, tab) => sum + tab.total, 0)
+  const overallOwned = Object.values(tabs).reduce((sum, tab) => sum + tab.owned, 0)
+  return {
+    tabs,
+    overall: countPercent(overallOwned, overallTotal),
+  }
+}

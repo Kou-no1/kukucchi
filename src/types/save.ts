@@ -54,6 +54,17 @@ export type BossProgress = {
   difficulties: Partial<Record<BossDifficultyId, BossDifficultyProgress>>
 }
 
+export type CollectionRecord = {
+  id: string
+  acquiredAt: string
+  method: string
+}
+
+export type KeyInventoryEntry = {
+  count: number
+  firstAcquiredAt: string | null
+}
+
 export type ProgressData = {
   facts: Record<string, MultiplicationFactProgress>
   history: GameHistoryEntry[]
@@ -74,6 +85,8 @@ export type ProgressData = {
   }
   rocketBestDistance: number
   rocketBadges: string[]
+  ownedTreasureItems: CollectionRecord[]
+  treasureKeys: Record<string, KeyInventoryEntry>
 }
 
 export type TutorialData = {

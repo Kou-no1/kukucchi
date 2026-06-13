@@ -2,17 +2,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
+import { KeyIcon } from '../../components/collection/KeyIcon'
+import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { miniGameMinDifficulty } from '../../data/factDifficulty'
+import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../data/keys'
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
+import { rarityStars } from '../../data/treasureItems'
 import { getUfoById } from '../../data/ufos'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { openTreasureChest } from '../../game-engine/treasure/treasureEngine'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -27,12 +32,6 @@ const battleTimeLimitMs = 6000
 const treasureGoal = 9
 const rocketGoal = 14
 const specialGaugeMax = 3
-
-const treasureChests = [
-  { id: 'small', label: 'ちいさなたからばこ', hint: 'こいんすこし', coins: 8, icon: '🪙' },
-  { id: 'middle', label: 'ほしのたからばこ', hint: 'こいんふつう', coins: 12, icon: '⭐' },
-  { id: 'large', label: 'ひかるたからばこ', hint: 'こいんたっぷり', coins: 16, icon: '💎' },
-]
 
 const gameConfig: Record<
   MiniGameVariant,
@@ -105,6 +104,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const [specialGauge, setSpecialGauge] = useState(0)
   const [specialUses, setSpecialUses] = useState(0)
   const [keys, setKeys] = useState(0)
+  const [earnedKeyIds, setEarnedKeyIds] = useState<string[]>([])
   const [treasureStreak, setTreasureStreak] = useState(0)
   const [fuel, setFuel] = useState(35)
   const [distance, setDistance] = useState(0)
@@ -125,6 +125,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     setSpecialGauge(0)
     setSpecialUses(0)
     setKeys(0)
+    setEarnedKeyIds([])
     setTreasureStreak(0)
     setFuel(35)
     setDistance(0)
@@ -155,7 +156,13 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         specialUses?: number
         treasureBonusCoins?: number
         treasureChestLabels?: string[]
+        treasureDuplicate?: boolean
+        treasureItemId?: string
+        treasureItemName?: string
+        treasureKeyIds?: string[]
         treasureKeys?: number
+        treasureMethod?: string
+        treasureOpenedAt?: string
       } = {},
     ) => {
       if (finishedRef.current) {
@@ -182,6 +189,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         details.openedChests = options.treasureChestLabels?.length ?? 0
         details.chestLabels = options.treasureChestLabels ?? []
         details.treasureBonusCoins = options.treasureBonusCoins ?? 0
+        details.treasureDuplicate = options.treasureDuplicate ?? false
+        details.treasureItemName = options.treasureItemName ?? null
+        details.treasureKeyNames = (options.treasureKeyIds ?? earnedKeyIds)
+          .map((keyId) => getKeyTypeById(keyId)?.name)
+          .filter((name): name is string => Boolean(name))
       } else {
         details.rocketDistance = Math.round(options.rocketDistance ?? distance)
       }
@@ -223,10 +235,43 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
           },
         }
       }
+      if (variant === 'treasure') {
+        const openedAt = options.treasureOpenedAt ?? new Date().toISOString()
+        const treasureKeyIds = options.treasureKeyIds ?? earnedKeyIds
+        const nextTreasureKeys = { ...nextSave.progress.treasureKeys }
+        for (const keyId of treasureKeyIds) {
+          const current = nextTreasureKeys[keyId] ?? { count: 0, firstAcquiredAt: null }
+          nextTreasureKeys[keyId] = {
+            count: current.count + 1,
+            firstAcquiredAt: current.firstAcquiredAt ?? openedAt,
+          }
+        }
+        const alreadyOwned = options.treasureItemId
+          ? nextSave.progress.ownedTreasureItems.some((item) => item.id === options.treasureItemId)
+          : true
+        nextSave = {
+          ...nextSave,
+          progress: {
+            ...nextSave.progress,
+            treasureKeys: nextTreasureKeys,
+            ownedTreasureItems:
+              options.treasureItemId && !alreadyOwned
+                ? [
+                    ...nextSave.progress.ownedTreasureItems,
+                    {
+                      id: options.treasureItemId,
+                      acquiredAt: openedAt,
+                      method: options.treasureMethod ?? 'たからばこから入手',
+                    },
+                  ]
+                : nextSave.progress.ownedTreasureItems,
+          },
+        }
+      }
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [distance, enemyHp, hearts, keys, navigate, results, saveData, scoreState, setSaveData, specialUses, variant],
+    [distance, earnedKeyIds, enemyHp, hearts, keys, navigate, results, saveData, scoreState, setSaveData, specialUses, variant],
   )
 
   const recordAnswer = useCallback(
@@ -278,7 +323,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       if (variant === 'treasure') {
         const nextStreak = correct ? treasureStreak + 1 : 0
         const earnedKey = nextStreak >= 3
+        const nextKey = earnedKey ? keyForTreasureStreak(earnedKeyIds.length) : null
         setKeys((current) => current + (earnedKey ? 1 : 0))
+        if (nextKey) {
+          setEarnedKeyIds((current) => [...current, nextKey.id])
+        }
         setTreasureStreak(earnedKey ? 0 : nextStreak)
         window.setTimeout(() => {
           if (nextResults.length >= treasureGoal) {
@@ -316,6 +365,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       saveData.settings.soundEnabled,
       scoreState,
       specialUses,
+      earnedKeyIds.length,
       treasureStreak,
       variant,
     ],
@@ -354,11 +404,23 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     }
   }
 
-  function openChest(chest: (typeof treasureChests)[number]) {
+  function openChest(chest: (typeof treasureChestTypes)[number]) {
+    const openedAt = new Date().toISOString()
+    const reward = openTreasureChest({
+      chestId: chest.id,
+      ownedItemIds: saveData.progress.ownedTreasureItems.map((item) => item.id),
+      openedAt,
+    })
     finish(results, scoreState, {
-      treasureBonusCoins: keys > 0 ? chest.coins * keys : 0,
-      treasureChestLabels: [chest.label],
+      treasureBonusCoins: reward.convertedCoins,
+      treasureChestLabels: [chest.name],
+      treasureDuplicate: reward.duplicate,
+      treasureItemId: reward.item.id,
+      treasureItemName: reward.item.name,
+      treasureKeyIds: earnedKeyIds,
       treasureKeys: keys,
+      treasureMethod: reward.method,
+      treasureOpenedAt: openedAt,
     })
   }
 
@@ -383,21 +445,35 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         <section className="treasure-chest-stage" aria-labelledby="treasure-open-title">
           <p className="welcome">かぎ {keys}ほん</p>
           <h2 id="treasure-open-title">ひらくたからばこをえらぼう</h2>
-          <p className="title-line">どれもこいんいり。はずれはありません。</p>
+          <p className="title-line">はずれなし。はこの色で★のめやすがわかるよ。</p>
           <div className="treasure-chest-grid">
-            {treasureChests.map((chest) => (
-              <button
-                className="treasure-chest-card"
-                key={chest.id}
-                type="button"
-                onClick={() => openChest(chest)}
-              >
-                <span aria-hidden="true">{chest.icon}</span>
-                <strong>{chest.label}</strong>
-                <small>{chest.hint}</small>
-              </button>
-            ))}
+            {treasureChestTypes.map((chest) => {
+              const keyType = getKeyTypeById(chest.keyId)
+              const unlocked = earnedKeyIds.includes(chest.keyId)
+              return (
+                <button
+                  className={unlocked ? 'treasure-chest-card' : 'treasure-chest-card locked'}
+                  key={chest.id}
+                  type="button"
+                  onClick={() => openChest(chest)}
+                  disabled={!unlocked}
+                >
+                  <TreasureIcon locked={!unlocked} className="treasure-preview-icon" />
+                  {keyType ? <KeyIcon keyType={keyType} locked={!unlocked} className="treasure-key-icon" /> : null}
+                  <strong>{unlocked ? chest.name : '？？？'}</strong>
+                  <small>{chest.hint}</small>
+                  <small>
+                    {rarityStars(chest.rarityRange[0])}〜{rarityStars(chest.rarityRange[1])}
+                  </small>
+                </button>
+              )
+            })}
           </div>
+          {keys === 0 ? (
+            <button className="secondary-action wide" type="button" onClick={() => finish(results, scoreState)}>
+              けっかへ
+            </button>
+          ) : null}
         </section>
       </AppShell>
     )

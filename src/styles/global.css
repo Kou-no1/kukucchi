@@ -3010,6 +3010,52 @@ legend {
   text-shadow: 0 0 16px rgba(91, 233, 244, 0.72);
 }
 
+.compact-book-command {
+  margin-top: 12px;
+  padding: 10px 12px;
+}
+
+.compact-book-command h2 {
+  font-size: 1.1rem;
+}
+
+.book-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.book-tabs button {
+  min-height: 46px;
+  border: 1px solid rgba(91, 233, 244, 0.36);
+  border-radius: 8px;
+  background: rgba(8, 23, 45, 0.74);
+  color: #dffcff;
+  font-weight: 900;
+}
+
+.book-tabs button.selected {
+  border-color: rgba(91, 233, 244, 0.9);
+  background: linear-gradient(135deg, #bff9ff, #4d75ff);
+  color: #07172d;
+}
+
+.book-meter {
+  overflow: hidden;
+  height: 14px;
+  border: 1px solid rgba(91, 233, 244, 0.42);
+  border-radius: 999px;
+  background: rgba(4, 14, 32, 0.78);
+}
+
+.book-meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #5be9f4, #9a7cff, #ffd86a);
+}
+
 .mini-game-command {
   grid-template-columns: auto minmax(0, 1fr) minmax(120px, 0.35fr);
   align-items: center;
@@ -3139,6 +3185,16 @@ legend {
   padding: 14px;
 }
 
+.book-card {
+  cursor: pointer;
+}
+
+.book-card:hover,
+.book-card:focus-visible {
+  outline: 3px solid rgba(91, 233, 244, 0.72);
+  outline-offset: 2px;
+}
+
 .book-card > span {
   font-size: 2.2rem;
 }
@@ -3146,6 +3202,84 @@ legend {
 .book-card small {
   color: #68f4ff;
   font-weight: 900;
+}
+
+.book-svg-icon {
+  width: 74px;
+  max-width: 100%;
+  height: 58px;
+}
+
+.collection-section {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.collection-section > h2 {
+  margin: 0;
+  color: #dffcff;
+  font-size: 1.2rem;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.68);
+}
+
+.rarity-3 {
+  border-color: rgba(154, 124, 255, 0.72);
+  box-shadow: 0 0 22px rgba(154, 124, 255, 0.24);
+}
+
+.rarity-4 {
+  border-color: rgba(255, 216, 106, 0.9);
+  box-shadow:
+    0 0 0 2px rgba(255, 216, 106, 0.16),
+    0 0 26px rgba(255, 216, 106, 0.34);
+}
+
+.book-detail-backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(3, 10, 24, 0.72);
+}
+
+.book-detail-modal {
+  display: grid;
+  width: min(420px, 100%);
+  gap: 12px;
+  padding: 18px;
+  border: 2px solid rgba(91, 233, 244, 0.58);
+  border-radius: 8px;
+  background: rgba(8, 23, 45, 0.96);
+  color: #e8fbff;
+  box-shadow: 0 0 34px rgba(91, 233, 244, 0.28);
+}
+
+.book-detail-modal h2,
+.book-detail-modal p {
+  margin: 0;
+}
+
+.book-detail-modal dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.book-detail-modal dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.book-detail-modal dt,
+.book-detail-modal dd {
+  margin: 0;
 }
 
 .kuku-ruby {
@@ -3658,7 +3792,7 @@ legend {
 
 .treasure-chest-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
   gap: 12px;
 }
 
@@ -3677,6 +3811,16 @@ legend {
 
 .treasure-chest-card span {
   font-size: 2.4rem;
+}
+
+.treasure-chest-card.locked {
+  opacity: 0.58;
+}
+
+.treasure-key-icon,
+.treasure-preview-icon {
+  width: 72px;
+  height: 48px;
 }
 
 .treasure-chest-card small {
