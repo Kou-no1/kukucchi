@@ -13,6 +13,7 @@ import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
 import { rarityStars } from '../../data/treasureItems'
 import { getUfoById } from '../../data/ufos'
+import { addCollectionRecords } from '../../game-engine/collection/collectionRecords'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
@@ -209,7 +210,10 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       let nextSummary = applied.summary
       if (variant === 'rocket') {
         const finalDistance = Math.round(options.rocketDistance ?? distance)
-        const newlyEarnedBadges = earnedRocketBadges(finalDistance)
+        const reachedBadgeIds = earnedRocketBadges(finalDistance)
+        const newlyEarnedBadges = reachedBadgeIds.filter(
+          (badgeId) => !saveData.progress.rocketBadges.includes(badgeId),
+        )
         const rocketBestUpdated = finalDistance > saveData.progress.rocketBestDistance
         nextSave = {
           ...nextSave,
@@ -217,7 +221,16 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
             ...nextSave.progress,
             rocketBestDistance: Math.max(saveData.progress.rocketBestDistance, finalDistance),
             rocketBadges: Array.from(
-              new Set([...saveData.progress.rocketBadges, ...newlyEarnedBadges]),
+              new Set([...saveData.progress.rocketBadges, ...reachedBadgeIds]),
+            ),
+            collectionRecords: addCollectionRecords(
+              nextSave.progress.collectionRecords,
+              newlyEarnedBadges.map((badgeId) => ({
+                kind: 'rocket-badge',
+                id: badgeId,
+                acquiredAt: nextSummary.finishedAt,
+                method: 'ロケットチャレンジ',
+              })),
             ),
           },
         }

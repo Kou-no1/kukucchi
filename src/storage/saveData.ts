@@ -1,9 +1,10 @@
 import type { MultiplicationFactProgress } from '../types/game'
+import type { CollectionRecord } from '../types/save'
 import type { OnboardingInput, SaveData } from '../types/save'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
 
-export const SAVE_DATA_VERSION = 6
+export const SAVE_DATA_VERSION = 7
 
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount
@@ -46,6 +47,12 @@ function normalizeTreasureKeys(
   )
 }
 
+function normalizeCollectionRecords(records: CollectionRecord[] | undefined): CollectionRecord[] {
+  return Array.isArray(records)
+    ? records.filter((record) => record.id && record.acquiredAt && record.method)
+    : []
+}
+
 export function createDefaultSaveData(): SaveData {
   return {
     version: SAVE_DATA_VERSION,
@@ -75,6 +82,7 @@ export function createDefaultSaveData(): SaveData {
       },
       rocketBestDistance: 0,
       rocketBadges: [],
+      collectionRecords: [],
       ownedTreasureItems: [],
       treasureKeys: defaultTreasureKeys(),
     },
@@ -141,6 +149,7 @@ export function migrateSaveData(raw: unknown): SaveData {
         },
         rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
         rocketBadges: candidate.progress?.rocketBadges ?? [],
+        collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
         ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
         treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
       },
@@ -180,6 +189,7 @@ export function migrateSaveData(raw: unknown): SaveData {
       },
       rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
       rocketBadges: candidate.progress?.rocketBadges ?? [],
+      collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
       ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
       treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
     },

@@ -6,11 +6,13 @@ export function AppShell({
   title,
   backTo = '/home',
   className = '',
+  rightAction,
 }: {
   children: ReactNode
   title: string
   backTo?: string
   className?: string
+  rightAction?: ReactNode
 }) {
   const location = useLocation()
   const showBack = location.pathname !== '/home'
@@ -28,9 +30,11 @@ export function AppShell({
           </span>
         )}
         <h1>{title}</h1>
-        <Link className="icon-button" to="/settings" aria-label="せってい">
-          ⚙
-        </Link>
+        {rightAction ?? (
+          <Link className="icon-button" to="/settings" aria-label="せってい">
+            ⚙
+          </Link>
+        )}
       </header>
       <main>{children}</main>
     </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import {
   equipShopItem,
@@ -6,7 +7,19 @@ import {
   shopItems,
   shopTier2UnlockPurchaseCount,
 } from '../../data/shopItems'
+import type { ShopItemKind } from '../../data/shopItems'
 import { useSaveData } from '../../hooks/useSaveData'
+
+const shopKindFilters: Array<{ id: 'all' | ShopItemKind; label: string }> = [
+  { id: 'all', label: 'ぜんぶ' },
+  { id: 'hat', label: 'ぼうし' },
+  { id: 'wear', label: 'ふく' },
+  { id: 'background', label: 'はいけい' },
+  { id: 'wallpaper', label: 'かべがみ' },
+  { id: 'furniture', label: 'かぐ' },
+  { id: 'effect', label: 'ひかり' },
+  { id: 'pet', label: 'なかま' },
+]
 
 function kindLabel(kind: string): string {
   const labels: Record<string, string> = {
@@ -23,11 +36,19 @@ function kindLabel(kind: string): string {
 
 export function ShopPage() {
   const { saveData, updateSaveData } = useSaveData()
+  const [activeKind, setActiveKind] = useState<'all' | ShopItemKind>('all')
   const coins = saveData.player?.coins ?? 0
   const purchasedCount = purchasedShopItemCount(saveData.progress.ownedItems)
   const tier2Unlocked = isShopTier2Unlocked(saveData.progress.ownedItems)
-  const visibleItems = shopItems.filter((item) => item.no <= 10 || tier2Unlocked)
+  const visibleItems = shopItems
+    .filter((item) => item.no <= 10 || tier2Unlocked)
+    .filter((item) => activeKind === 'all' || item.kind === activeKind)
   const unlockRemaining = Math.max(0, shopTier2UnlockPurchaseCount - purchasedCount)
+  const equippedKinds = new Set(
+    saveData.progress.equippedItems
+      .map((itemId) => shopItems.find((item) => item.id === itemId)?.kind)
+      .filter((kind): kind is ShopItemKind => Boolean(kind)),
+  )
 
   function buyItem(itemId: string) {
     const item = shopItems.find((candidate) => candidate.id === itemId)
@@ -85,6 +106,31 @@ export function ShopPage() {
         )}
       </section>
 
+      <section className="shop-filter-bar" aria-label="しょうひんしぼりこみ">
+        {shopKindFilters.map((filter) => {
+          const selected = activeKind === filter.id
+          const equipped = filter.id !== 'all' && equippedKinds.has(filter.id)
+          return (
+            <button
+              className={[
+                'shop-filter-chip',
+                selected ? 'selected' : '',
+                equipped ? 'equipped' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              type="button"
+              key={filter.id}
+              onClick={() => setActiveKind(filter.id)}
+              aria-pressed={selected}
+            >
+              <span>{filter.label}</span>
+              {equipped ? <small>そうびちゅう</small> : null}
+            </button>
+          )
+        })}
+      </section>
+
       <section className="shop-grid" aria-label="しょうひん">
         {visibleItems.map((item) => {
           const owned = saveData.progress.ownedItems.includes(item.id)
@@ -108,12 +154,12 @@ export function ShopPage() {
               <strong>{item.price} コイン</strong>
               {owned ? (
                 <button
-                  className="secondary-action"
+                  className={equipped ? 'shop-equipped-action' : 'shop-equip-action'}
                   type="button"
                   onClick={() => equipItem(item.id)}
                   disabled={equipped}
                 >
-                  {equipped ? 'そうび中' : 'そうび'}
+                  {equipped ? 'そうびちゅう' : 'そうび'}
                 </button>
               ) : (
                 <button

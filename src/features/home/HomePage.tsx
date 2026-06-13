@@ -44,11 +44,17 @@ export function HomePage() {
   }
 
   return (
-    <AppShell title="ホーム">
+    <AppShell
+      title="ホーム"
+      rightAction={
+        <button className="top-help-button" type="button" onClick={() => setTutorialOpen(true)}>
+          あそびかた
+        </button>
+      }
+    >
       <section className="home-command">
         <div className="home-profile">
           <div className="home-title-block">
-            <p className="welcome">またあえてうれしい！</p>
             <div className="home-name-row">
               <span className="player-icon-badge" aria-label={`${playerIcon.label}アイコン`}>
                 {playerIcon.emoji}
@@ -56,16 +62,7 @@ export function HomePage() {
               <h2>{player?.nickname ?? 'くくとも'}</h2>
             </div>
             <p className="title-line">{player?.currentTitle ?? 'はじめのいっぽ'}</p>
-            <button className="secondary-action compact-action" type="button" onClick={() => setTutorialOpen(true)}>
-              あそびかた
-            </button>
           </div>
-
-          <section className="home-stats-mini" aria-label="プレイヤー情報">
-            <StatPill label="Lv" value={player?.level ?? 1} icon="01" />
-            <StatPill label="EXP" value={player?.exp ?? 0} icon="★" />
-            <StatPill label="コイン" value={player?.coins ?? 0} icon="●" />
-          </section>
 
           <section className="home-mission-compact" aria-labelledby="mission-title">
             <h2 id="mission-title">今日のミッション</h2>
@@ -79,6 +76,12 @@ export function HomePage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="home-stats-mini" aria-label="プレイヤー情報">
+            <StatPill label="Lv" value={player?.level ?? 1} icon="01" />
+            <StatPill label="EXP" value={player?.exp ?? 0} icon="★" />
+            <StatPill label="コイン" value={player?.coins ?? 0} icon="●" />
           </section>
 
           <section className="home-equipment-slots" aria-label="そうび">

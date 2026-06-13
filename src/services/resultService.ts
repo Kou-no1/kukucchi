@@ -2,6 +2,7 @@ import {
   createFactProgress,
   updateFactProgress,
 } from '../game-engine/mastery/mastery'
+import { addCollectionRecords } from '../game-engine/collection/collectionRecords'
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
 import { judgeNewTitles } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
@@ -85,6 +86,15 @@ export function applySessionResult(
   const newlyMasteredFacts = getMasteredFacts(facts).filter(
     (fact) => !previousMasteredIds.has(fact.id),
   )
+  const collectionRecords = addCollectionRecords(
+    save.progress.collectionRecords,
+    newlyMasteredFacts.map((fact) => ({
+      kind: 'monster',
+      id: fact.id,
+      acquiredAt: summary.finishedAt,
+      method: 'にがてふくしゅう',
+    })),
+  )
   const missions = save.progress.missions.map((mission) => {
     let gained = 0
     if (mission.kind === 'correct-count') {
@@ -155,6 +165,7 @@ export function applySessionResult(
         : save.progress.bests,
       missions,
       monsterBook,
+      collectionRecords,
     },
   }
 

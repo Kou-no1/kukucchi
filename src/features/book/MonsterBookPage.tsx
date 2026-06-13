@@ -12,6 +12,7 @@ import type { TreasureTheme } from '../../data/treasureItems'
 import { ufoDefinitions } from '../../data/ufos'
 import { getDifficultyProgress } from '../../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../../game-engine/collection/bookProgress'
+import { getCollectionRecord } from '../../game-engine/collection/collectionRecords'
 import type { BookTabId } from '../../game-engine/collection/bookProgress'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -31,10 +32,14 @@ type BookDetail = {
   description: string
   acquiredAt: string | null
   method: string
+  owned: boolean
 }
 
-function formatDate(value: string | null): string {
-  return value ? new Date(value).toLocaleDateString('ja-JP') : 'まだです'
+function formatDate(value: string | null, owned: boolean): string {
+  if (!owned) {
+    return 'まだです'
+  }
+  return value ? new Date(value).toLocaleDateString('ja-JP') : 'きろくなし'
 }
 
 function formatBestTime(milliseconds: number | null): string {
@@ -61,6 +66,10 @@ export function MonsterBookPage() {
     minDifficulty: 1,
   })
   const monsterBook = new Set(saveData.progress.monsterBook)
+
+  function acquiredAt(kind: string, id: string): string | null {
+    return getCollectionRecord(saveData.progress.collectionRecords, kind, id)?.acquiredAt ?? null
+  }
 
   function equipUfo(ufoId: string) {
     updateSaveData((current) => {
@@ -155,7 +164,8 @@ export function MonsterBookPage() {
                 name: record.owned ? record.name : '？？？',
                 description: record.owned ? record.description : 'まだきろくがありません',
                 acquiredAt: record.owned ? record.acquiredAt : null,
-                method: record.method,
+                method: record.owned ? record.method : '？？？',
+                owned: record.owned,
               })}
             >
               <span className="boss-no">No.{String(record.no).padStart(2, '0')}</span>
@@ -166,6 +176,7 @@ export function MonsterBookPage() {
           ))}
           {rocketBadges.map((badge) => {
             const owned = saveData.progress.rocketBadges.includes(badge.id)
+            const record = getCollectionRecord(saveData.progress.collectionRecords, 'rocket-badge', badge.id)
             return (
               <article
                 className={owned ? 'book-card' : 'book-card silhouette'}
@@ -173,8 +184,9 @@ export function MonsterBookPage() {
                 {...cardAction({
                   name: owned ? badge.name : '？？？',
                   description: owned ? badge.description : `${badge.distance}mにとどくと入手`,
-                  acquiredAt: null,
-                  method: 'ロケットチャレンジ',
+                  acquiredAt: record?.acquiredAt ?? null,
+                  method: owned ? record?.method ?? 'ロケットチャレンジ' : '？？？',
+                  owned,
                 })}
               >
                 <span className="boss-no">R-{String(badge.no).padStart(2, '0')}</span>
@@ -199,8 +211,9 @@ export function MonsterBookPage() {
                 {...cardAction({
                   name: owned ? `${fact.left} × ${fact.right} モンスター` : '？？？',
                   description: owned ? 'ふくしゅうしてなかまになったよ' : 'まちがえた問題をふくしゅうしよう',
-                  acquiredAt: null,
-                  method: 'にがてふくしゅう',
+                  acquiredAt: acquiredAt('monster', factId),
+                  method: owned ? getCollectionRecord(saveData.progress.collectionRecords, 'monster', factId)?.method ?? 'にがてふくしゅう' : '？？？',
+                  owned,
                 })}
               >
                 <span className="boss-no">No.{String(index + 1).padStart(2, '0')}</span>
@@ -225,8 +238,9 @@ export function MonsterBookPage() {
                 {...cardAction({
                   name: owned ? ufo.name : '？？？',
                   description: owned ? ufo.description : 'げきムズボスをクリアすると入手',
-                  acquiredAt: null,
-                  method: 'ボスげきムズ',
+                  acquiredAt: acquiredAt('ufo', ufo.id),
+                  method: owned ? getCollectionRecord(saveData.progress.collectionRecords, 'ufo', ufo.id)?.method ?? 'ボスげきムズ' : '？？？',
+                  owned,
                 })}
               >
                 <span className="boss-no">No.{String(ufo.no).padStart(2, '0')}</span>
@@ -264,6 +278,9 @@ export function MonsterBookPage() {
                 .filter((time): time is number => time !== null),
               Infinity,
             )
+            const firstClearedAt = difficultyIds
+              .map((difficulty) => getDifficultyProgress(saveData, boss.id, difficulty).firstClearedAt)
+              .find((date): date is string => Boolean(date)) ?? null
             return (
               <article
                 className={cleared ? 'book-card' : 'book-card silhouette'}
@@ -271,8 +288,9 @@ export function MonsterBookPage() {
                 {...cardAction({
                   name: cleared ? boss.label : '？？？',
                   description: cleared ? `ベスト ${formatBestTime(bestTime === Infinity ? null : bestTime)}` : 'まだ出会っていません',
-                  acquiredAt: null,
-                  method: 'ボス討伐',
+                  acquiredAt: firstClearedAt,
+                  method: cleared ? 'ボス討伐' : '？？？',
+                  owned: cleared,
                 })}
               >
                 <span className="boss-no">B-{String(boss.no).padStart(2, '0')}</span>
@@ -292,6 +310,7 @@ export function MonsterBookPage() {
           })}
           {bossLimitedItems.map((item) => {
             const owned = ownedBossItems.has(item.id)
+            const record = getCollectionRecord(saveData.progress.collectionRecords, 'boss-item', item.id)
             return (
               <article
                 className={owned ? 'book-card' : 'book-card silhouette'}
@@ -299,8 +318,9 @@ export function MonsterBookPage() {
                 {...cardAction({
                   name: owned ? item.name : '？？？',
                   description: owned ? item.description : 'ボスをクリアすると入手',
-                  acquiredAt: null,
-                  method: item.tag,
+                  acquiredAt: record?.acquiredAt ?? null,
+                  method: owned ? record?.method ?? item.tag : '？？？',
+                  owned,
                 })}
               >
                 <span className="boss-no">T-{String(item.no).padStart(2, '0')}</span>
@@ -329,7 +349,8 @@ export function MonsterBookPage() {
                       name: owned ? key.name : '？？？',
                       description: owned ? key.description : 'たからばこでカギをあつめよう',
                       acquiredAt: entry?.firstAcquiredAt ?? null,
-                      method: 'たからばこチャレンジ',
+                      method: owned ? 'たからばこチャレンジ' : '？？？',
+                      owned,
                     })}
                   >
                     <span className="boss-no">K-{String(key.no).padStart(2, '0')}</span>
@@ -358,7 +379,8 @@ export function MonsterBookPage() {
                           name: owned ? item.name : '？？？',
                           description: owned ? item.description : 'たからばこから入手',
                           acquiredAt: record?.acquiredAt ?? null,
-                          method: record?.method ?? 'たからばこ',
+                          method: owned ? record?.method ?? 'たからばこ' : '？？？',
+                          owned,
                         })}
                       >
                         <span className="boss-no">C-{String(item.no).padStart(2, '0')}</span>
@@ -389,7 +411,7 @@ export function MonsterBookPage() {
             <dl>
               <div>
                 <dt>入手日</dt>
-                <dd>{formatDate(detail.acquiredAt)}</dd>
+                <dd>{formatDate(detail.acquiredAt, detail.owned)}</dd>
               </div>
               <div>
                 <dt>入手方法</dt>

@@ -8,6 +8,7 @@ import {
 } from '../../data/bosses'
 import type { BossDefinition } from '../../data/bosses'
 import { specialUfoId } from '../../data/ufos'
+import { addCollectionRecords } from '../collection/collectionRecords'
 import type {
   BossDifficultyId,
   BossDifficultyProgress,
@@ -161,6 +162,20 @@ export function applyBossClearReward(
       bossItems: Array.from(new Set([...save.progress.bossItems, ...rewardItemIds])),
       ownedUfos: Array.from(new Set([...save.progress.ownedUfos, ...rewardUfoIds])),
       equippedUfoId: save.progress.equippedUfoId ?? rewardUfoIds[0] ?? null,
+      collectionRecords: addCollectionRecords(save.progress.collectionRecords, [
+        ...rewardItemIds.map((itemId) => ({
+          kind: 'boss-item',
+          id: itemId,
+          acquiredAt: clearedAt,
+          method: `${boss.label} ${getBossDifficulty(boss, difficulty).label}`,
+        })),
+        ...rewardUfoIds.map((ufoId) => ({
+          kind: 'ufo',
+          id: ufoId,
+          acquiredAt: clearedAt,
+          method: `${boss.label} げきムズ`,
+        })),
+      ]),
       bossProgress: {
         ...save.progress.bossProgress,
         [bossId]: {
@@ -243,6 +258,14 @@ export function applyBossClearReward(
         ...withLegendary.progress,
         ownedUfos: Array.from(new Set([...withLegendary.progress.ownedUfos, specialUfoId])),
         equippedUfoId: withLegendary.progress.equippedUfoId ?? specialUfoId,
+        collectionRecords: addCollectionRecords(withLegendary.progress.collectionRecords, [
+          {
+            kind: 'ufo',
+            id: specialUfoId,
+            acquiredAt: clearedAt,
+            method: '全ボスげきムズ',
+          },
+        ]),
       },
     },
     firstClear,

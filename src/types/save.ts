@@ -85,6 +85,7 @@ export type ProgressData = {
   }
   rocketBestDistance: number
   rocketBadges: string[]
+  collectionRecords: CollectionRecord[]
   ownedTreasureItems: CollectionRecord[]
   treasureKeys: Record<string, KeyInventoryEntry>
 }

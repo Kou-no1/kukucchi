@@ -26,6 +26,7 @@ import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
+import { rocketBadges } from '../data/rocketBadges'
 import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
 import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
@@ -36,6 +37,7 @@ import {
   isDifficultyUnlocked,
 } from '../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
+import { collectionRecordId } from '../game-engine/collection/collectionRecords'
 import {
   createSeededRandom,
   getTreasurePoolForChest,
@@ -367,7 +369,7 @@ describe('mastery, review, missions, and storage', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(6)
+    expect(migrated.version).toBe(7)
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
@@ -375,11 +377,12 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
+    expect(migrated.progress.collectionRecords).toEqual([])
     expect(migrated.progress.ownedTreasureItems).toEqual([])
     expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
   })
 
-  it('migrates v4 save data into v6 and removes time-only monsters', () => {
+  it('migrates v4 save data into v7 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -411,11 +414,12 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(6)
+    expect(migrated.version).toBe(7)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
+    expect(migrated.progress.collectionRecords).toEqual([])
     expect(migrated.progress.ownedTreasureItems).toEqual([])
     expect(migrated.progress.treasureKeys.bronze.count).toBe(0)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
@@ -503,6 +507,13 @@ describe('mastery, review, missions, and storage', () => {
     expect(new Set(getTreasurePoolForChest('star-chest').map((item) => item.theme))).toEqual(
       new Set(themes),
     )
+  })
+
+  it('sets the final rocket badge milestone to 900m', () => {
+    expect(rocketBadges.at(-1)).toMatchObject({
+      id: 'rocket-cosmos',
+      distance: 900,
+    })
   })
 
   it('calculates book collection progress by tab and overall', () => {
@@ -606,6 +617,11 @@ describe('mastery, review, missions, and storage', () => {
     expect(first.firstClear).toBe(true)
     expect(first.rewardItemIds).toEqual([boss.rewards.normal.itemId])
     expect(first.rewardTitles).toContain(boss.rewards.normal.title)
+    expect(first.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('boss-item', boss.rewards.normal.itemId ?? ''),
+      }),
+    )
     expect(second.firstClear).toBe(false)
     expect(second.rewardItemIds).toEqual([])
     expect(second.rewardTitles).toEqual([])
@@ -626,6 +642,11 @@ describe('mastery, review, missions, and storage', () => {
     expect(first.rewardUfoIds).toEqual([ufo.id])
     expect(first.rewardTitles).toContain(boss.rewards.gekimuzu.title)
     expect(first.save.progress.ownedUfos).toContain(ufo.id)
+    expect(first.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('ufo', ufo.id),
+      }),
+    )
     expect(second.firstClear).toBe(false)
     expect(second.rewardUfoIds).toEqual([])
   })
@@ -643,6 +664,11 @@ describe('mastery, review, missions, and storage', () => {
     expect(finalClear.rewardUfoIds).toContain(specialUfoId)
     expect(finalClear.rewardTitles).toContain('すべてをしるもの')
     expect(finalClear.save.progress.ownedUfos).toContain(specialUfoId)
+    expect(finalClear.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('ufo', specialUfoId),
+      }),
+    )
 
     const repeat = applyBossClearReward(finalClear.save, finalBoss.id, 'gekimuzu', 7000)
     expect(repeat.grandReward).toBe(false)
