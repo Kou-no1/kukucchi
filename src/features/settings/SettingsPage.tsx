@@ -10,12 +10,17 @@ import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
 
+const teacherSettingsCode = '9631'
+
 export function SettingsPage() {
   const { saveData, setSaveData, updateSaveData, resetSaveData } = useSaveData()
   const [importText, setImportText] = useState('')
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [shipNameInput, setShipNameInput] = useState(saveData.player?.shipName ?? defaultShipName)
   const [shipNameMessage, setShipNameMessage] = useState('かな5もじまで')
+  const [teacherUnlocked, setTeacherUnlocked] = useState(false)
+  const [teacherCodeInput, setTeacherCodeInput] = useState('')
+  const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
   const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
 
@@ -37,6 +42,17 @@ export function SettingsPage() {
         dailyBudgetMinutes,
       },
     }))
+  }
+
+  function unlockTeacherSettings() {
+    if (teacherCodeInput === teacherSettingsCode) {
+      setTeacherUnlocked(true)
+      setTeacherMessage('ひらきました')
+      setTeacherCodeInput('')
+      return
+    }
+    setTeacherMessage('せんせいに きいてね')
+    setTeacherCodeInput('')
   }
 
   function updateIcon(icon: string) {
@@ -230,23 +246,56 @@ export function SettingsPage() {
       <details className="settings-section">
         <summary>せんせい・ほごしゃ</summary>
         <div className="teacher-settings-panel">
-          <h2>1日のじかん</h2>
-          <p className="quiet-text">
-            じかんをすぎても あそべます。コインとEXPだけ とまります。
-          </p>
-          <div className="segmented budget-segmented" aria-label="1日のじかん">
-            {DAILY_BUDGET_OPTIONS.map((minutes) => (
-              <button
-                className={saveData.settings.dailyBudgetMinutes === minutes ? 'selected' : ''}
-                key={minutes}
-                type="button"
-                onClick={() => updateDailyBudget(minutes)}
-                aria-pressed={saveData.settings.dailyBudgetMinutes === minutes}
-              >
-                {minutes === 0 ? 'オフ' : `${minutes}分`}
+          {!teacherUnlocked ? (
+            <div className="teacher-lock-panel">
+              <p className="quiet-text">
+                ここは せんせい・ほごしゃが つかいます。
+              </p>
+              <label>
+                せんせいコード
+                <input
+                  value={teacherCodeInput}
+                  inputMode="numeric"
+                  maxLength={4}
+                  onChange={(event) =>
+                    setTeacherCodeInput(event.target.value.replace(/\D/g, '').slice(0, 4))
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      unlockTeacherSettings()
+                    }
+                  }}
+                  aria-describedby="teacher-code-help"
+                />
+              </label>
+              <p className="form-help" id="teacher-code-help">
+                {teacherMessage}
+              </p>
+              <button className="secondary-action wide" type="button" onClick={unlockTeacherSettings}>
+                ひらく
               </button>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="teacher-budget-panel">
+              <h2>1日のじかん</h2>
+              <p className="quiet-text">
+                じかんをすぎても あそべます。コインとEXPだけ とまります。
+              </p>
+              <div className="segmented budget-segmented" aria-label="1日のじかん">
+                {DAILY_BUDGET_OPTIONS.map((minutes) => (
+                  <button
+                    className={saveData.settings.dailyBudgetMinutes === minutes ? 'selected' : ''}
+                    key={minutes}
+                    type="button"
+                    onClick={() => updateDailyBudget(minutes)}
+                    aria-pressed={saveData.settings.dailyBudgetMinutes === minutes}
+                  >
+                    {minutes === 0 ? 'オフ' : `${minutes}分`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </details>
 

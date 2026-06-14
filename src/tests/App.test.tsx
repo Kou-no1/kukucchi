@@ -37,6 +37,22 @@ describe('app flow', () => {
     expect(sound).not.toBeChecked()
   })
 
+  it('keeps school time budget behind a teacher code', async () => {
+    const user = await completeOnboarding()
+    await user.click(screen.getAllByRole('link', { name: 'せってい' })[0])
+    expect(await screen.findByRole('heading', { name: 'せってい' })).toBeInTheDocument()
+    await user.click(screen.getByText('せんせい・ほごしゃ'))
+    expect(screen.getByLabelText('せんせいコード')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'オフ' })).not.toBeInTheDocument()
+
+    await user.type(screen.getByLabelText('せんせいコード'), '9631')
+    await user.click(screen.getByRole('button', { name: 'ひらく' }))
+    expect(await screen.findByRole('button', { name: 'オフ' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '10分' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '15分' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '20分' })).toBeInTheDocument()
+  })
+
   it('hides learning level setup and reflects player icon changes on home', async () => {
     const user = userEvent.setup()
     render(<App />)

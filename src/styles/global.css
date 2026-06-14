@@ -5348,6 +5348,12 @@ legend {
   padding-top: 8px;
 }
 
+.teacher-lock-panel,
+.teacher-budget-panel {
+  display: grid;
+  gap: 10px;
+}
+
 .teacher-settings-panel h2 {
   margin: 0;
 }
