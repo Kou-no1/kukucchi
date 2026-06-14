@@ -19,6 +19,7 @@ import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdvancedQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -71,6 +72,7 @@ function categorySpriteName(category: AdvancedCategory) {
 export function AdvancedPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const { rewardBudgetReached } = useDailyUsage()
   const [phase, setPhase] = useState<AdvancedPhase>('ready')
   const [category, setCategory] = useState<AdvancedCategory>('mixed')
   const [question, setQuestion] = useState<Question>(() => generateAdvancedQuestion('mixed'))
@@ -131,7 +133,9 @@ export function AdvancedPage() {
       },
       finishedAt: new Date().toISOString(),
     })
-    const applied = applySessionResult(saveData, rawSummary)
+    const applied = applySessionResult(saveData, rawSummary, {
+      rewardBudgetPaused: rewardBudgetReached,
+    })
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
   }

@@ -11,6 +11,7 @@ import { averageStageDifficulty } from '../../game-engine/questions/factDifficul
 import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -36,6 +37,7 @@ function stageStars(stage: number): string {
 export function SpeedPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData, updateSaveData } = useSaveData()
+  const { rewardBudgetReached } = useDailyUsage()
   const savedSpeedSettings = saveData.progress.speedSettings
   const initialStages =
     savedSpeedSettings.selectedStages.length > 0
@@ -95,10 +97,12 @@ export function SpeedPage() {
       results,
       finishedAt: new Date().toISOString(),
     })
-    const applied = applySessionResult(saveData, rawSummary)
+    const applied = applySessionResult(saveData, rawSummary, {
+      rewardBudgetPaused: rewardBudgetReached,
+    })
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
-  }, [navigate, phase, results, saveData, scoreState.maxCombo, scoreState.score, setSaveData])
+  }, [navigate, phase, results, rewardBudgetReached, saveData, scoreState.maxCombo, scoreState.score, setSaveData])
 
   useEffect(() => {
     if (phase !== 'running') {

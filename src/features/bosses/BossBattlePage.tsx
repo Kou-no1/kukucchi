@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
 import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
@@ -28,6 +29,7 @@ import {
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -78,6 +80,7 @@ function formatSeconds(milliseconds: number): string {
 export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advanced' }) {
   const { bossId } = useParams()
   const { saveData, setSaveData } = useSaveData()
+  const { rewardBudgetReached, shouldShowNotice } = useDailyUsage()
   const [phase, setPhase] = useState<BossPhase>('select')
   const [activeBoss, setActiveBoss] = useState<BossDefinition | null>(null)
   const [activeDifficulty, setActiveDifficulty] = useState<BossDifficulty | null>(null)
@@ -89,6 +92,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   const [damage, setDamage] = useState(0)
   const [timeLeftMs, setTimeLeftMs] = useState(0)
   const [battleResult, setBattleResult] = useState<BossBattleResult | null>(null)
+  const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
   const questionStartedAtRef = useRef(Date.now())
   const battleStartedAtRef = useRef(Date.now())
 
@@ -123,10 +127,14 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         results: nextResults,
         finishedAt: new Date().toISOString(),
       })
-      const applied = applySessionResult(saveData, rawSummary)
+      const applied = applySessionResult(saveData, rawSummary, {
+        rewardBudgetPaused: rewardBudgetReached,
+      })
       const cleared = nextDamage >= difficulty.hp
       const reward = cleared
-        ? applyBossClearReward(applied.save, boss.id, difficulty.id, elapsedMs)
+        ? applyBossClearReward(applied.save, boss.id, difficulty.id, elapsedMs, undefined, {
+            rewardBudgetPaused: rewardBudgetReached,
+          })
         : {
             save: applied.save,
             firstClear: false,
@@ -150,7 +158,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
       })
       setPhase('result')
     },
-    [saveData, setSaveData],
+    [rewardBudgetReached, saveData, setSaveData],
   )
 
   const recordAnswer = useCallback(
@@ -234,6 +242,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     setActiveDifficulty(difficulty)
     setQuestion(null)
     setBattleResult(null)
+    setBudgetNoticeDismissed(false)
     setPhase('ready')
   }
 
@@ -247,6 +256,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     setScoreState({ score: 0, combo: 0, maxCombo: 0 })
     setDamage(0)
     setBattleResult(null)
+    setBudgetNoticeDismissed(false)
     battleStartedAtRef.current = Date.now()
     setPhase('running')
     nextQuestion(boss, difficulty, 0)
@@ -395,6 +405,10 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             </button>
           </div>
         </section>
+        <DailyBudgetNoticeModal
+          open={rewardBudgetReached && shouldShowNotice && !budgetNoticeDismissed}
+          onDismiss={() => setBudgetNoticeDismissed(true)}
+        />
       </AppShell>
     )
   }

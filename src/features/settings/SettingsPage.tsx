@@ -6,6 +6,7 @@ import { TutorialModal } from '../../components/common/TutorialModal'
 import { playerIcons } from '../../data/playerIcons'
 import { defaultShipName, normalizeShipNameInput, validateShipName } from '../../data/shipName'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
+import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine/school/dailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
 
@@ -24,6 +25,16 @@ export function SettingsPage() {
       settings: {
         ...current.settings,
         [key]: !current.settings[key],
+      },
+    }))
+  }
+
+  function updateDailyBudget(dailyBudgetMinutes: DailyBudgetMinutes) {
+    updateSaveData((current) => ({
+      ...current,
+      settings: {
+        ...current.settings,
+        dailyBudgetMinutes,
       },
     }))
   }
@@ -215,6 +226,29 @@ export function SettingsPage() {
           アニメーション軽減
         </label>
       </section>
+
+      <details className="settings-section">
+        <summary>せんせい・ほごしゃ</summary>
+        <div className="teacher-settings-panel">
+          <h2>1日のじかん</h2>
+          <p className="quiet-text">
+            じかんをすぎても あそべます。コインとEXPだけ とまります。
+          </p>
+          <div className="segmented budget-segmented" aria-label="1日のじかん">
+            {DAILY_BUDGET_OPTIONS.map((minutes) => (
+              <button
+                className={saveData.settings.dailyBudgetMinutes === minutes ? 'selected' : ''}
+                key={minutes}
+                type="button"
+                onClick={() => updateDailyBudget(minutes)}
+                aria-pressed={saveData.settings.dailyBudgetMinutes === minutes}
+              >
+                {minutes === 0 ? 'オフ' : `${minutes}分`}
+              </button>
+            ))}
+          </div>
+        </div>
+      </details>
 
       <section className="settings-section" aria-labelledby="backup-title">
         <h2 id="backup-title">データ</h2>

@@ -4,6 +4,7 @@ import type { OnboardingInput, SaveData } from '../types/save'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
 import { coerceShipName, defaultShipName } from '../data/shipName'
+import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
 
 export const SAVE_DATA_VERSION = 9
 
@@ -73,6 +74,7 @@ export function createDefaultSaveData(): SaveData {
       soundEnabled: true,
       speechEnabled: true,
       reduceMotion: false,
+      dailyBudgetMinutes: DEFAULT_DAILY_BUDGET_MINUTES,
     },
     progress: {
       facts: {},
@@ -126,6 +128,7 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
       soundEnabled: input.soundEnabled,
       speechEnabled: true,
       reduceMotion: false,
+      dailyBudgetMinutes: DEFAULT_DAILY_BUDGET_MINUTES,
     },
   }
 }

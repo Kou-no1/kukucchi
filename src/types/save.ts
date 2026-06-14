@@ -3,6 +3,7 @@ import type {
   LearningLevel,
   MultiplicationFactProgress,
 } from './game'
+import type { DailyBudgetMinutes } from '../game-engine/school/dailyUsage'
 
 export type PlayerData = {
   nickname: string
@@ -22,6 +23,7 @@ export type SettingsData = {
   soundEnabled: boolean
   speechEnabled: boolean
   reduceMotion: boolean
+  dailyBudgetMinutes: DailyBudgetMinutes
 }
 
 export type BestRecord = {

@@ -7,6 +7,7 @@ import { addCollectionRecords } from '../game-engine/collection/collectionRecord
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
 import { judgeNewTitles } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
+import { applyRewardBudgetToSummary } from '../game-engine/school/dailyUsage'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
 
@@ -42,11 +43,16 @@ function extractCategoryKey(result: AnswerResult): string | null {
 export function applySessionResult(
   save: SaveData,
   summary: GameSessionSummary,
+  options: { rewardBudgetPaused?: boolean } = {},
 ): { save: SaveData; summary: GameSessionSummary } {
+  const effectiveSummary = applyRewardBudgetToSummary(
+    summary,
+    options.rewardBudgetPaused === true,
+  )
   const facts = { ...save.progress.facts }
   const previousMasteredIds = new Set(getMasteredFacts(save.progress.facts).map((fact) => fact.id))
 
-  for (const result of summary.results) {
+  for (const result of effectiveSummary.results) {
     const fact = extractFact(result)
     if (!fact) {
       continue
@@ -55,7 +61,7 @@ export function applySessionResult(
     facts[result.questionId] = updateFactProgress(current, result)
   }
   const categoryCorrect = { ...save.progress.categoryCorrect }
-  for (const result of summary.results) {
+  for (const result of effectiveSummary.results) {
     if (!result.correct) {
       continue
     }
@@ -69,8 +75,8 @@ export function applySessionResult(
     categoryCorrect,
   )
 
-  const best = save.progress.bests[summary.mode]
-  const bestUpdated = !best || summary.score > best.score
+  const best = save.progress.bests[effectiveSummary.mode]
+  const bestUpdated = !best || effectiveSummary.score > best.score
   const interimSave: SaveData = {
     ...save,
     progress: {
@@ -79,9 +85,9 @@ export function applySessionResult(
       categoryCorrect,
     },
   }
-  const newTitles = judgeNewTitles(summary, interimSave)
+  const newTitles = judgeNewTitles(effectiveSummary, interimSave)
   const titles = Array.from(new Set([...(save.player?.titles ?? []), ...newTitles]))
-  const nextExp = (save.player?.exp ?? 0) + summary.earnedExp
+  const nextExp = (save.player?.exp ?? 0) + effectiveSummary.earnedExp
   const monsterBook = Array.from(
     new Set([
       ...save.progress.monsterBook,
@@ -97,13 +103,13 @@ export function applySessionResult(
       ...newlyMasteredFacts.map((fact) => ({
         kind: 'monster',
         id: fact.id,
-        acquiredAt: summary.finishedAt,
+        acquiredAt: effectiveSummary.finishedAt,
         method: 'にがてふくしゅう',
       })),
       ...newlyOwnedAdvanced.map((monster) => ({
         kind: 'advanced-monster',
         id: monster.id,
-        acquiredAt: summary.finishedAt,
+        acquiredAt: effectiveSummary.finishedAt,
         method: `${monster.category === 'square' ? '平方数' : monster.category === 'pi' ? '3.14' : 'ミックス'} ${monster.threshold}もん`,
       })),
     ],
@@ -111,19 +117,19 @@ export function applySessionResult(
   const missions = save.progress.missions.map((mission) => {
     let gained = 0
     if (mission.kind === 'correct-count') {
-      gained = summary.correctCount
+      gained = effectiveSummary.correctCount
     }
     if (mission.kind === 'combo') {
-      gained = summary.maxCombo
+      gained = effectiveSummary.maxCombo
     }
-    if (mission.kind === 'speed-play' && summary.mode === 'speed') {
+    if (mission.kind === 'speed-play' && effectiveSummary.mode === 'speed') {
       gained = 1
     }
     if (mission.kind === 'stage-practice') {
       const match = mission.id.match(/stage-(\d+)/)
       const stage = match?.[1]
       gained = stage
-        ? summary.results.filter(
+        ? effectiveSummary.results.filter(
             (result) => result.correct && result.questionId.startsWith(`${stage}x`),
           ).length
         : 0
@@ -143,10 +149,10 @@ export function applySessionResult(
           ...save.player,
           exp: nextExp,
           level: expToLevel(nextExp),
-          coins: save.player.coins + summary.earnedCoins,
+          coins: save.player.coins + effectiveSummary.earnedCoins,
           titles,
           currentTitle: titles.at(-1) ?? save.player.currentTitle,
-          lastPlayedAt: summary.finishedAt,
+          lastPlayedAt: effectiveSummary.finishedAt,
         }
       : save.player,
     progress: {
@@ -155,24 +161,24 @@ export function applySessionResult(
       categoryCorrect,
       history: [
         {
-          id: summary.id,
-          mode: summary.mode,
-          correctCount: summary.correctCount,
-          totalQuestions: summary.totalQuestions,
-          averageResponseTimeMs: summary.averageResponseTimeMs,
-          score: summary.score,
-          playedAt: summary.finishedAt,
+          id: effectiveSummary.id,
+          mode: effectiveSummary.mode,
+          correctCount: effectiveSummary.correctCount,
+          totalQuestions: effectiveSummary.totalQuestions,
+          averageResponseTimeMs: effectiveSummary.averageResponseTimeMs,
+          score: effectiveSummary.score,
+          playedAt: effectiveSummary.finishedAt,
         },
         ...save.progress.history,
       ].slice(0, 50),
       bests: bestUpdated
         ? {
             ...save.progress.bests,
-            [summary.mode]: {
-              score: summary.score,
-              averageResponseTimeMs: summary.averageResponseTimeMs,
-              accuracy: summary.accuracy,
-              achievedAt: summary.finishedAt,
+            [effectiveSummary.mode]: {
+              score: effectiveSummary.score,
+              averageResponseTimeMs: effectiveSummary.averageResponseTimeMs,
+              accuracy: effectiveSummary.accuracy,
+              achievedAt: effectiveSummary.finishedAt,
             },
           }
         : save.progress.bests,
@@ -185,7 +191,7 @@ export function applySessionResult(
   return {
     save: nextSave,
     summary: {
-      ...summary,
+      ...effectiveSummary,
       newTitles,
       bestUpdated,
       weakFacts: getMonsterFacts(facts),

@@ -67,6 +67,16 @@ import {
   getTreasurePoolForChest,
   openTreasureChest,
 } from '../game-engine/treasure/treasureEngine'
+import {
+  DAILY_USAGE_STORAGE_KEY,
+  addActiveUsage,
+  applyRewardBudgetToSummary,
+  createDailyUsageState,
+  isRewardBudgetReached,
+  normalizeDailyUsageState,
+  shouldCountActiveUsage,
+  shouldShowDailyBudgetNotice,
+} from '../game-engine/school/dailyUsage'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import { applySessionResult } from '../services/resultService'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
@@ -609,9 +619,12 @@ describe('mastery, review, missions, and storage', () => {
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
+    expect(save.version).toBe(9)
+    expect(save.settings.dailyBudgetMinutes).toBe(10)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
     expect(migrated.version).toBe(9)
+    expect(migrated.settings.dailyBudgetMinutes).toBe(10)
     expect(migrated.player).toBeNull()
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
@@ -623,6 +636,162 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.collectionRecords).toEqual([])
     expect(migrated.progress.ownedTreasureItems).toEqual([])
     expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
+  })
+
+  it('tracks daily active usage with idle, background, session accumulation, and midnight reset', () => {
+    const morning = new Date('2026-01-01T09:00:00')
+    const usage = createDailyUsageState(morning)
+    const firstSession = addActiveUsage(usage, 90_000, morning)
+    const secondSession = addActiveUsage(firstSession, 30_000, morning)
+    expect(secondSession.usedMs).toBe(120_000)
+    expect(isRewardBudgetReached(10, secondSession)).toBe(false)
+    expect(isRewardBudgetReached(0, { ...secondSession, usedMs: 999_999 })).toBe(false)
+
+    expect(
+      shouldCountActiveUsage({
+        visible: true,
+        focused: true,
+        lastActivityAt: 1_000,
+        now: 50_000,
+      }),
+    ).toBe(true)
+    expect(
+      shouldCountActiveUsage({
+        visible: true,
+        focused: true,
+        lastActivityAt: 1_000,
+        now: 70_000,
+      }),
+    ).toBe(false)
+    expect(
+      shouldCountActiveUsage({
+        visible: false,
+        focused: true,
+        lastActivityAt: 69_000,
+        now: 70_000,
+      }),
+    ).toBe(false)
+    expect(
+      shouldCountActiveUsage({
+        visible: true,
+        focused: false,
+        lastActivityAt: 69_000,
+        now: 70_000,
+      }),
+    ).toBe(false)
+
+    const nextDay = normalizeDailyUsageState(secondSession, new Date('2026-01-02T00:01:00'))
+    expect(nextDay.usedMs).toBe(0)
+    expect(nextDay.date).toBe('2026-01-02')
+
+    const futureDated = normalizeDailyUsageState(
+      { date: '2026-01-03', usedMs: 45_000, noticeShownDate: null },
+      new Date('2026-01-02T10:00:00'),
+    )
+    expect(futureDated.usedMs).toBe(45_000)
+    expect(futureDated.date).toBe('2026-01-03')
+  })
+
+  it('pauses coins and exp after the daily budget while preserving records', () => {
+    const save = createSaveWithPlayer()
+    const summary: GameSessionSummary = {
+      id: 'budget-test',
+      mode: 'advanced',
+      totalQuestions: 3,
+      correctCount: 3,
+      accuracy: 100,
+      averageResponseTimeMs: 1200,
+      maxCombo: 3,
+      score: 400,
+      earnedCoins: 30,
+      earnedExp: 60,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      details: {
+        advancedCategoryRates: ['平方数 100%'],
+      },
+      results: [
+        result({
+          questionId: 'square-11',
+          prompt: '11 × 11',
+          expectedAnswer: 121,
+          givenAnswer: 121,
+          difficulty: 4,
+        }),
+        result({
+          questionId: 'square-12',
+          prompt: '12 × 12',
+          expectedAnswer: 144,
+          givenAnswer: 144,
+          difficulty: 4,
+        }),
+        result({
+          questionId: 'square-13',
+          prompt: '13 × 13',
+          expectedAnswer: 169,
+          givenAnswer: 169,
+          difficulty: 4,
+        }),
+      ],
+      finishedAt: '2026-01-04T00:00:00.000Z',
+    }
+    const applied = applySessionResult(save, summary, { rewardBudgetPaused: true })
+    expect(applied.summary.earnedCoins).toBe(0)
+    expect(applied.summary.earnedExp).toBe(0)
+    expect(applied.summary.details?.rewardBudgetPaused).toBe(true)
+    expect(applied.save.player?.coins).toBe(0)
+    expect(applied.save.player?.exp).toBe(0)
+    expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
+    expect(applied.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('advanced-monster', 'square-2'),
+      }),
+    )
+  })
+
+  it('keeps daily usage outside save-data backups and shows the budget notice once', () => {
+    const reached = {
+      date: '2026-01-01',
+      usedMs: 600_000,
+      noticeShownDate: null,
+    }
+    expect(shouldShowDailyBudgetNotice(10, reached)).toBe(true)
+    expect(
+      shouldShowDailyBudgetNotice(10, {
+        ...reached,
+        noticeShownDate: '2026-01-01',
+      }),
+    ).toBe(false)
+    expect(applyRewardBudgetToSummary({
+      id: 'budget-summary',
+      mode: 'speed',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 4,
+      earnedExp: 8,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [result({ questionId: '2x2' })],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }, true)).toMatchObject({
+      earnedCoins: 0,
+      earnedExp: 0,
+      details: {
+        rewardBudgetPaused: true,
+      },
+    })
+    const backup = JSON.stringify(createDefaultSaveData())
+    expect(backup).not.toContain(DAILY_USAGE_STORAGE_KEY)
+    expect(backup).not.toContain('usedMs')
+    expect(backup).not.toContain('noticeShownDate')
   })
 
   it('validates spaceship names and migrates legacy saves with a default ship name', () => {

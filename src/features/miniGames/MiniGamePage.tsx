@@ -21,6 +21,7 @@ import { generateMultiplicationQuestion } from '../../game-engine/questions/ques
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { openTreasureChest } from '../../game-engine/treasure/treasureEngine'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -104,6 +105,7 @@ function monsterFactFromQuestion(question: Question): { left: number; right: num
 export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const { rewardBudgetReached } = useDailyUsage()
   const config = gameConfig[variant]
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [phase, setPhase] = useState<MiniGamePhase>('ready')
@@ -238,7 +240,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         earnedCoins: rawSummary.earnedCoins + (options.treasureBonusCoins ?? 0),
         details,
       }
-      const applied = applySessionResult(saveData, summary)
+      const applied = applySessionResult(saveData, summary, {
+        rewardBudgetPaused: rewardBudgetReached,
+      })
       let nextSave = applied.save
       let nextSummary = applied.summary
       if (variant === 'rocket') {
@@ -319,7 +323,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [distance, earnedKeyIds, enemyHp, hearts, keys, navigate, results, saveData, scoreState, setSaveData, specialUses, variant],
+    [distance, earnedKeyIds, enemyHp, hearts, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
   )
 
   const recordAnswer = useCallback(

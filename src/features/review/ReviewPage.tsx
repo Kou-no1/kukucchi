@@ -16,6 +16,7 @@ import {
 } from '../../game-engine/review/weakFacts'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -27,6 +28,7 @@ const reviewGoal = 6
 export function ReviewPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const { rewardBudgetReached } = useDailyUsage()
   const reviewQueue = useMemo(
     () => getReviewQueue(saveData.progress.facts, new Date(), reviewGoal),
     [saveData.progress.facts],
@@ -76,7 +78,9 @@ export function ReviewPage() {
       results: nextResults,
       finishedAt: new Date().toISOString(),
     })
-    const applied = applySessionResult(saveData, rawSummary)
+    const applied = applySessionResult(saveData, rawSummary, {
+      rewardBudgetPaused: rewardBudgetReached,
+    })
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
   }

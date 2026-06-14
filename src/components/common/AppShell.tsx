@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 
 export function AppShell({
   children,
@@ -15,6 +16,7 @@ export function AppShell({
   rightAction?: ReactNode
 }) {
   const location = useLocation()
+  const { rewardBudgetReached } = useDailyUsage()
   const showBack = location.pathname !== '/home'
 
   return (
@@ -29,7 +31,12 @@ export function AppShell({
             く
           </span>
         )}
-        <h1>{title}</h1>
+        <div className="top-bar-title">
+          <h1>{title}</h1>
+          {rewardBudgetReached ? (
+            <span className="reward-budget-chip">きょうの ごほうびは おしまい</span>
+          ) : null}
+        </div>
         {rightAction ?? (
           <Link className="icon-button" to="/settings" aria-label="せってい">
             ⚙

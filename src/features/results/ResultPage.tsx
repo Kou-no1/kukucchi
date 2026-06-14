@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
 import { expProgressToNextLevel, expToLevel } from '../../game-engine/rewards/rewards'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { GameSessionSummary } from '../../types/game'
 
@@ -152,7 +155,15 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
 export function ResultPage() {
   const location = useLocation()
   const { saveData } = useSaveData()
+  const { budgetMinutes, shouldShowNotice } = useDailyUsage()
   const summary = (location.state as { summary?: GameSessionSummary } | null)?.summary
+  const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
+  const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
+  const budgetNoticeOpen = rewardBudgetPaused && shouldShowNotice && !budgetNoticeDismissed
+
+  function closeBudgetNotice() {
+    setBudgetNoticeDismissed(true)
+  }
 
   if (!summary) {
     return (
@@ -185,6 +196,13 @@ export function ResultPage() {
           {levelUp ? <strong className="best-badge">レベルアップ！</strong> : null}
         </div>
       </section>
+
+      {rewardBudgetPaused ? (
+        <section className="reward-paused-card" aria-live="polite">
+          <strong>{budgetMinutes}分 たったよ</strong>
+          <span>このあとは コインとけいけんちは たまらないよ</span>
+        </section>
+      ) : null}
 
       <section className="stats-row result-stats" aria-label="結果">
         <StatPill label="正答率" value={`${summary.accuracy}%`} />
@@ -261,6 +279,7 @@ export function ResultPage() {
           ホームへ
         </Link>
       </section>
+      <DailyBudgetNoticeModal open={budgetNoticeOpen} onDismiss={closeBudgetNotice} />
     </AppShell>
   )
 }

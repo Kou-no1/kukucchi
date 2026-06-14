@@ -140,6 +140,7 @@ export function applyBossClearReward(
   difficulty: BossDifficultyId,
   elapsedMs: number,
   clearedAt = new Date().toISOString(),
+  options: { rewardBudgetPaused?: boolean } = {},
 ): {
   save: SaveData
   firstClear: boolean
@@ -183,7 +184,7 @@ export function applyBossClearReward(
       ...save.player,
       titles: Array.from(new Set([...save.player.titles, ...rewardTitles])),
       currentTitle: rewardTitles.at(-1) ?? save.player.currentTitle,
-      coins: save.player.coins + (firstClear ? 0 : 12),
+      coins: save.player.coins + (firstClear || options.rewardBudgetPaused ? 0 : 12),
     },
     progress: {
       ...save.progress,

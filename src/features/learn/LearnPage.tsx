@@ -15,6 +15,7 @@ import {
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound, speakJapanese } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
@@ -85,6 +86,7 @@ function createLearnQuestion(
 export function LearnPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const { rewardBudgetReached } = useDailyUsage()
   const [phase, setPhase] = useState<LearnPhase>('ready')
   const [learnKind, setLearnKind] = useState<LearnKind>('kuku')
   const [stage, setStage] = useState(2)
@@ -223,7 +225,9 @@ export function LearnPage() {
       results,
       finishedAt: new Date().toISOString(),
     })
-    const applied = applySessionResult(saveData, rawSummary)
+    const applied = applySessionResult(saveData, rawSummary, {
+      rewardBudgetPaused: rewardBudgetReached,
+    })
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
   }
