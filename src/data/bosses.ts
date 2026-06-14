@@ -142,7 +142,7 @@ export const bosses: BossDefinition[] = [
     group: 'advanced',
     label: '平方数ボス',
     shortLabel: '平方数',
-    emoji: '🔷',
+    emoji: '□',
     description: '11×11から20×20までの星を守る高学年ボス。',
     advancedCategory: 'square',
     difficultyOverrides: {
@@ -158,7 +158,7 @@ export const bosses: BossDefinition[] = [
     group: 'advanced',
     label: '円周率ボス',
     shortLabel: '3.14',
-    emoji: '🌀',
+    emoji: 'π',
     description: '3.14計算を使いこなすと出会える高学年ボス。',
     advancedCategory: 'pi',
     difficultyOverrides: {

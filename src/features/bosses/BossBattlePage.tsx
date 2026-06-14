@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
+import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
@@ -9,6 +10,7 @@ import { bossDifficultyIds, bosses, getBossDifficulty, getBossLimitedItem } from
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
 import { applyBossClearReward, getClearedStars, getDifficultyProgress, isBossUnlocked, isDifficultyUnlocked } from '../../game-engine/bosses/bossEngine'
+import { advancedBossVariantForBossId } from '../../game-engine/collection/advancedPixelSprites'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import {
@@ -234,6 +236,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   if (phase === 'running' && activeBoss && activeDifficulty && question) {
     const limitMs = activeDifficulty.timeLimitSeconds ? activeDifficulty.timeLimitSeconds * 1000 : 0
     const timePercent = limitMs ? Math.max(0, Math.round((timeLeftMs / limitMs) * 100)) : 100
+    const activeBossVariant = advancedBossVariantForBossId(activeBoss.id)
     return (
       <AppShell
         title={activeBoss.label}
@@ -242,8 +245,17 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
       >
         <section className="boss-arena" aria-labelledby="boss-question">
           <div className="boss-hud">
-            <strong>
-              {activeBoss.emoji} HP {Math.max(0, activeDifficulty.hp - damage)}/{activeDifficulty.hp}
+            <strong className="boss-hud-title">
+              {activeBossVariant ? (
+                <AdvancedBossSprite
+                  variant={activeBossVariant}
+                  compact
+                  className="boss-hud-sprite"
+                />
+              ) : (
+                <span aria-hidden="true">{activeBoss.emoji}</span>
+              )}
+              HP {Math.max(0, activeDifficulty.hp - damage)}/{activeDifficulty.hp}
             </strong>
             <span>
               {questionIndex + 1}/{activeDifficulty.questionCount}
@@ -348,6 +360,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         {visibleBosses.map((boss) => {
           const unlocked = isBossUnlocked(boss, saveData)
           const clearedStars = getClearedStars(saveData, boss.id)
+          const bossVariant = advancedBossVariantForBossId(boss.id)
           const rewardUfo = getUfoForBoss(boss.id)
           const ownsRewardUfo = rewardUfo
             ? saveData.progress.ownedUfos.includes(rewardUfo.id)
@@ -355,9 +368,17 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
           return (
             <article className={unlocked ? 'boss-card' : 'boss-card locked'} key={boss.id}>
               <span className="boss-no">No.{String(boss.no).padStart(2, '0')}</span>
-              <span className="boss-emoji" aria-hidden="true">
-                {unlocked ? boss.emoji : '◆'}
-              </span>
+              {bossVariant ? (
+                <AdvancedBossSprite
+                  variant={bossVariant}
+                  locked={!unlocked}
+                  className="boss-card-sprite"
+                />
+              ) : (
+                <span className="boss-emoji" aria-hidden="true">
+                  {unlocked ? boss.emoji : '◆'}
+                </span>
+              )}
               <h2>{unlocked ? boss.label : '？？？'}</h2>
               <p>{unlocked ? boss.description : '条件をみたすと出会えます。'}</p>
               <strong>{'★'.repeat(clearedStars) || '未クリア'}</strong>

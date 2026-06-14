@@ -1,4 +1,5 @@
 import { bossLimitedItems, bosses, bossDifficultyIds } from '../../data/bosses'
+import { advancedMonsterDefinitions, isAdvancedMonsterOwned } from '../../data/advancedMonsters'
 import { keyTypes } from '../../data/keys'
 import { rocketBadges } from '../../data/rocketBadges'
 import { treasureItems } from '../../data/treasureItems'
@@ -45,9 +46,15 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const bossOwned = bosses.filter((boss) =>
     bossDifficultyIds.some((difficulty) => getDifficultyProgress(save, boss.id, difficulty).cleared),
   ).length
+  const advancedMonsterOwned = advancedMonsterDefinitions.filter((monster) =>
+    isAdvancedMonsterOwned(save.progress.categoryCorrect, monster),
+  ).length
   const tabs: Record<BookTabId, BookProgressCount> = {
     kukucchi: countPercent(countKukucchiRecords(save), kukucchiRecordTotal + rocketBadges.length),
-    monsters: countPercent(new Set(save.progress.monsterBook).size, monsterTotal),
+    monsters: countPercent(
+      new Set(save.progress.monsterBook).size + advancedMonsterOwned,
+      monsterTotal + advancedMonsterDefinitions.length,
+    ),
     ufos: countPercent(new Set(save.progress.ownedUfos).size, ufoDefinitions.length),
     treasures: countPercent(new Set(save.progress.bossItems).size + bossOwned, bossLimitedItems.length + bosses.length),
     collection: countPercent(

@@ -2,6 +2,7 @@ import {
   createFactProgress,
   updateFactProgress,
 } from '../game-engine/mastery/mastery'
+import { newlyOwnedAdvancedMonsters } from '../data/advancedMonsters'
 import { addCollectionRecords } from '../game-engine/collection/collectionRecords'
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
 import { judgeNewTitles } from '../game-engine/rewards/titles'
@@ -63,6 +64,10 @@ export function applySessionResult(
       categoryCorrect[category] = (categoryCorrect[category] ?? 0) + 1
     }
   }
+  const newlyOwnedAdvanced = newlyOwnedAdvancedMonsters(
+    save.progress.categoryCorrect,
+    categoryCorrect,
+  )
 
   const best = save.progress.bests[summary.mode]
   const bestUpdated = !best || summary.score > best.score
@@ -88,12 +93,20 @@ export function applySessionResult(
   )
   const collectionRecords = addCollectionRecords(
     save.progress.collectionRecords,
-    newlyMasteredFacts.map((fact) => ({
-      kind: 'monster',
-      id: fact.id,
-      acquiredAt: summary.finishedAt,
-      method: 'にがてふくしゅう',
-    })),
+    [
+      ...newlyMasteredFacts.map((fact) => ({
+        kind: 'monster',
+        id: fact.id,
+        acquiredAt: summary.finishedAt,
+        method: 'にがてふくしゅう',
+      })),
+      ...newlyOwnedAdvanced.map((monster) => ({
+        kind: 'advanced-monster',
+        id: monster.id,
+        acquiredAt: summary.finishedAt,
+        method: `${monster.category === 'square' ? '平方数' : monster.category === 'pi' ? '3.14' : 'ミックス'} ${monster.threshold}もん`,
+      })),
+    ],
   )
   const missions = save.progress.missions.map((mission) => {
     let gained = 0

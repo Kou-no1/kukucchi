@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { bosses } from '../../data/bosses'
+import { advancedBossVariantForBossId } from '../../game-engine/collection/advancedPixelSprites'
 import { getClearedStars, isBossUnlocked } from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdvancedQuestion } from '../../game-engine/questions/questionGenerator'
@@ -27,6 +29,16 @@ function categoryFromQuestionId(questionId: string): string {
     return '3.14'
   }
   return '発展'
+}
+
+function categorySpriteVariant(category: AdvancedCategory) {
+  if (category === 'square') {
+    return 'square'
+  }
+  if (category === 'pi') {
+    return 'pi'
+  }
+  return 'mixed'
 }
 
 export function AdvancedPage() {
@@ -121,6 +133,11 @@ export function AdvancedPage() {
   return (
     <AppShell title="スーパー計算" backTo="/home" className="game-shell">
       <section className="advanced-command" aria-label="スーパー計算メニュー">
+        <AdvancedBossSprite
+          variant={categorySpriteVariant(category)}
+          compact
+          className="advanced-command-sprite"
+        />
         <div>
           <p className="welcome">スーパー計算</p>
           <h2>平方数と3.14を攻略</h2>
@@ -164,6 +181,7 @@ export function AdvancedPage() {
           .map((boss) => {
             const unlocked = isBossUnlocked(boss, saveData)
             const stars = getClearedStars(saveData, boss.id)
+            const bossVariant = advancedBossVariantForBossId(boss.id)
             return (
               <Link
                 className={unlocked ? 'boss-card' : 'boss-card locked'}
@@ -172,9 +190,18 @@ export function AdvancedPage() {
                 aria-disabled={!unlocked}
               >
                 <span className="boss-no">No.{boss.no}</span>
-                <span className="boss-emoji" aria-hidden="true">
-                  {unlocked ? boss.emoji : '◆'}
-                </span>
+                {bossVariant ? (
+                  <AdvancedBossSprite
+                    variant={bossVariant}
+                    locked={!unlocked}
+                    compact
+                    className="boss-card-sprite"
+                  />
+                ) : (
+                  <span className="boss-emoji" aria-hidden="true">
+                    {unlocked ? boss.emoji : '◆'}
+                  </span>
+                )}
                 <h2>{unlocked ? boss.label : '？？？'}</h2>
                 <p>{unlocked ? boss.description : 'このカテゴリで20もん正解すると解放'}</p>
                 <strong>{'★'.repeat(stars) || '未クリア'}</strong>

@@ -3024,6 +3024,20 @@ legend {
   text-shadow: 0 0 16px rgba(91, 233, 244, 0.72);
 }
 
+.advanced-command {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.advanced-command .segmented {
+  grid-column: 1 / -1;
+}
+
+.advanced-command-sprite {
+  width: clamp(64px, 14vw, 112px);
+  height: clamp(58px, 12vw, 96px);
+}
+
 .compact-book-command {
   margin-top: 12px;
   padding: 10px 12px;
@@ -3302,6 +3316,13 @@ legend {
   height: 68px;
 }
 
+.advanced-monster-sprite,
+.advanced-boss-sprite {
+  display: block;
+  justify-self: center;
+  filter: drop-shadow(0 0 12px rgba(91, 233, 244, 0.28));
+}
+
 .monster-chip-sprite {
   width: 48px;
   height: 48px;
@@ -3322,6 +3343,18 @@ legend {
   paint-order: stroke;
   stroke: rgba(7, 23, 45, 0.85);
   stroke-width: 3px;
+}
+
+.advanced-square {
+  border-color: rgba(91, 233, 244, 0.82);
+}
+
+.advanced-pi {
+  border-color: rgba(167, 139, 250, 0.82);
+}
+
+.advanced-mixed {
+  border-color: rgba(255, 216, 106, 0.82);
 }
 
 .collection-section {
@@ -3542,6 +3575,23 @@ legend {
 
 .boss-emoji {
   font-size: 2.6rem;
+}
+
+.boss-card-sprite {
+  width: 88px;
+  max-width: 100%;
+  height: 76px;
+}
+
+.boss-hud-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.boss-hud-sprite {
+  width: 42px;
+  height: 38px;
 }
 
 .boss-card h2,

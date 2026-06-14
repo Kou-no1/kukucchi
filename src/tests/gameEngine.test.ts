@@ -25,6 +25,11 @@ import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/r
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
+import {
+  advancedMonsterDefinitions,
+  isAdvancedMonsterOwned,
+  newlyOwnedAdvancedMonsters,
+} from '../data/advancedMonsters'
 import { bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
@@ -45,11 +50,17 @@ import {
   getTrophyKindForDifficulty,
 } from '../game-engine/collection/pixelSprites'
 import {
+  advancedBossVariantForBossId,
+  buildAdvancedBossSprite,
+  buildAdvancedMonsterSprite,
+} from '../game-engine/collection/advancedPixelSprites'
+import {
   createSeededRandom,
   getTreasurePoolForChest,
   openTreasureChest,
 } from '../game-engine/treasure/treasureEngine'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
+import { applySessionResult } from '../services/resultService'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
 
@@ -163,6 +174,33 @@ describe('question generation', () => {
     expect(normal.colors.accent).toBe(danPalette[2].base)
     expect(fast.colors.accent).toBe(danPalette[7].base)
     expect(getDanSpriteColors(1).outline).not.toBe(getDanSpriteColors(1).base)
+  })
+
+  it('builds deterministic high-grade companion and boss sprites', () => {
+    const square = advancedMonsterDefinitions.find((monster) => monster.category === 'square')
+    const pi = advancedMonsterDefinitions.find((monster) => monster.category === 'pi')
+    const mixed = advancedMonsterDefinitions.find((monster) => monster.category === 'mixed')
+    expect(square).toBeTruthy()
+    expect(pi).toBeTruthy()
+    expect(mixed).toBeTruthy()
+    if (!square || !pi || !mixed) {
+      return
+    }
+
+    expect(advancedMonsterDefinitions).toHaveLength(20)
+    expect(buildAdvancedMonsterSprite(square).signature).toBe(
+      buildAdvancedMonsterSprite(square).signature,
+    )
+    expect(buildAdvancedMonsterSprite(square).signature).not.toBe(
+      buildAdvancedMonsterSprite(pi).signature,
+    )
+    expect(buildAdvancedMonsterSprite(mixed).cells.length).toBeGreaterThan(20)
+    expect(buildAdvancedBossSprite('square').signature).toBe(buildAdvancedBossSprite('square').signature)
+    expect(buildAdvancedBossSprite('pi').rings.length).toBe(2)
+    expect(buildAdvancedBossSprite('mixed').cells.length).toBeGreaterThan(50)
+    expect(advancedBossVariantForBossId('boss-square')).toBe('square')
+    expect(advancedBossVariantForBossId('boss-pi')).toBe('pi')
+    expect(advancedBossVariantForBossId('boss-stage-2')).toBeNull()
   })
 
   it('generates multiplication questions with unique choices', () => {
@@ -472,6 +510,55 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.treasureKeys.bronze.count).toBe(0)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
+  })
+
+  it('unlocks high-grade companions from existing category progress and records new ones', () => {
+    const firstSquare = advancedMonsterDefinitions.find((monster) => monster.id === 'square-2')
+    expect(firstSquare).toBeTruthy()
+    if (!firstSquare) {
+      return
+    }
+    expect(isAdvancedMonsterOwned({}, firstSquare)).toBe(false)
+    expect(isAdvancedMonsterOwned({ 'multiplication-square': 3 }, firstSquare)).toBe(true)
+    expect(newlyOwnedAdvancedMonsters({}, { 'multiplication-square': 3 })).toContain(firstSquare)
+
+    const save = createSaveWithPlayer()
+    const results = Array.from({ length: 3 }, (_, index) =>
+      result({
+        questionId: `square-${11 + index}`,
+        prompt: `${11 + index} × ${11 + index}`,
+        expectedAnswer: (11 + index) ** 2,
+        givenAnswer: (11 + index) ** 2,
+        difficulty: 6,
+      }),
+    )
+    const summary: GameSessionSummary = {
+      id: 'advanced-square-test',
+      mode: 'advanced',
+      totalQuestions: results.length,
+      correctCount: results.length,
+      accuracy: 100,
+      averageResponseTimeMs: 1200,
+      maxCombo: 3,
+      score: 300,
+      earnedCoins: 9,
+      earnedExp: 54,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results,
+      finishedAt: '2026-01-03T00:00:00.000Z',
+    }
+    const applied = applySessionResult(save, summary)
+    expect(applied.save.version).toBe(7)
+    expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
+    expect(applied.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('advanced-monster', firstSquare.id),
+        acquiredAt: summary.finishedAt,
+      }),
+    )
   })
 
   it('opens treasure chests deterministically with rarity bands and no duplicate while pool remains', () => {
