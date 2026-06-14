@@ -79,6 +79,7 @@ body::after {
 
 button,
 input,
+select,
 textarea {
   font: inherit;
 }
@@ -91,6 +92,7 @@ a {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
+select:focus-visible,
 textarea:focus-visible {
   outline: 4px solid var(--sun);
   outline-offset: 4px;
@@ -210,6 +212,7 @@ a {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   min-height: 48px;
@@ -223,6 +226,16 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   color: var(--muted);
+}
+
+select {
+  cursor: pointer;
+}
+
+.form-help {
+  margin: -4px 0 0;
+  color: #fff2a8;
+  font-weight: 850;
 }
 
 textarea {
@@ -3716,23 +3729,65 @@ legend {
   bottom: 21%;
   width: 88%;
   min-height: 29%;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  padding: 7px 10px;
+  gap: 3px 4px;
+  padding: 7px 12px;
   border: 3px solid rgba(180, 220, 255, 0.78);
   border-radius: 50%;
   background: linear-gradient(180deg, #d6ebff 0%, #7694c2 58%, #526486 100%);
 }
 
 .ufo-badge-body i {
-  width: 8px;
-  height: 8px;
+  width: clamp(7px, 8%, 10px);
+  height: auto;
+  aspect-ratio: 1;
   flex: 0 0 auto;
-  border-radius: 50%;
+  justify-self: center;
+  clip-path: polygon(50% 0%, 61% 34%, 98% 34%, 68% 55%, 79% 91%, 50% 68%, 21% 91%, 32% 55%, 2% 34%, 39% 34%);
   background: #66f2ff;
   box-shadow: 0 0 12px rgba(102, 242, 255, 0.95);
+}
+
+.ufo-badge.compact .ufo-badge-body {
+  gap: 2px;
+  padding: 5px 8px;
+}
+
+.ufo-badge.compact .ufo-badge-body i {
+  width: clamp(5px, 9%, 8px);
+}
+
+.ufo-light-mark-0 {
+  background: #66f2ff !important;
+  box-shadow: 0 0 10px rgba(102, 242, 255, 0.95) !important;
+}
+
+.ufo-light-mark-1 {
+  background: #ffe36e !important;
+  box-shadow: 0 0 10px rgba(255, 227, 110, 0.95) !important;
+}
+
+.ufo-light-mark-2 {
+  background: #ff72b6 !important;
+  box-shadow: 0 0 10px rgba(255, 114, 182, 0.9) !important;
+}
+
+.ufo-light-mark-3 {
+  background: #8b65ff !important;
+  box-shadow: 0 0 10px rgba(139, 101, 255, 0.9) !important;
+}
+
+.ufo-light-mark-4 {
+  background: #76f0a8 !important;
+  box-shadow: 0 0 10px rgba(118, 240, 168, 0.9) !important;
+}
+
+.ufo-light-mark-5 {
+  background: #ff9f5f !important;
+  box-shadow: 0 0 10px rgba(255, 159, 95, 0.9) !important;
 }
 
 .ufo-badge-all .ufo-badge-dome {
@@ -3791,6 +3846,30 @@ legend {
   font-weight: 850;
 }
 
+.boss-start-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.boss-start-summary span {
+  display: grid;
+  gap: 3px;
+  min-height: 58px;
+  align-content: center;
+  padding: 8px;
+  border: 2px solid rgba(91, 233, 244, 0.34);
+  border-radius: 8px;
+  background: rgba(5, 20, 48, 0.78);
+  color: #dffcff;
+  font-weight: 900;
+  text-align: center;
+}
+
+.boss-start-summary strong {
+  color: #fff2a8;
+}
+
 .ufo-book-card {
   align-items: center;
   text-align: center;
@@ -3809,6 +3888,12 @@ legend {
   width: 124px;
   justify-self: center;
   animation: ufo-float 3.2s ease-in-out infinite;
+}
+
+.mini-battle-monster {
+  width: 92px;
+  max-width: 100%;
+  justify-self: center;
 }
 
 .ufo-celebration {
@@ -4462,6 +4547,139 @@ legend {
 
 .game-shell .key-button {
   min-height: clamp(44px, 8dvh, 62px);
+}
+
+.learn-game-shell main {
+  gap: clamp(4px, 0.8dvh, 7px);
+}
+
+.learn-game-shell .learn-console {
+  max-height: clamp(68px, 15dvh, 112px);
+  padding: clamp(5px, 0.9dvh, 8px);
+}
+
+.learn-game-shell .stage-grid {
+  gap: 4px;
+}
+
+.learn-game-shell .stage-button {
+  min-height: clamp(36px, 6dvh, 46px);
+  padding: 3px;
+}
+
+.learn-game-shell .stage-button strong {
+  font-size: clamp(0.9rem, 2.7dvh, 1.15rem);
+}
+
+.learn-game-shell .stage-button span {
+  font-size: 0.68rem;
+}
+
+.learn-game-shell .learn-mode-toggle {
+  gap: 5px;
+}
+
+.learn-game-shell .learn-mode-toggle button {
+  min-height: clamp(34px, 5.4dvh, 42px);
+  padding: 4px 8px;
+}
+
+.learn-game-shell .character-window {
+  max-height: 100%;
+  padding: 5px;
+}
+
+.learn-game-shell .character-window .kukucchi {
+  max-height: 70px;
+  transform: scale(0.62);
+}
+
+.learn-game-shell .character-window-copy {
+  display: none;
+}
+
+.learn-game-shell .game-panel {
+  display: grid;
+  grid-template-rows:
+    auto
+    auto
+    minmax(0, 0.82fr)
+    auto
+    auto
+    minmax(112px, 0.72fr)
+    auto;
+  gap: clamp(4px, 0.8dvh, 7px);
+  justify-content: stretch;
+  padding: clamp(6px, 1.2dvh, 10px);
+}
+
+.learn-game-shell .question-header {
+  min-height: 34px;
+}
+
+.learn-game-shell .question-prompt {
+  padding: 5px 8px;
+  font-size: clamp(2rem, 6.2dvh, 3.35rem);
+}
+
+.learn-game-shell .kuku-ruby {
+  margin-bottom: 2px;
+  font-size: clamp(0.95rem, 2.4dvh, 1.2rem);
+  line-height: 1.05;
+}
+
+.learn-game-shell .visual-groups,
+.learn-game-shell .visual-line,
+.learn-game-shell .visual-addition,
+.learn-game-shell .visual-reading {
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  padding: clamp(4px, 0.8dvh, 8px);
+  overflow: hidden;
+}
+
+.learn-game-shell .visual-groups {
+  align-content: center;
+}
+
+.learn-game-shell .dot {
+  width: clamp(7px, 1.8dvh, 14px);
+  height: clamp(7px, 1.8dvh, 14px);
+}
+
+.learn-game-shell .visual-switches {
+  min-height: 0;
+  gap: 5px;
+}
+
+.learn-game-shell .visual-switches button,
+.learn-game-shell .mini-toggle {
+  min-height: clamp(32px, 5dvh, 38px);
+  padding: 4px 8px;
+  font-size: clamp(0.72rem, 1.9dvh, 0.86rem);
+}
+
+.learn-game-shell .feedback {
+  min-height: clamp(32px, 5dvh, 38px);
+  padding: 5px 8px;
+}
+
+.learn-game-shell .choice-grid {
+  align-self: stretch;
+  grid-template-rows: repeat(2, minmax(48px, 1fr));
+  min-height: 0;
+}
+
+.learn-game-shell .choice-button {
+  min-height: 0;
+  height: 100%;
+  padding: 4px;
+  font-size: clamp(1.7rem, 7dvh, 2.75rem);
+}
+
+.learn-game-shell .game-actions {
+  min-height: 0;
 }
 
 .game-shell .primary-action,

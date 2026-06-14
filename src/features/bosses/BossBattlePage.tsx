@@ -6,6 +6,7 @@ import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSpri
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
+import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { bossDifficultyIds, bosses, getBossDifficulty, getBossLimitedItem } from '../../data/bosses'
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
@@ -27,7 +28,7 @@ import type { AnswerResult, Question, ScoreState } from '../../types/game'
 import type { BossDifficultyId } from '../../types/save'
 import { createId } from '../../utils/id'
 
-type BossPhase = 'select' | 'running' | 'result'
+type BossPhase = 'select' | 'ready' | 'running' | 'result'
 
 type BossBattleResult = {
   boss: BossDefinition
@@ -221,7 +222,18 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     return () => window.clearInterval(interval)
   }, [activeDifficulty, feedback, phase, question, recordAnswer])
 
-  function startBattle(boss: BossDefinition, difficulty: BossDifficulty) {
+  function prepareBattle(boss: BossDefinition, difficulty: BossDifficulty) {
+    setActiveBoss(boss)
+    setActiveDifficulty(difficulty)
+    setQuestion(null)
+    setBattleResult(null)
+    setPhase('ready')
+  }
+
+  function startBattle(boss = activeBoss, difficulty = activeDifficulty) {
+    if (!boss || !difficulty) {
+      return
+    }
     setActiveBoss(boss)
     setActiveDifficulty(difficulty)
     setResults([])
@@ -231,6 +243,32 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     battleStartedAtRef.current = Date.now()
     setPhase('running')
     nextQuestion(boss, difficulty, 0)
+  }
+
+  if (phase === 'ready' && activeBoss && activeDifficulty) {
+    const backTo = activeBoss.group === 'advanced' ? '/advanced' : '/battle'
+    return (
+      <AppShell title={activeBoss.label} backTo={backTo}>
+        <ModeStartScreen
+          title={activeBoss.label}
+          eyebrow={activeDifficulty.label}
+          description={`${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきムズはミスなしでクリア！`}
+          level={saveData.player?.level ?? 1}
+          backTo={backTo}
+          onStart={() => startBattle(activeBoss, activeDifficulty)}
+        >
+          <div className="boss-start-summary" aria-label="ボスバトルのじゅんび">
+            <span>もんだい {activeDifficulty.questionCount}</span>
+            <span>HP {activeDifficulty.hp}</span>
+            <span>
+              {activeDifficulty.timeLimitSeconds
+                ? `1もん ${activeDifficulty.timeLimitSeconds}びょう`
+                : 'じかんせいげんなし'}
+            </span>
+          </div>
+        </ModeStartScreen>
+      </AppShell>
+    )
   }
 
   if (phase === 'running' && activeBoss && activeDifficulty && question) {
@@ -341,7 +379,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             <button
               className="primary-action"
               type="button"
-              onClick={() => startBattle(battleResult.boss, battleResult.difficulty)}
+              onClick={() => prepareBattle(battleResult.boss, battleResult.difficulty)}
             >
               もういちど
             </button>
@@ -405,7 +443,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
                       disabled={!difficultyUnlocked}
                       key={difficultyId}
                       type="button"
-                      onClick={() => startBattle(boss, difficulty)}
+                      onClick={() => prepareBattle(boss, difficulty)}
                     >
                       {label}
                       {progress.bestTimeMs ? ` ${formatSeconds(progress.bestTimeMs)}` : ''}

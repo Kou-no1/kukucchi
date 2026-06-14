@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { playerIcons } from '../../data/playerIcons'
+import { defaultShipName, normalizeShipNameInput, validateShipName } from '../../data/shipName'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
@@ -12,7 +13,10 @@ export function SettingsPage() {
   const { saveData, setSaveData, updateSaveData, resetSaveData } = useSaveData()
   const [importText, setImportText] = useState('')
   const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [shipNameInput, setShipNameInput] = useState(saveData.player?.shipName ?? defaultShipName)
+  const [shipNameMessage, setShipNameMessage] = useState('かな5もじまで')
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
+  const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
 
   function updateSetting(key: 'soundEnabled' | 'speechEnabled' | 'reduceMotion') {
     updateSaveData((current) => ({
@@ -36,6 +40,37 @@ export function SettingsPage() {
     }))
   }
 
+  function updateShipName(value: string) {
+    const nextValue = normalizeShipNameInput(value)
+    const result = validateShipName(nextValue)
+    setShipNameInput(nextValue)
+    setShipNameMessage(result.message)
+    if (!result.ok) {
+      return
+    }
+    updateSaveData((current) => ({
+      ...current,
+      player: current.player
+        ? {
+            ...current.player,
+            shipName: result.value,
+          }
+        : current.player,
+    }))
+  }
+
+  function updateCurrentTitle(title: string) {
+    updateSaveData((current) => ({
+      ...current,
+      player: current.player
+        ? {
+            ...current.player,
+            currentTitle: title,
+          }
+        : current.player,
+    }))
+  }
+
   function downloadBackup() {
     const blob = new Blob([backupText], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
@@ -54,7 +89,10 @@ export function SettingsPage() {
       return
     }
     try {
-      setSaveData(parseSaveData(text))
+      const nextSave = parseSaveData(text)
+      setSaveData(nextSave)
+      setShipNameInput(nextSave.player?.shipName ?? defaultShipName)
+      setShipNameMessage('かな5もじまで')
       setImportText('')
     } catch (error) {
       console.error('ひきつぎに失敗しました', error)
@@ -112,6 +150,39 @@ export function SettingsPage() {
             </button>
           ))}
         </div>
+      </section>
+
+      <section className="settings-section" aria-labelledby="ship-title">
+        <h2 id="ship-title">うちゅうせん</h2>
+        <label>
+          ふねのなまえ
+          <input
+            value={shipNameInput}
+            maxLength={5}
+            onChange={(event) => updateShipName(event.target.value)}
+            placeholder={defaultShipName}
+            aria-describedby="ship-name-help"
+          />
+        </label>
+        <p
+          className={shipNameMessage === 'ほぞんしました' ? 'quiet-text' : 'form-help'}
+          id="ship-name-help"
+        >
+          {shipNameMessage}
+        </p>
+        <label>
+          ホームのしょうごう
+          <select
+            value={saveData.player?.currentTitle ?? ownedTitles[0]}
+            onChange={(event) => updateCurrentTitle(event.target.value)}
+          >
+            {ownedTitles.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </select>
+        </label>
       </section>
 
       <section className="settings-section" aria-labelledby="sound-title">

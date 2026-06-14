@@ -34,6 +34,7 @@ import { bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
 import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
+import { normalizeShipNameInput, validateShipName } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import {
@@ -85,6 +86,7 @@ function createSaveWithPlayer(): SaveData {
     player: {
       nickname: 'テスト',
       icon: 'たまご',
+      shipName: 'くくっち',
       learningLevel: 'first' as const,
       level: 1,
       exp: 0,
@@ -478,7 +480,8 @@ describe('mastery, review, missions, and storage', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(7)
+    expect(migrated.version).toBe(8)
+    expect(migrated.player).toBeNull()
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
@@ -491,7 +494,25 @@ describe('mastery, review, missions, and storage', () => {
     expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
   })
 
-  it('migrates v4 save data into v7 and removes time-only monsters', () => {
+  it('validates spaceship names and migrates legacy saves with a default ship name', () => {
+    expect(normalizeShipNameInput('あいうえおか')).toBe('あいうえお')
+    expect(validateShipName('スター').ok).toBe(true)
+    expect(validateShipName('abc').ok).toBe(false)
+    expect(validateShipName('うんこ').ok).toBe(false)
+
+    const legacyPlayer = { ...createSaveWithPlayer().player! }
+    const legacy = {
+      ...createSaveWithPlayer(),
+      version: 7,
+      player: legacyPlayer,
+    }
+    delete (legacy.player as Record<string, unknown>).shipName
+    const migrated = migrateSaveData(legacy)
+    expect(migrated.version).toBe(8)
+    expect(migrated.player?.shipName).toBe('くくっち')
+  })
+
+  it('migrates v4 save data into v8 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -523,7 +544,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(7)
+    expect(migrated.version).toBe(8)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -574,7 +595,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(7)
+    expect(applied.save.version).toBe(8)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({

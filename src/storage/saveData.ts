@@ -1,10 +1,11 @@
 import type { MultiplicationFactProgress } from '../types/game'
-import type { CollectionRecord } from '../types/save'
+import type { CollectionRecord, PlayerData } from '../types/save'
 import type { OnboardingInput, SaveData } from '../types/save'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
+import { coerceShipName, defaultShipName } from '../data/shipName'
 
-export const SAVE_DATA_VERSION = 7
+export const SAVE_DATA_VERSION = 8
 
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount
@@ -51,6 +52,17 @@ function normalizeCollectionRecords(records: CollectionRecord[] | undefined): Co
   return Array.isArray(records)
     ? records.filter((record) => record.id && record.acquiredAt && record.method)
     : []
+}
+
+function normalizePlayer(player: SaveData['player'] | undefined | null): SaveData['player'] {
+  if (!player) {
+    return null
+  }
+  const partialPlayer = player as Partial<PlayerData>
+  return {
+    ...player,
+    shipName: coerceShipName(partialPlayer.shipName),
+  }
 }
 
 export function createDefaultSaveData(): SaveData {
@@ -100,6 +112,7 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
     player: {
       nickname: input.nickname.trim() || 'くくとも',
       icon: input.icon,
+      shipName: defaultShipName,
       learningLevel: input.learningLevel,
       level: 1,
       exp: 0,
@@ -128,6 +141,7 @@ export function migrateSaveData(raw: unknown): SaveData {
     return {
       ...defaults,
       ...candidate,
+      player: normalizePlayer(candidate.player),
       progress: {
         ...defaults.progress,
         ...candidate.progress,
@@ -168,6 +182,7 @@ export function migrateSaveData(raw: unknown): SaveData {
     ...defaults,
     ...candidate,
     version: SAVE_DATA_VERSION,
+    player: normalizePlayer(candidate.player),
     progress: {
       ...defaults.progress,
       ...candidate.progress,

@@ -7,6 +7,7 @@ import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { getPlayerIcon } from '../../data/playerIcons'
 import { equipmentSlots, getEquippedItemForSlot } from '../../data/shopItems'
+import { defaultShipName } from '../../data/shipName'
 import { getUfoById } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -19,6 +20,8 @@ export function HomePage() {
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
   const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
   const playerIcon = getPlayerIcon(player?.icon)
+  const crewTitle = player?.currentTitle ?? 'はじめのいっぽ'
+  const shipName = player?.shipName ?? defaultShipName
 
   function closeTutorial() {
     setTutorialOpen(false)
@@ -102,8 +105,8 @@ export function HomePage() {
           {equippedUfo ? <UfoBadge ufo={equippedUfo} compact className="home-equipped-ufo" /> : null}
           <KukucchiCharacter level={player?.level ?? 1} mood="happy" />
           <div className="character-window-copy">
-            <p className="welcome">クルー待機中</p>
-            <h2>くくっち号</h2>
+            <p className="welcome">{crewTitle}</p>
+            <h2>{shipName}号</h2>
           </div>
         </aside>
       </section>

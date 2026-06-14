@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { KeyIcon } from '../../components/collection/KeyIcon'
+import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
@@ -15,6 +16,7 @@ import { rarityStars } from '../../data/treasureItems'
 import { getUfoById } from '../../data/ufos'
 import { addCollectionRecords } from '../../game-engine/collection/collectionRecords'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
+import { averageStageDifficulty } from '../../game-engine/questions/factDifficulty'
 import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
@@ -33,6 +35,7 @@ const battleTimeLimitMs = 6000
 const treasureGoal = 9
 const rocketGoal = 14
 const specialGaugeMax = 3
+const allStages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
 const gameConfig: Record<
   MiniGameVariant,
@@ -79,11 +82,23 @@ const gameConfig: Record<
   },
 }
 
-function createMiniQuestion(): Question {
+function createMiniQuestion(stages = allStages): Question {
   return generateMultiplicationQuestion({
     answerMode: 'choice',
+    stages,
     minDifficulty: miniGameMinDifficulty,
   })
+}
+
+function stageStars(stage: number): string {
+  return '★'.repeat(Math.max(1, Math.round(averageStageDifficulty(stage))))
+}
+
+function monsterFactFromQuestion(question: Question): { left: number; right: number } {
+  return {
+    left: Number(question.metadata?.left ?? 2),
+    right: Number(question.metadata?.right ?? 1),
+  }
 }
 
 export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
@@ -93,6 +108,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [phase, setPhase] = useState<MiniGamePhase>('ready')
   const [question, setQuestion] = useState<Question>(createMiniQuestion)
+  const [selectedBattleStages, setSelectedBattleStages] = useState<number[]>([...allStages])
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
   const [scoreState, setScoreState] = useState<ScoreState>({
@@ -114,10 +130,27 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const finishedRef = useRef(false)
 
   const attackWarning = variant === 'battle' && (results.length + 1) % 4 === 0
+  const questionStages = variant === 'battle' ? selectedBattleStages : allStages
+  const battleMonsterFact = monsterFactFromQuestion(question)
+
+  function toggleBattleStage(stage: number) {
+    const exists = selectedBattleStages.includes(stage)
+    const nextStages = exists
+      ? selectedBattleStages.filter((candidate) => candidate !== stage)
+      : [...selectedBattleStages, stage]
+    if (nextStages.length === 0) {
+      return
+    }
+    setSelectedBattleStages(nextStages.sort((left, right) => left - right))
+  }
+
+  function toggleAllBattleStages() {
+    setSelectedBattleStages(selectedBattleStages.length === allStages.length ? [2] : [...allStages])
+  }
 
   function resetRunState() {
     finishedRef.current = false
-    setQuestion(createMiniQuestion())
+    setQuestion(createMiniQuestion(questionStages))
     setFeedback('idle')
     setResults([])
     setScoreState({ score: 0, combo: 0, maxCombo: 0 })
@@ -139,12 +172,12 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     setPhase('running')
   }
 
-  function nextQuestion() {
-    setQuestion(createMiniQuestion())
+  const nextQuestion = useCallback(() => {
+    setQuestion(createMiniQuestion(questionStages))
     setFeedback('idle')
     setTimeLeftMs(battleTimeLimitMs)
     startedAtRef.current = Date.now()
-  }
+  }, [questionStages])
 
   const finish = useCallback(
     (
@@ -374,6 +407,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       finish,
       fuel,
       hearts,
+      nextQuestion,
       phase,
       question,
       results,
@@ -450,7 +484,36 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
           level={saveData.player?.level ?? 1}
           backTo="/games"
           onStart={startGame}
-        />
+        >
+          {variant === 'battle' ? (
+            <div className="stage-select-panel" aria-label="つかうだんをえらぶ">
+              <div className="start-option-header">
+                <strong>つかうだん</strong>
+                <button className="secondary-action compact-action" type="button" onClick={toggleAllBattleStages}>
+                  ぜんぶ
+                </button>
+              </div>
+              <div className="stage-chip-grid">
+                {allStages.map((stage) => {
+                  const selected = selectedBattleStages.includes(stage)
+                  return (
+                    <button
+                      className={selected ? 'stage-chip selected' : 'stage-chip'}
+                      key={stage}
+                      type="button"
+                      onClick={() => toggleBattleStage(stage)}
+                      aria-pressed={selected}
+                    >
+                      <strong>{stage}のだん</strong>
+                      <span>{stageStars(stage)}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="quiet-text">えらんだだんのモンスターだけが出るよ</p>
+            </div>
+          ) : null}
+        </ModeStartScreen>
       </AppShell>
     )
   }
@@ -502,7 +565,13 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   return (
     <AppShell title={config.title} backTo="/games" className="game-shell">
       <section className="mission-companion mini-game-command" aria-label={config.title}>
-        {variant === 'rocket' && equippedUfo ? (
+        {variant === 'battle' ? (
+          <MonsterSprite
+            left={battleMonsterFact.left}
+            right={battleMonsterFact.right}
+            className="mini-battle-monster"
+          />
+        ) : variant === 'rocket' && equippedUfo ? (
           <UfoBadge ufo={equippedUfo} compact className="mini-equipped-ufo" />
         ) : (
           <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />

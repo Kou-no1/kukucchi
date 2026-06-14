@@ -79,9 +79,9 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     id: 'gekimuzu',
     label: 'げきムズ 🛸★★★★',
     stars: 4,
-    timeLimitSeconds: 2.5,
-    questionCount: 18,
-    hp: 14,
+    timeLimitSeconds: 1.5,
+    questionCount: 10,
+    hp: 10,
     minDifficulty: defaultMinDifficultyByBossDifficulty.gekimuzu,
   },
 }
@@ -148,7 +148,7 @@ export const bosses: BossDefinition[] = [
     difficultyOverrides: {
       hard: { timeLimitSeconds: 8 },
       fast: { timeLimitSeconds: 5 },
-      gekimuzu: { timeLimitSeconds: 3.5, questionCount: 15, hp: 12 },
+      gekimuzu: { timeLimitSeconds: 3.5, questionCount: 10, hp: 10 },
     },
     rewards: createRewards({ id: 'boss-square', shortLabel: 'クリスタルゴーレム' }),
   },
@@ -164,7 +164,7 @@ export const bosses: BossDefinition[] = [
     difficultyOverrides: {
       hard: { timeLimitSeconds: 12 },
       fast: { timeLimitSeconds: 8 },
-      gekimuzu: { timeLimitSeconds: 6, questionCount: 15, hp: 12 },
+      gekimuzu: { timeLimitSeconds: 6, questionCount: 10, hp: 10 },
     },
     rewards: createRewards({ id: 'boss-pi', shortLabel: 'リングプラネット' }),
   },

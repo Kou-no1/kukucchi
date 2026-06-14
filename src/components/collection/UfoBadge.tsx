@@ -14,6 +14,7 @@ export function UfoBadge({
   className = '',
 }: UfoBadgeProps) {
   const visibleLights = locked || !ufo ? 3 : ufo.lights
+  const lightCount = Math.min(visibleLights, 12)
   const classes = [
     'ufo-badge',
     ufo ? `ufo-badge-${ufo.variant}` : '',
@@ -30,8 +31,12 @@ export function UfoBadge({
         <span>{locked || !ufo ? '?' : ufo.motif}</span>
       </div>
       <div className="ufo-badge-body">
-        {Array.from({ length: visibleLights }, (_, index) => (
-          <i key={index} />
+        {Array.from({ length: lightCount }, (_, index) => (
+          <i
+            aria-hidden="true"
+            className={`ufo-light-mark ufo-light-mark-${index % 6}`}
+            key={index}
+          />
         ))}
       </div>
       <div className="ufo-badge-beam" />

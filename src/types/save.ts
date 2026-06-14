@@ -7,6 +7,7 @@ import type {
 export type PlayerData = {
   nickname: string
   icon: string
+  shipName: string
   learningLevel: LearningLevel
   level: number
   exp: number
