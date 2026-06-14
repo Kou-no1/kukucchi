@@ -187,7 +187,7 @@ export function SpeedPage() {
   }
 
   return (
-    <AppShell title="すぴーど" backTo="/games" className={phase === 'running' ? 'game-shell' : ''}>
+    <AppShell title="すぴーど" backTo="/games" className={phase === 'running' ? 'game-shell' : 'mode-ready-shell speed-ready-shell'}>
       {phase === 'ready' ? (
         <ModeStartScreen
           title={`${durationSeconds}びょうちゃれんじ`}

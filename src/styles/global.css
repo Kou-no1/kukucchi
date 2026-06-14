@@ -3967,6 +3967,222 @@ legend {
   max-width: 180px;
 }
 
+.mode-ready-shell {
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px clamp(8px, 2.4vw, 18px) calc(8px + env(safe-area-inset-bottom));
+}
+
+.mode-ready-shell .top-bar {
+  flex: 0 0 auto;
+  grid-template-columns: 44px 1fr 44px;
+  min-height: 48px;
+  padding: 4px;
+}
+
+.mode-ready-shell .top-bar h1 {
+  font-size: clamp(1rem, 4vw, 1.45rem);
+}
+
+.mode-ready-shell .icon-button {
+  width: 40px;
+  height: 40px;
+}
+
+.mode-ready-shell main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.mode-ready-shell .mode-start-screen {
+  height: 100%;
+  grid-template-columns: minmax(72px, 0.18fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-content: start;
+  padding: clamp(8px, 1.8dvh, 12px);
+  overflow: hidden;
+}
+
+.mode-ready-shell .mode-start-screen > .kukucchi {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.mode-ready-shell .mode-start-screen .kukucchi {
+  width: 82px;
+  max-width: 82px;
+  max-height: 76px;
+}
+
+.mode-ready-shell .mode-start-screen .ufo-ring {
+  width: 82px;
+  border-width: 5px;
+}
+
+.mode-ready-shell .mode-start-screen .ufo-cockpit {
+  width: 48px;
+  height: 35px;
+  border-width: 3px;
+}
+
+.mode-ready-shell .mode-start-screen .kukucchi-body {
+  width: 31px;
+}
+
+.mode-ready-shell .mode-start-screen .antenna {
+  top: -18px;
+  height: 20px;
+}
+
+.mode-ready-shell .mode-start-screen .eye {
+  top: 9px;
+  width: 9px;
+  height: 9px;
+  border-width: 2px;
+}
+
+.mode-ready-shell .mode-start-screen .left-eye {
+  left: 7px;
+}
+
+.mode-ready-shell .mode-start-screen .right-eye {
+  right: 7px;
+}
+
+.mode-ready-shell .mode-start-screen .mouth {
+  bottom: 7px;
+  width: 14px;
+  height: 7px;
+}
+
+.mode-ready-shell .mode-start-screen .belly,
+.mode-ready-shell .mode-start-screen .kukucchi-shadow {
+  display: none;
+}
+
+.mode-ready-shell .mode-start-screen .ufo-ship {
+  top: 45px;
+  width: 70px;
+  height: 21px;
+  border-width: 3px;
+}
+
+.mode-ready-shell .mode-start-copy {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  gap: 3px;
+}
+
+.mode-ready-shell .mode-start-copy h2 {
+  font-size: clamp(1.45rem, 5vw, 2.35rem);
+}
+
+.mode-ready-shell .mode-start-copy .welcome,
+.mode-ready-shell .mode-start-copy .title-line {
+  margin: 0;
+  line-height: 1.12;
+}
+
+.mode-ready-shell .mode-start-options {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  gap: 6px;
+  min-height: 0;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+}
+
+.mode-ready-shell .stage-select-panel,
+.mode-ready-shell .duration-select-panel {
+  gap: 5px;
+  padding: 6px;
+}
+
+.mode-ready-shell .stage-chip-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mode-ready-shell .stage-chip {
+  min-height: 44px;
+  padding: 3px 5px;
+  gap: 1px;
+}
+
+.mode-ready-shell .stage-chip strong {
+  font-size: clamp(0.78rem, 2.7vw, 0.98rem);
+}
+
+.mode-ready-shell .stage-chip span,
+.mode-ready-shell .stage-chip small {
+  font-size: 0.66rem;
+  line-height: 1;
+}
+
+.mode-ready-shell .stage-chip small {
+  display: none;
+}
+
+.mode-ready-shell .learn-start-segmented,
+.mode-ready-shell .duration-select-panel .segmented {
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.mode-ready-shell .duration-select-panel button {
+  min-height: 36px;
+  padding: 5px 6px;
+  font-size: clamp(0.68rem, 2.5vw, 0.86rem);
+  line-height: 1.05;
+}
+
+.mode-ready-shell .mode-start-actions {
+  grid-column: 1 / -1;
+  grid-row: 3;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.mode-ready-shell .mode-start-actions .primary-action,
+.mode-ready-shell .mode-start-actions .secondary-action {
+  min-height: 44px;
+  padding: 7px 10px;
+}
+
+.mode-ready-shell .mode-start-actions .speed-start-button {
+  grid-column: auto;
+  justify-self: stretch;
+  width: auto;
+  min-height: 44px;
+  margin-top: 0;
+  border-width: 2px;
+  font-size: clamp(1rem, 3.5vw, 1.35rem);
+}
+
+.learn-ready-shell .mode-start-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.learn-ready-shell .stage-select-panel {
+  grid-column: 1 / -1;
+}
+
+.speed-ready-shell .mode-start-options {
+  grid-template-columns: 1fr;
+}
+
 .mode-start-copy {
   display: grid;
   gap: 8px;

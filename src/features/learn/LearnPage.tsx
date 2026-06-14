@@ -190,7 +190,7 @@ export function LearnPage() {
     <AppShell
       title="おぼえる"
       backTo="/games"
-      className={phase === 'running' ? 'game-shell learn-game-shell' : ''}
+      className={phase === 'running' ? 'game-shell learn-game-shell' : 'mode-ready-shell learn-ready-shell'}
     >
       {phase === 'ready' ? (
         <ModeStartScreen
