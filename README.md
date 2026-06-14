@@ -62,7 +62,7 @@ npm run preview
 
 ## GitHub Pages公開
 
-`vite.config.ts` の `base` は `/kukucchi/` に設定しています。リポジトリ名が変わる場合は `base` を合わせてからビルドしてください。
+`vite.config.ts` の `base` は `math-planet` に設定しています。リポジトリ名が変わる場合は `base` を合わせてからビルドしてください。
 
 ```bash
 npm run build
