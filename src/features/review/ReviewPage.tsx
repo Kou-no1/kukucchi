@@ -9,7 +9,11 @@ import {
   generateAdaptiveMultiplicationQuestion,
   generateMultiplicationFactQuestion,
 } from '../../game-engine/questions/questionGenerator'
-import { getMonsterFacts, getReviewQueue } from '../../game-engine/review/weakFacts'
+import {
+  getMonsterFacts,
+  getMonsterOvercomeProgress,
+  getReviewQueue,
+} from '../../game-engine/review/weakFacts'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -122,15 +126,27 @@ export function ReviewPage() {
             最近まちがえた式、復習の日が来た式、ゆっくりだった式から出題します。
           </p>
           <div className="monster-grid" aria-label="出現中のモンスター">
-            {(monsters.length > 0 ? monsters : reviewQueue).slice(0, 6).map((fact) => (
-              <span className="monster-chip" key={fact.id}>
-                <MonsterSprite left={fact.left} right={fact.right} className="monster-chip-sprite" />
-                <span>
-                  {fact.left} × {fact.right}
-                  <small>Lv {fact.masteryLevel}</small>
+            {(monsters.length > 0 ? monsters : reviewQueue).slice(0, 6).map((fact) => {
+              const showOvercomeProgress =
+                monsters.includes(fact) && !saveData.progress.monsterBook.includes(fact.id)
+              const overcomeProgress = showOvercomeProgress
+                ? getMonsterOvercomeProgress(fact)
+                : null
+              return (
+                <span className="monster-chip" key={fact.id}>
+                  <MonsterSprite left={fact.left} right={fact.right} className="monster-chip-sprite" />
+                  <span>
+                    {fact.left} × {fact.right}
+                    <small>Lv {fact.masteryLevel}</small>
+                    {overcomeProgress?.message ? (
+                      <small className="monster-overcome-progress">
+                        {overcomeProgress.message}
+                      </small>
+                    ) : null}
+                  </span>
                 </span>
-              </span>
-            ))}
+              )
+            })}
             {monsters.length === 0 && reviewQueue.length === 0 ? (
               <span className="monster-chip">
                 🌟 まだ平和

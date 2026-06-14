@@ -5,7 +5,7 @@ import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
 import { coerceShipName, defaultShipName } from '../data/shipName'
 
-export const SAVE_DATA_VERSION = 8
+export const SAVE_DATA_VERSION = 9
 
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount

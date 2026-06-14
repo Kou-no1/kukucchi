@@ -1,5 +1,11 @@
 import type { MultiplicationFactProgress } from '../../types/game'
 
+export type MonsterOvercomeProgress = {
+  remainingCorrect: number
+  needsDifferentDay: boolean
+  message: string | null
+}
+
 function attemptsOf(fact: MultiplicationFactProgress): number {
   return fact.correctCount + fact.incorrectCount
 }
@@ -29,6 +35,55 @@ export function isMonsterOvercome(fact: MultiplicationFactProgress): boolean {
   return fact.recentResults.some(
     (result) => result.correct && isDifferentDay(registeredAt, result.answeredAt),
   )
+}
+
+export function getMonsterOvercomeProgress(
+  fact: MultiplicationFactProgress,
+): MonsterOvercomeProgress {
+  if (fact.incorrectCount <= 0 || isMonsterOvercome(fact)) {
+    return {
+      remainingCorrect: 0,
+      needsDifferentDay: false,
+      message: null,
+    }
+  }
+
+  const registeredAt = firstWrongDate(fact)
+  const remainingCorrect = Math.max(0, 3 - fact.correctCount)
+  const hasDifferentDayCorrect = registeredAt
+    ? fact.recentResults.some(
+        (result) => result.correct && isDifferentDay(registeredAt, result.answeredAt),
+      )
+    : false
+  const needsDifferentDay = !hasDifferentDayCorrect
+
+  if (remainingCorrect > 0 && needsDifferentDay) {
+    return {
+      remainingCorrect,
+      needsDifferentDay,
+      message: `あと ${remainingCorrect}かい、また あしたも といてみよう！`,
+    }
+  }
+  if (remainingCorrect > 0) {
+    return {
+      remainingCorrect,
+      needsDifferentDay,
+      message: `あと ${remainingCorrect}かいで こくふく！`,
+    }
+  }
+  if (needsDifferentDay) {
+    return {
+      remainingCorrect,
+      needsDifferentDay,
+      message: 'また あした も といてみよう！',
+    }
+  }
+
+  return {
+    remainingCorrect,
+    needsDifferentDay,
+    message: null,
+  }
 }
 
 export function getWeakFacts(

@@ -21,7 +21,12 @@ import {
   createFactProgress,
   updateFactProgress,
 } from '../game-engine/mastery/mastery'
-import { getWeakFacts, isMonsterFact, isMonsterOvercome } from '../game-engine/review/weakFacts'
+import {
+  getMonsterOvercomeProgress,
+  getWeakFacts,
+  isMonsterFact,
+  isMonsterOvercome,
+} from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
@@ -477,11 +482,136 @@ describe('mastery, review, missions, and storage', () => {
     expect(isMonsterFact(progress)).toBe(false)
   })
 
+  it('shows nigate overcome progress messages', () => {
+    let remainingOnly = createFactProgress(6, 7)
+    remainingOnly = updateFactProgress(
+      remainingOnly,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 41,
+        correct: false,
+        answeredAt: '2026-01-01T09:00:00.000Z',
+      }),
+    )
+    remainingOnly = updateFactProgress(
+      remainingOnly,
+      result({
+        questionId: '6x7',
+        expectedAnswer: 42,
+        givenAnswer: 42,
+        correct: true,
+        answeredAt: '2026-01-02T09:00:00.000Z',
+      }),
+    )
+    expect(getMonsterOvercomeProgress(remainingOnly).message).toBe('あと 2かいで こくふく！')
+
+    let nextDayOnly = createFactProgress(7, 8)
+    nextDayOnly = updateFactProgress(
+      nextDayOnly,
+      result({
+        questionId: '7x8',
+        expectedAnswer: 56,
+        givenAnswer: 54,
+        correct: false,
+        answeredAt: '2026-01-01T09:00:00.000Z',
+      }),
+    )
+    for (let index = 0; index < 3; index += 1) {
+      nextDayOnly = updateFactProgress(
+        nextDayOnly,
+        result({
+          questionId: '7x8',
+          expectedAnswer: 56,
+          givenAnswer: 56,
+          correct: true,
+          answeredAt: `2026-01-01T1${index}:00:00.000Z`,
+        }),
+      )
+    }
+    expect(getMonsterOvercomeProgress(nextDayOnly).message).toBe('また あした も といてみよう！')
+
+    let both = createFactProgress(8, 8)
+    both = updateFactProgress(
+      both,
+      result({
+        questionId: '8x8',
+        expectedAnswer: 64,
+        givenAnswer: 63,
+        correct: false,
+        answeredAt: '2026-01-01T09:00:00.000Z',
+      }),
+    )
+    both = updateFactProgress(
+      both,
+      result({
+        questionId: '8x8',
+        expectedAnswer: 64,
+        givenAnswer: 64,
+        correct: true,
+        answeredAt: '2026-01-01T10:00:00.000Z',
+      }),
+    )
+    expect(getMonsterOvercomeProgress(both).message).toBe(
+      'あと 2かい、また あしたも といてみよう！',
+    )
+
+    let overcome = nextDayOnly
+    overcome = updateFactProgress(
+      overcome,
+      result({
+        questionId: '7x8',
+        expectedAnswer: 56,
+        givenAnswer: 56,
+        correct: true,
+        answeredAt: '2026-01-02T09:00:00.000Z',
+      }),
+    )
+    expect(getMonsterOvercomeProgress(overcome).message).toBeNull()
+  })
+
+  it('re-applies stale time-only monster cleanup from v8 to v9', () => {
+    const timeOnly = {
+      ...createFactProgress(8, 8),
+      correctCount: 2,
+      incorrectCount: 0,
+      averageResponseTimeMs: 6200,
+      masteryLevel: 2 as const,
+      recentResults: [
+        result({ questionId: '8x8', expectedAnswer: 64, givenAnswer: 64, correct: true, responseTimeMs: 6400 }),
+        result({ questionId: '8x8', expectedAnswer: 64, givenAnswer: 64, correct: true, responseTimeMs: 6000 }),
+      ],
+    }
+    const wrong = {
+      ...createFactProgress(7, 8),
+      correctCount: 0,
+      incorrectCount: 1,
+      averageResponseTimeMs: 1200,
+      masteryLevel: 1 as const,
+      recentResults: [result({ questionId: '7x8', expectedAnswer: 56, givenAnswer: 54, correct: false })],
+    }
+    const v8Save = {
+      ...createDefaultSaveData(),
+      version: 8,
+      progress: {
+        ...createDefaultSaveData().progress,
+        facts: {
+          [timeOnly.id]: timeOnly,
+          [wrong.id]: wrong,
+        },
+      },
+    }
+    const migrated = migrateSaveData(v8Save)
+    expect(migrated.version).toBe(9)
+    expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
+    expect(migrated.progress.facts[wrong.id]).toBeTruthy()
+  })
+
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(8)
+    expect(migrated.version).toBe(9)
     expect(migrated.player).toBeNull()
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
@@ -509,7 +639,7 @@ describe('mastery, review, missions, and storage', () => {
     }
     delete (legacy.player as Record<string, unknown>).shipName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(8)
+    expect(migrated.version).toBe(9)
     expect(migrated.player?.shipName).toBe('くくっち')
   })
 
@@ -545,7 +675,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(8)
+    expect(migrated.version).toBe(9)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -596,7 +726,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(8)
+    expect(applied.save.version).toBe(9)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({

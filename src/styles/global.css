@@ -3202,6 +3202,14 @@ legend {
   color: rgba(232, 251, 255, 0.66);
 }
 
+.monster-chip .monster-overcome-progress {
+  margin-top: 4px;
+  color: #e8fbff;
+  font-size: 0.86rem;
+  line-height: 1.2;
+  text-shadow: 0 0 10px rgba(91, 233, 244, 0.58);
+}
+
 .advanced-command {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
