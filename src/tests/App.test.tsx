@@ -2,6 +2,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it } from 'vitest'
 import App from '../App'
+import { replayPath } from '../features/results/ResultPage'
 
 async function completeOnboarding() {
   const user = userEvent.setup()
@@ -35,6 +36,11 @@ describe('app flow', () => {
     const sound = screen.getByLabelText('効果音')
     await user.click(sound)
     expect(sound).not.toBeChecked()
+  })
+
+  it('replays monster battle without jumping to boss battle', () => {
+    expect(replayPath('battle')).toBe('/monster-battle')
+    expect(replayPath('boss')).toBe('/battle')
   })
 
   it('keeps school time budget behind a teacher code', async () => {

@@ -54,3 +54,8 @@ Object.defineProperty(window, 'alert', {
   value: () => undefined,
   writable: true,
 })
+
+Object.defineProperty(window, 'scrollTo', {
+  value: () => undefined,
+  writable: true,
+})

@@ -8,7 +8,7 @@ import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { GameSessionSummary } from '../../types/game'
 
-function replayPath(mode: GameSessionSummary['mode']): string {
+export function replayPath(mode: GameSessionSummary['mode']): string {
   if (mode === 'speed') {
     return '/speed'
   }
@@ -16,7 +16,7 @@ function replayPath(mode: GameSessionSummary['mode']): string {
     return '/review'
   }
   if (mode === 'battle') {
-    return '/battle'
+    return '/monster-battle'
   }
   if (mode === 'boss') {
     return '/battle'
