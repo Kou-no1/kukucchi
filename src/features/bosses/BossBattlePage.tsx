@@ -10,7 +10,14 @@ import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { bossDifficultyIds, bosses, getBossDifficulty, getBossLimitedItem } from '../../data/bosses'
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
-import { applyBossClearReward, getClearedStars, getDifficultyProgress, isBossUnlocked, isDifficultyUnlocked } from '../../game-engine/bosses/bossEngine'
+import {
+  applyBossClearReward,
+  getClearedStars,
+  getDifficultyProgress,
+  isBossUnlocked,
+  isDifficultyUnlocked,
+  remainingQuestionsToUnlockBoss,
+} from '../../game-engine/bosses/bossEngine'
 import { advancedBossVariantForBossId } from '../../game-engine/collection/advancedPixelSprites'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
@@ -400,6 +407,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
           const clearedStars = getClearedStars(saveData, boss.id)
           const bossVariant = advancedBossVariantForBossId(boss.id)
           const rewardUfo = getUfoForBoss(boss.id)
+          const remainingToUnlock = remainingQuestionsToUnlockBoss(boss, saveData)
           const ownsRewardUfo = rewardUfo
             ? saveData.progress.ownedUfos.includes(rewardUfo.id)
             : false
@@ -418,6 +426,9 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
                 </span>
               )}
               <h2>{unlocked ? boss.label : '？？？'}</h2>
+              {!unlocked && remainingToUnlock !== null ? (
+                <p className="boss-unlock-progress">あと {remainingToUnlock}もん で かいほう！</p>
+              ) : null}
               <p>{unlocked ? boss.description : '条件をみたすと出会えます。'}</p>
               <strong>{'★'.repeat(clearedStars) || '未クリア'}</strong>
               {rewardUfo ? (

@@ -2766,39 +2766,42 @@ legend {
 .home-character-window {
   justify-self: end;
   width: 100%;
-  min-height: 154px;
-  padding: 8px;
+  min-height: clamp(308px, 42vh, 420px);
+  align-content: center;
+  grid-template-rows: minmax(0, 1fr) auto;
+  padding: 18px 10px 14px;
 }
 
 .home-character-window .kukucchi {
-  min-height: 100px;
+  align-self: center;
+  min-height: 178px;
 }
 
 .home-character-window .ufo-ring {
-  width: 112px;
+  width: 178px;
 }
 
 .home-character-window .ufo-cockpit {
-  width: 64px;
-  height: 46px;
+  width: 100px;
+  height: 72px;
 }
 
 .home-character-window .kukucchi-body {
-  width: 40px;
+  width: 62px;
 }
 
 .home-character-window .ufo-ship {
-  top: 64px;
-  width: 92px;
-  height: 28px;
+  top: 98px;
+  width: 146px;
+  height: 44px;
 }
 
 .home-character-window .character-window-copy h2 {
-  font-size: 0.92rem;
+  font-size: 1.1rem;
 }
 
 .home-character-window .character-window-copy .welcome {
-  font-size: 0.7rem;
+  font-size: 0.78rem;
 }
 
 .home-main-actions .home-menu-card-large {
@@ -3635,6 +3638,21 @@ legend {
   margin: 0;
 }
 
+.boss-unlock-progress {
+  display: inline-grid;
+  justify-self: start;
+  min-height: 34px;
+  align-items: center;
+  padding: 5px 10px;
+  border: 1px solid rgba(91, 233, 244, 0.58);
+  border-radius: 999px;
+  background: rgba(91, 233, 244, 0.12);
+  color: #e8fbff;
+  font-size: 0.95rem;
+  font-weight: 950;
+  text-shadow: 0 0 10px rgba(91, 233, 244, 0.64);
+}
+
 .boss-difficulty-row button {
   flex: 1 1 112px;
   min-height: 44px;
@@ -3877,10 +3895,11 @@ legend {
 
 .home-equipped-ufo {
   position: absolute;
-  top: 4px;
+  top: 22px;
   left: 50%;
   z-index: 4;
   transform: translateX(-50%);
+  width: 86px;
   animation: ufo-float-home 3.2s ease-in-out infinite;
 }
 
@@ -4183,6 +4202,67 @@ legend {
   grid-template-columns: 1fr;
 }
 
+.advanced-ready-shell .mode-start-options {
+  grid-template-columns: 1fr;
+}
+
+.advanced-start-segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.advanced-ready-boss-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.advanced-ready-boss-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  min-height: 58px;
+  gap: 2px 8px;
+  padding: 6px;
+  border: 2px solid rgba(91, 233, 244, 0.42);
+  border-radius: 8px;
+  background: rgba(4, 18, 45, 0.68);
+  color: #e8fbff;
+  text-decoration: none;
+}
+
+.advanced-ready-boss-card.locked {
+  opacity: 0.72;
+}
+
+.advanced-ready-boss-card .boss-card-sprite {
+  grid-row: 1 / span 2;
+  width: 42px;
+}
+
+.advanced-ready-boss-card span,
+.advanced-ready-boss-card strong,
+.advanced-ready-boss-card .boss-unlock-progress {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.advanced-ready-boss-card .boss-unlock-progress {
+  justify-self: stretch;
+  min-height: 26px;
+  padding: 2px 7px;
+  font-size: 0.72rem;
+}
+
+.advanced-ready-boss-card strong {
+  color: #fff2a8;
+  font-size: 0.72rem;
+}
+
 .mode-start-copy {
   display: grid;
   gap: 8px;
@@ -4415,7 +4495,7 @@ legend {
 
 @media (max-width: 620px) {
   .home-command {
-    grid-template-columns: minmax(0, 1fr) 110px;
+    grid-template-columns: minmax(0, 1fr) minmax(148px, 0.42fr);
   }
 
   .home-title-block h2 {
@@ -4431,20 +4511,20 @@ legend {
   }
 
   .home-character-window {
-    min-height: 128px;
+    min-height: 260px;
   }
 
   .home-character-window .ufo-ring {
-    width: 94px;
+    width: 144px;
   }
 
   .home-character-window .ufo-ship {
-    top: 54px;
-    width: 80px;
+    top: 80px;
+    width: 118px;
   }
 
   .home-character-window .character-window-copy h2 {
-    font-size: 0.78rem;
+    font-size: 0.9rem;
   }
 }
 

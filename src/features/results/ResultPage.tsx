@@ -254,6 +254,9 @@ export function ResultPage() {
         <Link className="primary-action" to={replayPath(summary.mode)}>
           もう一回
         </Link>
+        <Link className="secondary-action" to="/games">
+          あそぶへ
+        </Link>
         <Link className="secondary-action" to="/home">
           ホームへ
         </Link>

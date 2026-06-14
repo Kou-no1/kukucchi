@@ -79,7 +79,7 @@ export const bossDifficulties: Record<BossDifficultyId, BossDifficulty> = {
     id: 'gekimuzu',
     label: 'げきムズ 🛸★★★★',
     stars: 4,
-    timeLimitSeconds: 1.5,
+    timeLimitSeconds: 1.8,
     questionCount: 10,
     hp: 10,
     minDifficulty: defaultMinDifficultyByBossDifficulty.gekimuzu,

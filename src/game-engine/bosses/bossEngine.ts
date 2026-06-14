@@ -17,6 +17,7 @@ import type {
 } from '../../types/save'
 
 const difficultyOrder: BossDifficultyId[] = ['normal', 'hard', 'fast', 'gekimuzu']
+const bossUnlockRequiredCorrect = 20
 
 function createDifficultyProgress(): BossDifficultyProgress {
   return {
@@ -69,9 +70,36 @@ export function isBossUnlocked(boss: BossDefinition, save: SaveData): boolean {
     return areBasicStageBossesCleared(save)
   }
   if (boss.group === 'advanced') {
-    return boss.advancedCategory ? countCorrectByCategory(save, boss.advancedCategory) >= 20 : false
+    return boss.advancedCategory ? countCorrectByCategory(save, boss.advancedCategory) >= bossUnlockRequiredCorrect : false
   }
-  return boss.stages ? countCorrectForStages(save, boss.stages) >= 20 : false
+  return boss.stages ? countCorrectForStages(save, boss.stages) >= bossUnlockRequiredCorrect : false
+}
+
+export function countCorrectForBossUnlock(
+  boss: BossDefinition,
+  save: SaveData,
+): number | null {
+  if (boss.id === 'boss-all-kuku') {
+    return null
+  }
+  if (boss.group === 'advanced') {
+    return boss.advancedCategory ? countCorrectByCategory(save, boss.advancedCategory) : null
+  }
+  return boss.stages ? countCorrectForStages(save, boss.stages) : null
+}
+
+export function remainingQuestionsToUnlockBoss(
+  boss: BossDefinition,
+  save: SaveData,
+): number | null {
+  if (isBossUnlocked(boss, save)) {
+    return null
+  }
+  const currentCorrect = countCorrectForBossUnlock(boss, save)
+  if (currentCorrect === null) {
+    return null
+  }
+  return Math.max(0, bossUnlockRequiredCorrect - currentCorrect)
 }
 
 export function isDifficultyUnlocked(

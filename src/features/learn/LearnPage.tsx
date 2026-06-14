@@ -9,7 +9,10 @@ import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { QuestionVisual } from '../../components/game/QuestionVisual'
 import { getKukuReading } from '../../data/kukuReadings'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
-import { generateMultiplicationFactQuestion } from '../../game-engine/questions/questionGenerator'
+import {
+  generateAdvancedQuestion,
+  generateMultiplicationFactQuestion,
+} from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -22,8 +25,15 @@ const stages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const goalQuestions = 9
 
 type LearnPhase = 'ready' | 'running'
+type LearnKind = 'kuku' | 'square' | 'pi'
 type LearnOrder = 'random' | 'ascending' | 'descending'
 type VisualMode = 'groups' | 'line' | 'addition' | 'reading'
+
+const learnKindLabels: Record<LearnKind, string> = {
+  kuku: '九九',
+  square: '平方数',
+  pi: '円周率',
+}
 
 const learnOrderLabels: Record<LearnOrder, string> = {
   random: 'ランダム',
@@ -53,14 +63,30 @@ function createLearnOrder(order: LearnOrder): number[] {
   return shuffleNumbers(rights)
 }
 
-function createQuestion(stage: number, answerMode: AnswerMode, right: number): Question {
+function createKukuQuestion(stage: number, answerMode: AnswerMode, right: number): Question {
   return generateMultiplicationFactQuestion(stage, right, { answerMode })
+}
+
+function createLearnQuestion(
+  kind: LearnKind,
+  stage: number,
+  answerMode: AnswerMode,
+  right: number,
+): Question {
+  if (kind === 'square') {
+    return generateAdvancedQuestion('square')
+  }
+  if (kind === 'pi') {
+    return generateAdvancedQuestion('pi')
+  }
+  return createKukuQuestion(stage, answerMode, right)
 }
 
 export function LearnPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
   const [phase, setPhase] = useState<LearnPhase>('ready')
+  const [learnKind, setLearnKind] = useState<LearnKind>('kuku')
   const [stage, setStage] = useState(2)
   const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
   const [learnOrder, setLearnOrder] = useState<LearnOrder>('random')
@@ -68,7 +94,7 @@ export function LearnPage() {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [visualMode, setVisualMode] = useState<VisualMode>('groups')
   const [showReading, setShowReading] = useState(true)
-  const [question, setQuestion] = useState(() => createQuestion(2, 'choice', 1))
+  const [question, setQuestion] = useState(() => createKukuQuestion(2, 'choice', 1))
   const [inputValue, setInputValue] = useState('')
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
@@ -97,7 +123,8 @@ export function LearnPage() {
 
   function resetQuestion(nextIndex = questionIndex) {
     clearAutoAdvanceTimeout()
-    setQuestion(createQuestion(stage, answerMode, questionOrder[nextIndex] ?? 1))
+    const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
+    setQuestion(createLearnQuestion(learnKind, stage, activeAnswerMode, questionOrder[nextIndex] ?? 1))
     setQuestionIndex(nextIndex)
     setInputValue('')
     setFeedback('idle')
@@ -106,10 +133,11 @@ export function LearnPage() {
 
   function startLearn() {
     const nextOrder = createLearnOrder(learnOrder)
+    const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
     clearAutoAdvanceTimeout()
     setQuestionOrder(nextOrder)
     setQuestionIndex(0)
-    setQuestion(createQuestion(stage, answerMode, nextOrder[0] ?? 1))
+    setQuestion(createLearnQuestion(learnKind, stage, activeAnswerMode, nextOrder[0] ?? 1))
     setInputValue('')
     setFeedback('idle')
     setResults([])
@@ -117,6 +145,13 @@ export function LearnPage() {
     setVisualMode('groups')
     startedAtRef.current = Date.now()
     setPhase('running')
+  }
+
+  function changeLearnKind(nextKind: LearnKind) {
+    setLearnKind(nextKind)
+    if (nextKind !== 'kuku') {
+      setAnswerMode('choice')
+    }
   }
 
   function advanceQuestion() {
@@ -149,9 +184,11 @@ export function LearnPage() {
     setFeedback(correct ? 'correct' : 'incorrect')
     if (correct) {
       playCorrectSound(saveData.settings.soundEnabled)
-      const left = Number(question.metadata?.left ?? 2)
-      const right = Number(question.metadata?.right ?? 1)
-      speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
+      if (learnKind === 'kuku') {
+        const left = Number(question.metadata?.left ?? 2)
+        const right = Number(question.metadata?.right ?? 1)
+        speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
+      }
       if (results.length + 1 < goalQuestions) {
         clearAutoAdvanceTimeout()
         autoAdvanceTimeoutRef.current = window.setTimeout(() => {
@@ -162,6 +199,10 @@ export function LearnPage() {
   }
 
   function handleSpeak() {
+    if (learnKind !== 'kuku') {
+      speakJapanese(`${question.prompt}、こたえは ${question.answer}`, saveData.settings.speechEnabled)
+      return
+    }
     const left = Number(question.metadata?.left ?? 2)
     const right = Number(question.metadata?.right ?? 1)
     speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
@@ -170,7 +211,8 @@ export function LearnPage() {
 
   const left = Number(question.metadata?.left ?? 2)
   const right = Number(question.metadata?.right ?? 1)
-  const revealReading = feedback === 'correct' || visualMode === 'reading'
+  const revealReading = learnKind === 'kuku' && (feedback === 'correct' || visualMode === 'reading')
+  const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
 
   function finish() {
     const rawSummary = buildSessionSummary({
@@ -194,67 +236,89 @@ export function LearnPage() {
     >
       {phase === 'ready' ? (
         <ModeStartScreen
-          title={`${stage}のだん れんしゅう`}
+          title={learnKind === 'kuku' ? `${stage}のだん れんしゅう` : `${learnKindLabels[learnKind]} れんしゅう`}
           eyebrow="9もんぜんぶチャレンジ"
-          description="だんとじゅんばんをえらんで、スタートしよう！"
+          description="けいさんとこたえかたをえらんで、スタートしよう！"
           level={saveData.player?.level ?? 1}
           backTo="/games"
           onStart={startLearn}
         >
-          <div className="stage-select-panel" aria-label="れんしゅうするだん">
-            <div className="start-option-header">
-              <strong>れんしゅうするだん</strong>
-              <span>{stage}のだん</span>
-            </div>
-            <div className="stage-chip-grid">
-              {stages.map((value) => (
+          <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
+            <strong>けいさん</strong>
+            <div className="segmented learn-start-segmented">
+              {(['kuku', 'square', 'pi'] as const).map((kind) => (
                 <button
-                  className={stage === value ? 'stage-chip selected' : 'stage-chip'}
-                  key={value}
+                  className={learnKind === kind ? 'selected' : ''}
+                  key={kind}
                   type="button"
-                  onClick={() => setStage(value)}
-                  aria-pressed={stage === value}
+                  onClick={() => changeLearnKind(kind)}
+                  aria-pressed={learnKind === kind}
                 >
-                  <strong>{value}のだん</strong>
-                  <span>9もん</span>
+                  {learnKindLabels[kind]}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="duration-select-panel" aria-label="じゅんばんをえらぶ">
-            <strong>じゅんばん</strong>
-            <div className="segmented learn-start-segmented">
-              {(['random', 'ascending', 'descending'] as const).map((order) => (
-                <button
-                  className={learnOrder === order ? 'selected' : ''}
-                  key={order}
-                  type="button"
-                  onClick={() => setLearnOrder(order)}
-                  aria-pressed={learnOrder === order}
-                >
-                  {learnOrderLabels[order]}
-                </button>
-              ))}
+          {learnKind === 'kuku' ? (
+            <div className="stage-select-panel" aria-label="れんしゅうするだん">
+              <div className="start-option-header">
+                <strong>れんしゅうするだん</strong>
+                <span>{stage}のだん</span>
+              </div>
+              <div className="stage-chip-grid">
+                {stages.map((value) => (
+                  <button
+                    className={stage === value ? 'stage-chip selected' : 'stage-chip'}
+                    key={value}
+                    type="button"
+                    onClick={() => setStage(value)}
+                    aria-pressed={stage === value}
+                  >
+                    <strong>{value}のだん</strong>
+                    <span>9もん</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {learnKind === 'kuku' ? (
+            <div className="duration-select-panel" aria-label="じゅんばんをえらぶ">
+              <strong>じゅんばん</strong>
+              <div className="segmented learn-start-segmented">
+                {(['random', 'ascending', 'descending'] as const).map((order) => (
+                  <button
+                    className={learnOrder === order ? 'selected' : ''}
+                    key={order}
+                    type="button"
+                    onClick={() => setLearnOrder(order)}
+                    aria-pressed={learnOrder === order}
+                  >
+                    {learnOrderLabels[order]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
 
           <div className="duration-select-panel" aria-label="こたえかたをえらぶ">
             <strong>こたえかた</strong>
             <div className="segmented learn-start-segmented">
               <button
-                className={answerMode === 'choice' ? 'selected' : ''}
+                className={activeAnswerMode === 'choice' ? 'selected' : ''}
                 type="button"
                 onClick={() => setAnswerMode('choice')}
-                aria-pressed={answerMode === 'choice'}
+                aria-pressed={activeAnswerMode === 'choice'}
               >
                 4たく
               </button>
               <button
-                className={answerMode === 'input' ? 'selected' : ''}
+                className={activeAnswerMode === 'input' ? 'selected' : ''}
                 type="button"
                 onClick={() => setAnswerMode('input')}
-                aria-pressed={answerMode === 'input'}
+                aria-pressed={activeAnswerMode === 'input'}
+                disabled={learnKind === 'pi'}
               >
                 入力
               </button>
@@ -265,8 +329,8 @@ export function LearnPage() {
         <>
           <section className="learn-console learn-run-console" aria-label="練習設定">
             <div className="learn-run-status">
-              <span>{stage}のだん</span>
-              <strong>{learnOrderLabels[learnOrder]}</strong>
+              <span>{learnKind === 'kuku' ? `${stage}のだん` : learnKindLabels[learnKind]}</span>
+              <strong>{learnKind === 'kuku' ? learnOrderLabels[learnOrder] : '9もんチャレンジ'}</strong>
               <small>9もんぜんぶ</small>
             </div>
 
@@ -274,7 +338,7 @@ export function LearnPage() {
               <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
               <div className="character-window-copy">
                 <p className="welcome">くくっち号、しゅっぱつ！</p>
-                <h2>{stage}のだんステーション</h2>
+                <h2>{learnKind === 'kuku' ? `${stage}のだんステーション` : `${learnKindLabels[learnKind]}ステーション`}</h2>
               </div>
             </aside>
           </section>
@@ -289,50 +353,58 @@ export function LearnPage() {
               </button>
             </div>
             <h2 id="question-title" className="question-prompt">
-              <KukuReadingRuby
-                left={left}
-                right={right}
-                revealAnswer={revealReading}
-                visible={showReading}
-              />
+              {learnKind === 'kuku' ? (
+                <KukuReadingRuby
+                  left={left}
+                  right={right}
+                  revealAnswer={revealReading}
+                  visible={showReading}
+                />
+              ) : null}
               {question.prompt}
             </h2>
-            <QuestionVisual
-              question={question}
-              mode={visualMode}
-              hideAnswer={feedback === 'idle'}
-              revealReading={revealReading}
-            />
-            <div className="visual-switches" aria-label="表示を変える">
-              {(['groups', 'line', 'addition', 'reading'] as const).map((mode) => (
-                <button
-                  className={visualMode === mode ? 'selected' : ''}
-                  key={mode}
-                  type="button"
-                  onClick={() => setVisualMode(mode)}
-                >
-                  {mode === 'groups'
-                    ? 'まとまり'
-                    : mode === 'line'
-                      ? '数直線'
-                      : mode === 'addition'
-                        ? 'たし算'
-                        : '読み'}
-                </button>
-              ))}
-              <label className="mini-toggle">
-                <input
-                  type="checkbox"
-                  checked={showReading}
-                  onChange={(event) => setShowReading(event.target.checked)}
+            {learnKind === 'kuku' ? (
+              <>
+                <QuestionVisual
+                  question={question}
+                  mode={visualMode}
+                  hideAnswer={feedback === 'idle'}
+                  revealReading={revealReading}
                 />
-                九九の読み方
-              </label>
-            </div>
+                <div className="visual-switches" aria-label="表示を変える">
+                  {(['groups', 'line', 'addition', 'reading'] as const).map((mode) => (
+                    <button
+                      className={visualMode === mode ? 'selected' : ''}
+                      key={mode}
+                      type="button"
+                      onClick={() => setVisualMode(mode)}
+                    >
+                      {mode === 'groups'
+                        ? 'まとまり'
+                        : mode === 'line'
+                          ? '数直線'
+                          : mode === 'addition'
+                            ? 'たし算'
+                            : '読み'}
+                    </button>
+                  ))}
+                  <label className="mini-toggle">
+                    <input
+                      type="checkbox"
+                      checked={showReading}
+                      onChange={(event) => setShowReading(event.target.checked)}
+                    />
+                    九九の読み方
+                  </label>
+                </div>
+              </>
+            ) : feedback !== 'idle' && question.explanation ? (
+              <p className="quiet-text">{question.explanation}</p>
+            ) : null}
             <GameFeedback state={feedback} correctAnswer={question.answer} />
             <AnswerControls
               question={question}
-              answerMode={answerMode}
+              answerMode={activeAnswerMode}
               inputValue={inputValue}
               onInputChange={setInputValue}
               onAnswer={handleAnswer}

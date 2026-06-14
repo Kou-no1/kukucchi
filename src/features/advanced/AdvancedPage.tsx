@@ -4,12 +4,17 @@ import { AppShell } from '../../components/common/AppShell'
 import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
+import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { bosses } from '../../data/bosses'
 import {
   advancedBossDisplayNames,
   advancedBossVariantForBossId,
 } from '../../game-engine/collection/advancedPixelSprites'
-import { getClearedStars, isBossUnlocked } from '../../game-engine/bosses/bossEngine'
+import {
+  getClearedStars,
+  isBossUnlocked,
+  remainingQuestionsToUnlockBoss,
+} from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdvancedQuestion } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
@@ -21,8 +26,23 @@ import type { AnswerResult, Question, ScoreState } from '../../types/game'
 import { createId } from '../../utils/id'
 
 type AdvancedCategory = 'mixed' | 'square' | 'pi' | 'development'
+type AdvancedPhase = 'ready' | 'running'
 
 const advancedGoal = 8
+
+const advancedCategoryLabels: Record<AdvancedCategory, string> = {
+  mixed: 'ミックス',
+  square: '平方数',
+  pi: '円周率',
+  development: '発展',
+}
+
+const advancedCategoryDescriptions: Record<AdvancedCategory, string> = {
+  mixed: '平方数・円周率・発展をまぜてれんしゅう',
+  square: '11×11から20×20までの平方数',
+  pi: '3.14をつかった円周率計算',
+  development: '約数・倍数・素数などの発展計算',
+}
 
 function categoryFromQuestionId(questionId: string): string {
   if (questionId.startsWith('square-')) {
@@ -51,6 +71,7 @@ function categorySpriteName(category: AdvancedCategory) {
 export function AdvancedPage() {
   const navigate = useNavigate()
   const { saveData, setSaveData } = useSaveData()
+  const [phase, setPhase] = useState<AdvancedPhase>('ready')
   const [category, setCategory] = useState<AdvancedCategory>('mixed')
   const [question, setQuestion] = useState<Question>(() => generateAdvancedQuestion('mixed'))
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
@@ -70,7 +91,18 @@ export function AdvancedPage() {
 
   function changeCategory(nextCategory: AdvancedCategory) {
     setCategory(nextCategory)
-    resetQuestion(nextCategory)
+    if (phase === 'running') {
+      resetQuestion(nextCategory)
+    }
+  }
+
+  function startAdvanced() {
+    setQuestion(generateAdvancedQuestion(category))
+    setFeedback('idle')
+    setResults([])
+    setScoreState({ score: 0, combo: 0, maxCombo: 0 })
+    startedAtRef.current = Date.now()
+    setPhase('running')
   }
 
   function finish(nextResults = results, nextScoreState = scoreState) {
@@ -138,111 +170,113 @@ export function AdvancedPage() {
   }
 
   return (
-    <AppShell title="スーパー計算" backTo="/home" className="game-shell">
-      <section className="advanced-command" aria-label="スーパー計算メニュー">
-        <div className="advanced-command-guardian">
-          <AdvancedBossSprite
-            variant={categorySpriteVariant(category)}
-            compact
-            className="advanced-command-sprite"
-          />
-          <span>{categorySpriteName(category)}</span>
-        </div>
-        <div>
-          <p className="welcome">スーパー計算</p>
-          <h2>平方数と3.14を攻略</h2>
-          <p className="title-line">すこしむずかしい計算ステージです。</p>
-        </div>
-        <div className="segmented">
-          <button
-            className={category === 'mixed' ? 'selected' : ''}
-            type="button"
-            onClick={() => changeCategory('mixed')}
-          >
-            ミックス
-          </button>
-          <button
-            className={category === 'square' ? 'selected' : ''}
-            type="button"
-            onClick={() => changeCategory('square')}
-          >
-            平方
-          </button>
-          <button
-            className={category === 'pi' ? 'selected' : ''}
-            type="button"
-            onClick={() => changeCategory('pi')}
-          >
-            3.14
-          </button>
-          <button
-            className={category === 'development' ? 'selected' : ''}
-            type="button"
-            onClick={() => changeCategory('development')}
-          >
-            発展
-          </button>
-        </div>
-      </section>
+    <AppShell
+      title="スーパー計算"
+      backTo="/home"
+      className={phase === 'running' ? 'game-shell' : 'mode-ready-shell advanced-ready-shell'}
+    >
+      {phase === 'ready' ? (
+        <ModeStartScreen
+          title={`${advancedCategoryLabels[category]} チャレンジ`}
+          eyebrow="けいさんをえらぼう"
+          description={advancedCategoryDescriptions[category]}
+          level={saveData.player?.level ?? 1}
+          backTo="/games"
+          onStart={startAdvanced}
+        >
+          <div className="duration-select-panel advanced-start-panel" aria-label="けいさんをえらぶ">
+            <strong>けいさん</strong>
+            <div className="segmented advanced-start-segmented">
+              {(['mixed', 'square', 'pi', 'development'] as const).map((nextCategory) => (
+                <button
+                  className={category === nextCategory ? 'selected' : ''}
+                  key={nextCategory}
+                  type="button"
+                  onClick={() => changeCategory(nextCategory)}
+                  aria-pressed={category === nextCategory}
+                >
+                  {advancedCategoryLabels[nextCategory]}
+                </button>
+              ))}
+            </div>
+          </div>
 
-      <section className="boss-list compact" aria-label="高学年ボス">
-        {bosses
-          .filter((boss) => boss.group === 'advanced')
-          .map((boss) => {
-            const unlocked = isBossUnlocked(boss, saveData)
-            const stars = getClearedStars(saveData, boss.id)
-            const bossVariant = advancedBossVariantForBossId(boss.id)
-            return (
-              <Link
-                className={unlocked ? 'boss-card' : 'boss-card locked'}
-                key={boss.id}
-                to={unlocked ? `/boss/${boss.id}` : '#'}
-                aria-disabled={!unlocked}
-              >
-                <span className="boss-no">No.{boss.no}</span>
-                {bossVariant ? (
-                  <AdvancedBossSprite
-                    variant={bossVariant}
-                    locked={!unlocked}
-                    compact
-                    className="boss-card-sprite"
-                  />
-                ) : (
-                  <span className="boss-emoji" aria-hidden="true">
-                    {unlocked ? boss.emoji : '◆'}
-                  </span>
-                )}
-                <h2>{unlocked ? boss.label : '？？？'}</h2>
-                <p>{unlocked ? boss.description : 'このカテゴリで20もん正解すると解放'}</p>
-                <strong>{'★'.repeat(stars) || '未クリア'}</strong>
-              </Link>
-            )
-          })}
-      </section>
+          <div className="advanced-ready-boss-list" aria-label="高学年ボス">
+            {bosses
+              .filter((boss) => boss.group === 'advanced')
+              .map((boss) => {
+                const unlocked = isBossUnlocked(boss, saveData)
+                const stars = getClearedStars(saveData, boss.id)
+                const remainingToUnlock = remainingQuestionsToUnlockBoss(boss, saveData)
+                const bossVariant = advancedBossVariantForBossId(boss.id)
+                return (
+                  <Link
+                    className={unlocked ? 'advanced-ready-boss-card' : 'advanced-ready-boss-card locked'}
+                    key={boss.id}
+                    to={unlocked ? `/boss/${boss.id}` : '#'}
+                    aria-disabled={!unlocked}
+                  >
+                    {bossVariant ? (
+                      <AdvancedBossSprite
+                        variant={bossVariant}
+                        locked={!unlocked}
+                        compact
+                        className="boss-card-sprite"
+                      />
+                    ) : null}
+                    <span>{unlocked ? boss.label : '？？？'}</span>
+                    {!unlocked && remainingToUnlock !== null ? (
+                      <p className="boss-unlock-progress">あと {remainingToUnlock}もん で かいほう！</p>
+                    ) : null}
+                    <strong>{'★'.repeat(stars) || '未クリア'}</strong>
+                  </Link>
+                )
+              })}
+          </div>
+        </ModeStartScreen>
+      ) : (
+        <>
+          <section className="advanced-command" aria-label="スーパー計算メニュー">
+            <div className="advanced-command-guardian">
+              <AdvancedBossSprite
+                variant={categorySpriteVariant(category)}
+                compact
+                className="advanced-command-sprite"
+              />
+              <span>{categorySpriteName(category)}</span>
+            </div>
+            <div>
+              <p className="welcome">{advancedCategoryLabels[category]}</p>
+              <h2>スーパー計算</h2>
+              <p className="title-line">{advancedCategoryDescriptions[category]}</p>
+            </div>
+          </section>
 
-      <section className="game-panel" aria-labelledby="advanced-question">
-        <div className="question-header">
-          <span>
-            {results.length}/{advancedGoal}
-          </span>
-          <span>{scoreState.score} pt</span>
-        </div>
-        <h2 id="advanced-question" className="question-prompt">
-          {question.prompt}
-        </h2>
-        {feedback !== 'idle' && question.explanation ? (
-          <p className="quiet-text">{question.explanation}</p>
-        ) : null}
-        <GameFeedback state={feedback} correctAnswer={question.answer} />
-        <AnswerControls
-          question={question}
-          answerMode="choice"
-          inputValue=""
-          onInputChange={() => undefined}
-          onAnswer={handleAnswer}
-          disabled={feedback !== 'idle'}
-        />
-      </section>
+          <section className="game-panel" aria-labelledby="advanced-question">
+            <div className="question-header">
+              <span>
+                {results.length}/{advancedGoal}
+              </span>
+              <span>{scoreState.score} pt</span>
+            </div>
+            <h2 id="advanced-question" className="question-prompt">
+              {question.prompt}
+            </h2>
+            {feedback !== 'idle' && question.explanation ? (
+              <p className="quiet-text">{question.explanation}</p>
+            ) : null}
+            <GameFeedback state={feedback} correctAnswer={question.answer} />
+            <AnswerControls
+              question={question}
+              answerMode="choice"
+              inputValue=""
+              onInputChange={() => undefined}
+              onAnswer={handleAnswer}
+              disabled={feedback !== 'idle'}
+            />
+          </section>
+        </>
+      )}
     </AppShell>
   )
 }

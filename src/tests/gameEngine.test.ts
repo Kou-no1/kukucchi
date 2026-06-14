@@ -30,7 +30,7 @@ import {
   isAdvancedMonsterOwned,
   newlyOwnedAdvancedMonsters,
 } from '../data/advancedMonsters'
-import { bosses } from '../data/bosses'
+import { bossDifficulties, bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
 import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
@@ -42,6 +42,7 @@ import {
   getDifficultyProgress,
   isBossUnlocked,
   isDifficultyUnlocked,
+  remainingQuestionsToUnlockBoss,
 } from '../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
@@ -759,6 +760,7 @@ describe('mastery, review, missions, and storage', () => {
   })
 
   it('unlocks bosses and higher difficulties in order', () => {
+    expect(bossDifficulties.gekimuzu.timeLimitSeconds).toBe(1.8)
     const boss = bosses.find((candidate) => candidate.id === 'boss-stage-2')
     expect(boss).toBeTruthy()
     if (!boss) {
@@ -785,6 +787,49 @@ describe('mastery, review, missions, and storage', () => {
     const hardCleared = applyBossClearReward(cleared, boss.id, 'hard', 11000).save
     const fastCleared = applyBossClearReward(hardCleared, boss.id, 'fast', 9000).save
     expect(isDifficultyUnlocked(boss, 'gekimuzu', fastCleared)).toBe(true)
+  })
+
+  it('calculates remaining correct answers for locked bosses', () => {
+    const boss = bosses.find((candidate) => candidate.id === 'boss-stage-3')
+    const allBoss = bosses.find((candidate) => candidate.id === 'boss-all-kuku')
+    expect(boss).toBeTruthy()
+    expect(allBoss).toBeTruthy()
+    if (!boss || !allBoss) {
+      return
+    }
+    const save = createDefaultSaveData()
+    expect(remainingQuestionsToUnlockBoss(boss, save)).toBe(20)
+    const withTenCorrect = {
+      ...save,
+      progress: {
+        ...save.progress,
+        facts: {
+          '3x1': { ...createFactProgress(3, 1), correctCount: 10 },
+        },
+      },
+    }
+    expect(remainingQuestionsToUnlockBoss(boss, withTenCorrect)).toBe(10)
+    const withNineteenCorrect = {
+      ...save,
+      progress: {
+        ...save.progress,
+        facts: {
+          '3x1': { ...createFactProgress(3, 1), correctCount: 19 },
+        },
+      },
+    }
+    expect(remainingQuestionsToUnlockBoss(boss, withNineteenCorrect)).toBe(1)
+    const unlocked = {
+      ...save,
+      progress: {
+        ...save.progress,
+        facts: {
+          '3x1': { ...createFactProgress(3, 1), correctCount: 20 },
+        },
+      },
+    }
+    expect(remainingQuestionsToUnlockBoss(boss, unlocked)).toBeNull()
+    expect(remainingQuestionsToUnlockBoss(allBoss, save)).toBeNull()
   })
 
   it('grants fixed boss rewards only on first clear', () => {
