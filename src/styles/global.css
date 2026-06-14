@@ -609,6 +609,17 @@ legend {
   text-shadow: 0 0 12px rgba(91, 233, 244, 0.64);
 }
 
+.exp-progress-card h2 {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.26);
+}
+
+.mode-result-card .title-line,
+.exp-progress-card .quiet-text {
+  color: #ffffff;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
+}
+
 .exp-progress-track {
   overflow: hidden;
   height: 14px;
@@ -4398,6 +4409,108 @@ legend {
 
 .game-shell .boss-time > div {
   height: 12px;
+}
+
+.game-shell .mini-game-command {
+  grid-template-columns: minmax(54px, auto) minmax(0, 1fr) minmax(78px, 0.24fr);
+  max-height: clamp(62px, 13dvh, 104px);
+  padding: clamp(5px, 1dvh, 8px);
+}
+
+.game-shell .mini-game-command h2 {
+  font-size: clamp(0.95rem, 3vw, 1.32rem);
+  line-height: 1.08;
+}
+
+.game-shell .mini-game-command .welcome,
+.game-shell .mini-game-command .title-line {
+  margin: 0;
+  line-height: 1.1;
+}
+
+.game-shell .mini-game-meter {
+  min-width: 78px;
+  padding: 6px 8px;
+}
+
+.game-shell .mini-game-meter span {
+  font-size: clamp(1rem, 3vw, 1.35rem);
+}
+
+.game-shell .mini-game-meter strong {
+  font-size: clamp(1.35rem, 5vw, 2rem);
+}
+
+.game-shell .mini-game-meter small {
+  font-size: 0.68rem;
+}
+
+.game-shell .mini-game-panel {
+  justify-content: flex-start;
+  gap: clamp(4px, 0.8dvh, 7px);
+  padding: clamp(6px, 1.2dvh, 10px);
+}
+
+.game-shell .mini-game-panel .question-header {
+  gap: 6px;
+  font-size: clamp(0.82rem, 2.4vw, 1rem);
+}
+
+.game-shell .mini-game-panel .boss-time span,
+.game-shell .mini-game-panel .quiet-text {
+  font-size: clamp(0.78rem, 2.3vw, 0.92rem);
+  line-height: 1.12;
+}
+
+.game-shell .mini-game-panel .boss-time > div {
+  height: 10px;
+}
+
+.game-shell .mini-game-panel .question-prompt {
+  font-size: clamp(2rem, 7.5vw, 3.35rem);
+  line-height: 0.98;
+}
+
+.game-shell .mini-game-panel .feedback {
+  min-height: clamp(28px, 4.8dvh, 34px);
+  padding: 4px 8px;
+  font-size: clamp(0.78rem, 2.4vw, 0.92rem);
+}
+
+.game-shell .mini-game-panel .secondary-action.wide {
+  min-height: 40px;
+  padding: 4px 8px;
+  font-size: clamp(0.85rem, 2.6vw, 1rem);
+}
+
+.game-shell .mini-game-panel .choice-grid {
+  width: 100%;
+  margin-top: auto;
+  gap: clamp(6px, 1dvh, 8px);
+}
+
+.game-shell .mini-game-panel .choice-button {
+  min-height: clamp(48px, 9.5dvh, 72px);
+  font-size: clamp(1.65rem, 6vw, 2.55rem);
+}
+
+@media (max-height: 700px) {
+  .game-shell .mini-game-command {
+    max-height: 78px;
+  }
+
+  .game-shell .mini-game-command .kukucchi {
+    max-height: 58px;
+    transform: scale(0.58);
+  }
+
+  .game-shell .mini-game-panel .question-prompt {
+    font-size: clamp(1.65rem, 7vw, 2.75rem);
+  }
+
+  .game-shell .mini-game-panel .choice-button {
+    min-height: clamp(44px, 8.2dvh, 58px);
+  }
 }
 
 .shop-unlock-message {

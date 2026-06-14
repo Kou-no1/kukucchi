@@ -519,7 +519,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         </div>
       </section>
 
-      <section className="game-panel" aria-labelledby="mini-question">
+      <section className={`game-panel mini-game-panel mini-game-panel-${variant}`} aria-labelledby="mini-question">
         <div className="question-header">
           <span>
             {results.length}/{config.goal}

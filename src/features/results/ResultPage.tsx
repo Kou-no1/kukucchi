@@ -79,7 +79,10 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
         <h2 id="mode-result-title">ろけっと</h2>
         <div className="stats-row compact-stats">
           <StatPill label="きょり" value={`${distance}m`} />
-          <StatPill label="ばっじ" value={badges.length > 0 ? badges.join('、') : 'つぎへ'} />
+          <StatPill
+            label={badges.length > 0 ? 'とったばっじ' : 'つぎのばっじ'}
+            value={badges.length > 0 ? badges.join('、') : nextBadgeName ?? 'ぜんぶたっせい'}
+          />
         </div>
         <p className="title-line">
           {nextBadgeName ? `${nextBadgeName}まで あと${remaining}m！` : 'ばっじを ぜんぶ たっせい！'}
