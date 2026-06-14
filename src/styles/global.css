@@ -3038,6 +3038,22 @@ legend {
   height: clamp(58px, 12vw, 96px);
 }
 
+.advanced-command-guardian {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  min-width: clamp(72px, 15vw, 132px);
+}
+
+.advanced-command-guardian span {
+  color: #dffcff;
+  font-size: clamp(0.72rem, 1.6vw, 0.9rem);
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.58);
+}
+
 .compact-book-command {
   margin-top: 12px;
   padding: 10px 12px;

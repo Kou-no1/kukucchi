@@ -5,7 +5,10 @@ import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSpri
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { bosses } from '../../data/bosses'
-import { advancedBossVariantForBossId } from '../../game-engine/collection/advancedPixelSprites'
+import {
+  advancedBossDisplayNames,
+  advancedBossVariantForBossId,
+} from '../../game-engine/collection/advancedPixelSprites'
 import { getClearedStars, isBossUnlocked } from '../../game-engine/bosses/bossEngine'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { generateAdvancedQuestion } from '../../game-engine/questions/questionGenerator'
@@ -39,6 +42,10 @@ function categorySpriteVariant(category: AdvancedCategory) {
     return 'pi'
   }
   return 'mixed'
+}
+
+function categorySpriteName(category: AdvancedCategory) {
+  return advancedBossDisplayNames[categorySpriteVariant(category)]
 }
 
 export function AdvancedPage() {
@@ -133,11 +140,14 @@ export function AdvancedPage() {
   return (
     <AppShell title="スーパー計算" backTo="/home" className="game-shell">
       <section className="advanced-command" aria-label="スーパー計算メニュー">
-        <AdvancedBossSprite
-          variant={categorySpriteVariant(category)}
-          compact
-          className="advanced-command-sprite"
-        />
+        <div className="advanced-command-guardian">
+          <AdvancedBossSprite
+            variant={categorySpriteVariant(category)}
+            compact
+            className="advanced-command-sprite"
+          />
+          <span>{categorySpriteName(category)}</span>
+        </div>
         <div>
           <p className="welcome">スーパー計算</p>
           <h2>平方数と3.14を攻略</h2>

@@ -36,9 +36,9 @@ const squareMonsters: AdvancedMonsterDefinition[] = Array.from({ length: 8 }, (_
 const piSeeds: Array<[string, string, number, number]> = [
   ['pi-1', 'ワンリングパイ', 1, 3],
   ['pi-2', 'ツインリングパイ', 2, 6],
-  ['pi-5', 'ファイブオービット', 5, 10],
-  ['pi-10', 'テンパイプラネット', 10, 14],
-  ['pi-25', 'クォーターパイ', 25, 20],
+  ['pi-5', 'ファイブリングパイ', 5, 10],
+  ['pi-10', 'スリーリングパイ', 10, 14],
+  ['pi-25', 'フォーリングパイ', 25, 20],
   ['pi-100', 'フルムーンパイ', 100, 25],
 ]
 

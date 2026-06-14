@@ -3,6 +3,18 @@ import type { AdvancedMonsterCategory, AdvancedMonsterDefinition } from '../../d
 
 export type AdvancedBossVariant = AdvancedMonsterCategory
 
+export const advancedBossDisplayNames: Record<AdvancedBossVariant, string> = {
+  square: 'クリスタルゴーレム',
+  pi: 'リングプラネット',
+  mixed: 'にじいろキング',
+}
+
+const advancedBossShortLabels: Record<AdvancedBossVariant, string> = {
+  square: 'クリ',
+  pi: 'リング',
+  mixed: 'にじ',
+}
+
 export type AdvancedPixelCell = {
   x: number
   y: number
@@ -23,6 +35,7 @@ export type AdvancedBossSpriteDefinition = {
   variant: AdvancedBossVariant
   cells: AdvancedPixelCell[]
   rings: Array<{ cx: number; cy: number; rx: number; ry: number; rotate: number; color: string }>
+  name: string
   label: string
   signature: string
 }
@@ -228,7 +241,8 @@ export function buildAdvancedBossSprite(variant: AdvancedBossVariant): AdvancedB
     variant,
     cells: bossCells(variant),
     rings,
-    label: variant === 'square' ? '□' : variant === 'pi' ? 'π' : '虹',
+    name: advancedBossDisplayNames[variant],
+    label: advancedBossShortLabels[variant],
     signature: `advanced-boss:${variant}:${rings.length}:${bossCells(variant)
       .map((cell) => `${cell.x},${cell.y},${cell.color}`)
       .join('|')}`,

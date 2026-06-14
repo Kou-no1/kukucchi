@@ -246,37 +246,40 @@ export function MonsterBookPage() {
 
       {activeTab === 'monsters' ? (
         <>
-          <section className="monster-grid book-grid" aria-label="モンスター図かん">
-            {monsterFacts.map((fact, index) => {
-              const factId = `${fact.left}x${fact.right}`
-              const owned = monsterBook.has(factId)
-              return (
-                <article
-                  className={owned ? 'book-card' : 'book-card silhouette'}
-                  key={factId}
-                  {...cardAction({
-                    name: owned ? `${fact.left} × ${fact.right} モンスター` : '？？？',
-                    description: owned ? 'ふくしゅうしてなかまになったよ' : 'まちがえた問題をふくしゅうしよう',
-                    acquiredAt: acquiredAt('monster', factId),
-                    method: owned ? getCollectionRecord(saveData.progress.collectionRecords, 'monster', factId)?.method ?? 'にがてふくしゅう' : '？？？',
-                    owned,
-                  })}
-                >
-                  <span className="boss-no">No.{String(index + 1).padStart(2, '0')}</span>
-                  <MonsterSprite
-                    left={fact.left}
-                    right={fact.right}
-                    locked={!owned}
-                    className="book-pixel-icon"
-                  />
-                  <h2>{owned ? `${fact.left} × ${fact.right}` : '？？？'}</h2>
-                  <p>{owned ? 'なかま' : 'まだ出会っていません'}</p>
-                </article>
-              )
-            })}
+          <section className="collection-section" aria-labelledby="low-monsters-title">
+            <h2 id="low-monsters-title">ていがくねんの なかま</h2>
+            <div className="monster-grid book-grid" aria-label="ていがくねんのモンスター図かん">
+              {monsterFacts.map((fact, index) => {
+                const factId = `${fact.left}x${fact.right}`
+                const owned = monsterBook.has(factId)
+                return (
+                  <article
+                    className={owned ? 'book-card' : 'book-card silhouette'}
+                    key={factId}
+                    {...cardAction({
+                      name: owned ? `${fact.left} × ${fact.right} モンスター` : '？？？',
+                      description: owned ? 'ふくしゅうしてなかまになったよ' : 'まちがえた問題をふくしゅうしよう',
+                      acquiredAt: acquiredAt('monster', factId),
+                      method: owned ? getCollectionRecord(saveData.progress.collectionRecords, 'monster', factId)?.method ?? 'にがてふくしゅう' : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">No.{String(index + 1).padStart(2, '0')}</span>
+                    <MonsterSprite
+                      left={fact.left}
+                      right={fact.right}
+                      locked={!owned}
+                      className="book-pixel-icon"
+                    />
+                    <h2>{owned ? `${fact.left} × ${fact.right}` : '？？？'}</h2>
+                    <p>{owned ? 'なかま' : 'まだ出会っていません'}</p>
+                  </article>
+                )
+              })}
+            </div>
           </section>
           <section className="collection-section" aria-labelledby="advanced-monsters-title">
-            <h2 id="advanced-monsters-title">高学年なかま</h2>
+            <h2 id="advanced-monsters-title">こうがくねんの なかま</h2>
             <div className="monster-grid book-grid">
               {advancedMonsterDefinitions.map((monster) => {
                 const owned = isAdvancedMonsterOwned(saveData.progress.categoryCorrect, monster)

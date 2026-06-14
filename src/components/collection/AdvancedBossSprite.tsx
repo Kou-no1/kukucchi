@@ -26,7 +26,7 @@ export const AdvancedBossSprite = memo(function AdvancedBossSprite({
       className={classNames('advanced-boss-sprite', compact && 'compact', className)}
       viewBox="0 0 112 104"
       role="img"
-      aria-label={locked ? '未解放の高学年ボス' : `${sprite.label}ボス`}
+      aria-label={locked ? '未解放の高学年ボス' : sprite.name}
       shapeRendering="crispEdges"
     >
       <rect x="7" y="7" width="98" height="90" rx="8" fill="#07172d" opacity={locked ? 0.22 : 0.3} />

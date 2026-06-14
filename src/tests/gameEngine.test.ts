@@ -50,6 +50,7 @@ import {
   getTrophyKindForDifficulty,
 } from '../game-engine/collection/pixelSprites'
 import {
+  advancedBossDisplayNames,
   advancedBossVariantForBossId,
   buildAdvancedBossSprite,
   buildAdvancedMonsterSprite,
@@ -188,6 +189,18 @@ describe('question generation', () => {
     }
 
     expect(advancedMonsterDefinitions).toHaveLength(20)
+    expect(
+      advancedMonsterDefinitions
+        .filter((monster) => monster.category === 'pi')
+        .map((monster) => [monster.id, monster.name]),
+    ).toEqual([
+      ['pi-1', 'ワンリングパイ'],
+      ['pi-2', 'ツインリングパイ'],
+      ['pi-5', 'ファイブリングパイ'],
+      ['pi-10', 'スリーリングパイ'],
+      ['pi-25', 'フォーリングパイ'],
+      ['pi-100', 'フルムーンパイ'],
+    ])
     expect(buildAdvancedMonsterSprite(square).signature).toBe(
       buildAdvancedMonsterSprite(square).signature,
     )
@@ -196,8 +209,18 @@ describe('question generation', () => {
     )
     expect(buildAdvancedMonsterSprite(mixed).cells.length).toBeGreaterThan(20)
     expect(buildAdvancedBossSprite('square').signature).toBe(buildAdvancedBossSprite('square').signature)
+    expect(buildAdvancedBossSprite('square').name).toBe('クリスタルゴーレム')
     expect(buildAdvancedBossSprite('pi').rings.length).toBe(2)
+    expect(buildAdvancedBossSprite('pi').name).toBe('リングプラネット')
     expect(buildAdvancedBossSprite('mixed').cells.length).toBeGreaterThan(50)
+    expect(buildAdvancedBossSprite('mixed').name).toBe('にじいろキング')
+    expect(advancedBossDisplayNames).toEqual({
+      square: 'クリスタルゴーレム',
+      pi: 'リングプラネット',
+      mixed: 'にじいろキング',
+    })
+    expect(bosses.find((boss) => boss.id === 'boss-square')?.label).toBe('クリスタルゴーレム')
+    expect(bosses.find((boss) => boss.id === 'boss-pi')?.label).toBe('リングプラネット')
     expect(advancedBossVariantForBossId('boss-square')).toBe('square')
     expect(advancedBossVariantForBossId('boss-pi')).toBe('pi')
     expect(advancedBossVariantForBossId('boss-stage-2')).toBeNull()
