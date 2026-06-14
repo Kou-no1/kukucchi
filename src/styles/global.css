@@ -4055,6 +4055,43 @@ legend {
   color: #061525;
 }
 
+.learn-start-segmented {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 8px;
+}
+
+.learn-run-status {
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  min-height: 100%;
+  padding: 10px 12px;
+  border: 2px solid rgba(91, 233, 244, 0.5);
+  border-radius: 8px;
+  background:
+    linear-gradient(180deg, rgba(10, 45, 82, 0.94), rgba(5, 20, 48, 0.96)),
+    radial-gradient(circle at 50% 0%, rgba(91, 233, 244, 0.2), transparent 70%);
+  color: #dffcff;
+  text-align: center;
+  box-shadow:
+    0 0 16px rgba(91, 233, 244, 0.22),
+    inset 0 0 16px rgba(91, 233, 244, 0.12);
+}
+
+.learn-run-status span,
+.learn-run-status small {
+  color: rgba(232, 251, 255, 0.74);
+  font-weight: 900;
+}
+
+.learn-run-status strong {
+  color: #dffcff;
+  font-size: clamp(1rem, 3vw, 1.35rem);
+  line-height: 1.1;
+  text-shadow: 0 0 12px rgba(91, 233, 244, 0.72);
+}
+
 .treasure-chest-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(136px, 1fr));
@@ -4446,6 +4483,144 @@ legend {
   max-height: 82px;
   transform: scale(0.72);
   transform-origin: center;
+}
+
+.game-shell .speed-command {
+  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1.28fr);
+  max-height: clamp(82px, 16dvh, 108px);
+  align-items: stretch;
+}
+
+.game-shell .speed-command .speed-summary {
+  height: 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.game-shell .speed-command .speed-summary div {
+  min-height: 0;
+  height: 100%;
+  padding: 5px 6px;
+}
+
+.game-shell .speed-command .speed-summary span {
+  font-size: clamp(0.68rem, 2.2vw, 0.82rem);
+}
+
+.game-shell .speed-command .speed-summary strong {
+  font-size: clamp(1.35rem, 5vw, 2rem);
+  line-height: 1;
+}
+
+.game-shell .speed-companion {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(74px, 0.18fr) minmax(0, 1fr);
+  align-items: center;
+  padding: 6px 10px;
+  overflow: hidden;
+}
+
+.game-shell .speed-companion .kukucchi {
+  width: 76px;
+  max-height: 66px;
+  transform: none;
+}
+
+.game-shell .speed-companion .ufo-ring {
+  width: 76px;
+  border-width: 5px;
+}
+
+.game-shell .speed-companion .ufo-cockpit {
+  width: 46px;
+  height: 34px;
+  border-width: 3px;
+}
+
+.game-shell .speed-companion .kukucchi-body {
+  width: 30px;
+}
+
+.game-shell .speed-companion .antenna {
+  top: -18px;
+  height: 20px;
+}
+
+.game-shell .speed-companion .antenna-left {
+  left: 6px;
+}
+
+.game-shell .speed-companion .antenna-right {
+  right: 6px;
+}
+
+.game-shell .speed-companion .eye {
+  top: 9px;
+  width: 9px;
+  height: 9px;
+  border-width: 2px;
+}
+
+.game-shell .speed-companion .left-eye {
+  left: 7px;
+}
+
+.game-shell .speed-companion .right-eye {
+  right: 7px;
+}
+
+.game-shell .speed-companion .mouth {
+  bottom: 7px;
+  width: 14px;
+  height: 7px;
+}
+
+.game-shell .speed-companion .belly {
+  display: none;
+}
+
+.game-shell .speed-companion .ufo-ship {
+  top: 43px;
+  width: 66px;
+  height: 20px;
+  border-width: 3px;
+}
+
+.game-shell .speed-companion .ufo-light {
+  width: 8px;
+  height: 8px;
+}
+
+.game-shell .speed-companion .light-a {
+  left: 12px;
+}
+
+.game-shell .speed-companion .light-b {
+  left: 26px;
+}
+
+.game-shell .speed-companion .light-c {
+  right: 26px;
+}
+
+.game-shell .speed-companion .light-d {
+  right: 12px;
+}
+
+.game-shell .speed-companion .kukucchi-shadow {
+  display: none;
+}
+
+.game-shell .speed-companion h2 {
+  font-size: clamp(1.15rem, 4vw, 1.7rem);
+  line-height: 1.05;
+}
+
+.game-shell .speed-companion .welcome,
+.game-shell .speed-companion .title-line {
+  margin: 0;
+  line-height: 1.08;
 }
 
 .game-shell .boss-list.compact {

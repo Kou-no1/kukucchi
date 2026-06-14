@@ -59,11 +59,15 @@ describe('app flow', () => {
     await user.click(screen.getByRole('link', { name: 'あそぶ' }))
     await user.click(screen.getByRole('link', { name: /おぼえる/ }))
     expect(await screen.findByRole('heading', { name: 'おぼえる' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '2のだん れんしゅう' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: '上がり 1→9' }))
+    await user.click(screen.getByRole('button', { name: 'スタート！' }))
+    expect(await screen.findByRole('heading', { level: 2, name: /×/ }, { timeout: 3000 })).toBeInTheDocument()
 
-    for (let index = 0; index < 5; index += 1) {
+    for (let index = 0; index < 9; index += 1) {
       await answerCurrentQuestion(user)
       expect(await screen.findByText(/できた/)).toBeInTheDocument()
-      if (index < 4) {
+      if (index < 8) {
         await waitFor(
           () => expect(screen.queryByText(/できた/)).not.toBeInTheDocument(),
           { timeout: 2000 },
