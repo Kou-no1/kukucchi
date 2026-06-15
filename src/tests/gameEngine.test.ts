@@ -16,7 +16,7 @@ import {
   calculateSpeedBonus,
 } from '../game-engine/scoring/score'
 import { calculateCoins, calculateExp, expProgressToNextLevel } from '../game-engine/rewards/rewards'
-import { judgeNewTitles } from '../game-engine/rewards/titles'
+import { getTitleDefinitions, judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import {
   createFactProgress,
   updateFactProgress,
@@ -239,8 +239,10 @@ describe('question generation', () => {
     })
     expect(bosses.find((boss) => boss.id === 'boss-square')?.label).toBe('クリスタルゴーレム')
     expect(bosses.find((boss) => boss.id === 'boss-pi')?.label).toBe('リングプラネット')
+    expect(bosses.find((boss) => boss.id === 'boss-development')?.label).toBe('にじいろキング')
     expect(advancedBossVariantForBossId('boss-square')).toBe('square')
     expect(advancedBossVariantForBossId('boss-pi')).toBe('pi')
+    expect(advancedBossVariantForBossId('boss-development')).toBe('mixed')
     expect(advancedBossVariantForBossId('boss-stage-2')).toBeNull()
   })
 
@@ -580,7 +582,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(getMonsterOvercomeProgress(overcome).message).toBeNull()
   })
 
-  it('re-applies stale time-only monster cleanup from v8 to v9', () => {
+  it('re-applies stale time-only monster cleanup from v8 to v10', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -612,18 +614,18 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v8Save)
-    expect(migrated.version).toBe(9)
+    expect(migrated.version).toBe(10)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
-    expect(save.version).toBe(9)
+    expect(save.version).toBe(10)
     expect(save.settings.dailyBudgetMinutes).toBe(10)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(9)
+    expect(migrated.version).toBe(10)
     expect(migrated.settings.dailyBudgetMinutes).toBe(10)
     expect(migrated.player).toBeNull()
     expect(migrated.tutorial.homeSeen).toBe(false)
@@ -636,6 +638,32 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.collectionRecords).toEqual([])
     expect(migrated.progress.ownedTreasureItems).toEqual([])
     expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
+  })
+
+  it('counts title book progress from existing title definitions', () => {
+    const bossTitle = bosses[0].rewards.normal.title
+    const save: SaveData = {
+      ...createSaveWithPlayer(),
+      player: {
+        ...createSaveWithPlayer().player!,
+        titles: ['はじめのいっぽ', bossTitle],
+        currentTitle: bossTitle,
+      },
+      progress: {
+        ...createSaveWithPlayer().progress,
+        collectionRecords: [
+          {
+            id: collectionRecordId('title', titleRecordId(bossTitle)),
+            acquiredAt: '2026-01-02T00:00:00.000Z',
+            method: 'ボスバトル',
+          },
+        ],
+      },
+    }
+    const progress = calculateBookProgress(save)
+    expect(getTitleDefinitions().map((title) => title.label)).toContain(bossTitle)
+    expect(progress.tabs.titles.total).toBe(getTitleDefinitions().length)
+    expect(progress.tabs.titles.owned).toBe(2)
   })
 
   it('tracks daily active usage with idle, background, session accumulation, and midnight reset', () => {
@@ -808,11 +836,11 @@ describe('mastery, review, missions, and storage', () => {
     }
     delete (legacy.player as Record<string, unknown>).shipName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(9)
+    expect(migrated.version).toBe(10)
     expect(migrated.player?.shipName).toBe('くくっち')
   })
 
-  it('migrates v4 save data into v8 and removes time-only monsters', () => {
+  it('migrates v4 save data into v10 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -844,7 +872,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(9)
+    expect(migrated.version).toBe(10)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -895,7 +923,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(9)
+    expect(applied.save.version).toBe(10)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
@@ -1131,6 +1159,146 @@ describe('mastery, review, missions, and storage', () => {
     expect(remainingQuestionsToUnlockBoss(allBoss, save)).toBeNull()
   })
 
+  it('unlocks high-grade boss categories independently', () => {
+    const squareBoss = bosses.find((boss) => boss.id === 'boss-square')
+    const piBoss = bosses.find((boss) => boss.id === 'boss-pi')
+    const developmentBoss = bosses.find((boss) => boss.id === 'boss-development')
+    expect(squareBoss).toBeTruthy()
+    expect(piBoss).toBeTruthy()
+    expect(developmentBoss).toBeTruthy()
+    if (!squareBoss || !piBoss || !developmentBoss) {
+      return
+    }
+
+    const squareOnly = {
+      ...createDefaultSaveData(),
+      progress: {
+        ...createDefaultSaveData().progress,
+        categoryCorrect: {
+          'multiplication-square': 20,
+          'pi-multiplication': 0,
+          development: 0,
+        },
+      },
+    }
+    expect(isBossUnlocked(squareBoss, squareOnly)).toBe(true)
+    expect(isBossUnlocked(piBoss, squareOnly)).toBe(false)
+    expect(isBossUnlocked(developmentBoss, squareOnly)).toBe(false)
+    expect(remainingQuestionsToUnlockBoss(piBoss, squareOnly)).toBe(20)
+
+    const piOnly = {
+      ...squareOnly,
+      progress: {
+        ...squareOnly.progress,
+        categoryCorrect: {
+          'multiplication-square': 0,
+          'pi-multiplication': 20,
+          development: 0,
+        },
+      },
+    }
+    expect(isBossUnlocked(squareBoss, piOnly)).toBe(false)
+    expect(isBossUnlocked(piBoss, piOnly)).toBe(true)
+    expect(isBossUnlocked(developmentBoss, piOnly)).toBe(false)
+
+    const developmentOnly = {
+      ...squareOnly,
+      progress: {
+        ...squareOnly.progress,
+        categoryCorrect: {
+          'multiplication-square': 0,
+          'pi-multiplication': 0,
+          development: 20,
+        },
+      },
+    }
+    expect(isBossUnlocked(squareBoss, developmentOnly)).toBe(false)
+    expect(isBossUnlocked(piBoss, developmentOnly)).toBe(false)
+    expect(isBossUnlocked(developmentBoss, developmentOnly)).toBe(true)
+  })
+
+  it('resets legacy high-grade boss clears and rewards during v10 migration', () => {
+    const legacy = createSaveWithPlayer()
+    const squareTitle = bosses.find((boss) => boss.id === 'boss-square')?.rewards.normal.title ?? ''
+    const squareItem = 'boss-square-normal-item'
+    const migrated = migrateSaveData({
+      ...legacy,
+      version: 9,
+      player: legacy.player
+        ? {
+            ...legacy.player,
+            titles: [...legacy.player.titles, squareTitle, 'すべてをしるもの'],
+            currentTitle: squareTitle,
+          }
+        : legacy.player,
+      progress: {
+        ...legacy.progress,
+        bossProgress: {
+          'boss-square': {
+            bossId: 'boss-square',
+            difficulties: {
+              normal: {
+                cleared: true,
+                clearCount: 1,
+                firstClearedAt: '2026-01-01T00:00:00.000Z',
+                bestTimeMs: 8000,
+              },
+            },
+          },
+          'boss-development': {
+            bossId: 'boss-development',
+            difficulties: {
+              normal: {
+                cleared: true,
+                clearCount: 1,
+                firstClearedAt: '2026-01-01T00:00:00.000Z',
+                bestTimeMs: 8000,
+              },
+            },
+          },
+        },
+        bossItems: [squareItem, 'boss-development-normal-item'],
+        ownedUfos: ['boss-square-ufo', 'boss-development-ufo', specialUfoId],
+        equippedUfoId: 'boss-square-ufo',
+        collectionRecords: [
+          {
+            id: collectionRecordId('boss-item', squareItem),
+            acquiredAt: '2026-01-01T00:00:00.000Z',
+            method: '旧平方数ボス',
+          },
+          {
+            id: collectionRecordId('title', titleRecordId(squareTitle)),
+            acquiredAt: '2026-01-01T00:00:00.000Z',
+            method: '旧平方数ボス',
+          },
+          {
+            id: collectionRecordId('ufo', 'boss-development-ufo'),
+            acquiredAt: '2026-01-01T00:00:00.000Z',
+            method: 'はってんボス',
+          },
+        ],
+      },
+    })
+
+    expect(migrated.version).toBe(10)
+    expect(migrated.progress.bossProgress['boss-square']).toBeUndefined()
+    expect(migrated.progress.bossProgress['boss-development']).toBeTruthy()
+    expect(migrated.progress.bossItems).not.toContain(squareItem)
+    expect(migrated.progress.bossItems).toContain('boss-development-normal-item')
+    expect(migrated.progress.ownedUfos).not.toContain('boss-square-ufo')
+    expect(migrated.progress.ownedUfos).not.toContain(specialUfoId)
+    expect(migrated.progress.ownedUfos).toContain('boss-development-ufo')
+    expect(migrated.progress.equippedUfoId).toBe('boss-development-ufo')
+    expect(migrated.player?.titles).not.toContain(squareTitle)
+    expect(migrated.player?.titles).not.toContain('すべてをしるもの')
+    expect(migrated.progress.collectionRecords).not.toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('boss-item', squareItem) }),
+    )
+    expect(migrated.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('ufo', 'boss-development-ufo') }),
+    )
+  })
+
   it('grants fixed boss rewards only on first clear', () => {
     const boss = bosses[0]
     let save: SaveData = createSaveWithPlayer()
@@ -1174,7 +1342,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(second.rewardUfoIds).toEqual([])
   })
 
-  it('grants the all-gekimuzu reward once when the 11th boss clears', () => {
+  it('grants the all-gekimuzu reward once when the final boss clears', () => {
     const finalBoss = bosses[bosses.length - 1]
     let save: SaveData = createSaveWithPlayer()
     for (const boss of bosses.slice(0, -1)) {

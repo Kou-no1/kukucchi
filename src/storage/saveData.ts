@@ -1,12 +1,43 @@
 import type { MultiplicationFactProgress } from '../types/game'
-import type { CollectionRecord, PlayerData } from '../types/save'
+import type { CollectionRecord, PlayerData, ProgressData } from '../types/save'
 import type { OnboardingInput, SaveData } from '../types/save'
+import { allGekimuzuTitle, bosses, bossLimitedItems, legendaryBossTitle } from '../data/bosses'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
 import { coerceShipName, defaultShipName } from '../data/shipName'
+import { specialUfoId } from '../data/ufos'
+import { collectionRecordId } from '../game-engine/collection/collectionRecords'
 import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
+import { titleRecordId } from '../game-engine/rewards/titles'
 
-export const SAVE_DATA_VERSION = 9
+export const SAVE_DATA_VERSION = 10
+
+const legacyAdvancedBossIds = ['boss-square', 'boss-pi'] as const
+const legacyAdvancedBossIdSet = new Set<string>(legacyAdvancedBossIds)
+const legacyAdvancedBossTitles = new Set<string>([
+  ...bosses
+    .filter((boss) => legacyAdvancedBossIdSet.has(boss.id))
+    .flatMap((boss) => Object.values(boss.rewards).map((reward) => reward.title)),
+  legendaryBossTitle,
+  allGekimuzuTitle,
+])
+const legacyAdvancedBossItemIds = new Set(
+  bossLimitedItems
+    .filter((item) => legacyAdvancedBossIdSet.has(item.bossId))
+    .map((item) => item.id),
+)
+const legacyAdvancedUfoIds = new Set([
+  ...legacyAdvancedBossIds.map((bossId) => `${bossId}-ufo`),
+  specialUfoId,
+])
+const legacyAdvancedCollectionRecordIds = new Set<string>([
+  ...legacyAdvancedBossIds.map((bossId) => collectionRecordId('ufo', `${bossId}-ufo`)),
+  collectionRecordId('ufo', specialUfoId),
+  ...Array.from(legacyAdvancedBossItemIds).map((itemId) => collectionRecordId('boss-item', itemId)),
+  ...Array.from(legacyAdvancedBossTitles).map((title) =>
+    collectionRecordId('title', titleRecordId(title)),
+  ),
+])
 
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount
@@ -66,6 +97,55 @@ function normalizePlayer(player: SaveData['player'] | undefined | null): SaveDat
   }
 }
 
+function resetLegacyAdvancedBossPlayer(player: SaveData['player']): SaveData['player'] {
+  if (!player) {
+    return player
+  }
+  const titles = player.titles.filter((title) => !legacyAdvancedBossTitles.has(title))
+  return {
+    ...player,
+    titles,
+    currentTitle: legacyAdvancedBossTitles.has(player.currentTitle)
+      ? titles.at(-1) ?? 'はじめのいっぽ'
+      : player.currentTitle,
+  }
+}
+
+function resetLegacyAdvancedBossProgress(progress: ProgressData): ProgressData {
+  const bossProgress = { ...progress.bossProgress }
+  for (const bossId of legacyAdvancedBossIds) {
+    delete bossProgress[bossId]
+  }
+  const ownedUfos = progress.ownedUfos.filter((ufoId) => !legacyAdvancedUfoIds.has(ufoId))
+  return {
+    ...progress,
+    bossProgress,
+    bossItems: progress.bossItems.filter((itemId) => !legacyAdvancedBossItemIds.has(itemId)),
+    ownedUfos,
+    equippedUfoId:
+      progress.equippedUfoId && legacyAdvancedUfoIds.has(progress.equippedUfoId)
+        ? ownedUfos[0] ?? null
+        : progress.equippedUfoId,
+    collectionRecords: progress.collectionRecords.filter(
+      (record) => !legacyAdvancedCollectionRecordIds.has(record.id),
+    ),
+  }
+}
+
+function maybeResetLegacyAdvancedBossPlayer(
+  player: SaveData['player'],
+  shouldReset: boolean,
+): SaveData['player'] {
+  return shouldReset ? resetLegacyAdvancedBossPlayer(player) : player
+}
+
+function maybeResetLegacyAdvancedBossProgress(
+  progress: ProgressData,
+  shouldReset: boolean,
+): ProgressData {
+  return shouldReset ? resetLegacyAdvancedBossProgress(progress) : progress
+}
+
 export function createDefaultSaveData(): SaveData {
   return {
     version: SAVE_DATA_VERSION,
@@ -109,8 +189,10 @@ export function createDefaultSaveData(): SaveData {
 
 export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
   const now = new Date().toISOString()
+  const firstTitle = 'はじめのいっぽ'
+  const defaults = createDefaultSaveData()
   return {
-    ...createDefaultSaveData(),
+    ...defaults,
     player: {
       nickname: input.nickname.trim() || 'くくとも',
       icon: input.icon,
@@ -119,8 +201,8 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
       level: 1,
       exp: 0,
       coins: 0,
-      titles: ['はじめのいっぽ'],
-      currentTitle: 'はじめのいっぽ',
+      titles: [firstTitle],
+      currentTitle: firstTitle,
       createdAt: now,
       lastPlayedAt: now,
     },
@@ -129,6 +211,16 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
       speechEnabled: true,
       reduceMotion: false,
       dailyBudgetMinutes: DEFAULT_DAILY_BUDGET_MINUTES,
+    },
+    progress: {
+      ...defaults.progress,
+      collectionRecords: [
+        {
+          id: collectionRecordId('title', titleRecordId(firstTitle)),
+          acquiredAt: now,
+          method: '初回設定',
+        },
+      ],
     },
   }
 }
@@ -140,12 +232,64 @@ export function migrateSaveData(raw: unknown): SaveData {
 
   const candidate = raw as Partial<SaveData>
   const defaults = createDefaultSaveData()
+  const shouldResetLegacyAdvancedBosses = (candidate.version ?? 0) < SAVE_DATA_VERSION
   if (candidate.version === SAVE_DATA_VERSION) {
     return {
       ...defaults,
       ...candidate,
-      player: normalizePlayer(candidate.player),
-      progress: {
+      player: maybeResetLegacyAdvancedBossPlayer(
+        normalizePlayer(candidate.player),
+        shouldResetLegacyAdvancedBosses,
+      ),
+      progress: maybeResetLegacyAdvancedBossProgress(
+        {
+          ...defaults.progress,
+          ...candidate.progress,
+          facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
+          categoryCorrect: candidate.progress?.categoryCorrect ?? {},
+          bossProgress: candidate.progress?.bossProgress ?? {},
+          bossItems: candidate.progress?.bossItems ?? [],
+          ownedUfos: candidate.progress?.ownedUfos ?? [],
+          equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+          speedSettings: {
+            ...defaults.progress.speedSettings,
+            ...candidate.progress?.speedSettings,
+            selectedStages:
+              candidate.progress?.speedSettings?.selectedStages ??
+              defaults.progress.speedSettings.selectedStages,
+            durationSeconds:
+              candidate.progress?.speedSettings?.durationSeconds ??
+              defaults.progress.speedSettings.durationSeconds,
+          },
+          rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
+          rocketBadges: candidate.progress?.rocketBadges ?? [],
+          collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
+          ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
+          treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
+        },
+        shouldResetLegacyAdvancedBosses,
+      ),
+      settings: {
+        ...defaults.settings,
+        ...candidate.settings,
+      },
+      tutorial: {
+        ...defaults.tutorial,
+        ...candidate.tutorial,
+      },
+    }
+  }
+
+  return {
+    ...defaults,
+    ...candidate,
+    version: SAVE_DATA_VERSION,
+    player: maybeResetLegacyAdvancedBossPlayer(
+      normalizePlayer(candidate.player),
+      shouldResetLegacyAdvancedBosses,
+    ),
+    progress: maybeResetLegacyAdvancedBossProgress(
+      {
         ...defaults.progress,
         ...candidate.progress,
         facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
@@ -170,47 +314,8 @@ export function migrateSaveData(raw: unknown): SaveData {
         ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
         treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
       },
-      settings: {
-        ...defaults.settings,
-        ...candidate.settings,
-      },
-      tutorial: {
-        ...defaults.tutorial,
-        ...candidate.tutorial,
-      },
-    }
-  }
-
-  return {
-    ...defaults,
-    ...candidate,
-    version: SAVE_DATA_VERSION,
-    player: normalizePlayer(candidate.player),
-    progress: {
-      ...defaults.progress,
-      ...candidate.progress,
-      facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
-      categoryCorrect: candidate.progress?.categoryCorrect ?? {},
-      bossProgress: candidate.progress?.bossProgress ?? {},
-      bossItems: candidate.progress?.bossItems ?? [],
-      ownedUfos: candidate.progress?.ownedUfos ?? [],
-      equippedUfoId: candidate.progress?.equippedUfoId ?? null,
-      speedSettings: {
-        ...defaults.progress.speedSettings,
-        ...candidate.progress?.speedSettings,
-        selectedStages:
-          candidate.progress?.speedSettings?.selectedStages ??
-          defaults.progress.speedSettings.selectedStages,
-        durationSeconds:
-          candidate.progress?.speedSettings?.durationSeconds ??
-          defaults.progress.speedSettings.durationSeconds,
-      },
-      rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
-      rocketBadges: candidate.progress?.rocketBadges ?? [],
-      collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
-      ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
-      treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
-    },
+      shouldResetLegacyAdvancedBosses,
+    ),
     settings: {
       ...defaults.settings,
       ...candidate.settings,

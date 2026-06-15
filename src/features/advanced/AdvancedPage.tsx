@@ -5,7 +5,7 @@ import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSpri
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
-import { bosses } from '../../data/bosses'
+import { advancedBossCategoryLabels, bosses } from '../../data/bosses'
 import {
   advancedBossDisplayNames,
   advancedBossVariantForBossId,
@@ -227,6 +227,11 @@ export function AdvancedPage() {
                         compact
                         className="boss-card-sprite"
                       />
+                    ) : null}
+                    {boss.advancedCategory ? (
+                      <small className="advanced-boss-category">
+                        {advancedBossCategoryLabels[boss.advancedCategory]}
+                      </small>
                     ) : null}
                     <span>{unlocked ? boss.label : '？？？'}</span>
                     {!unlocked && remainingToUnlock !== null ? (

@@ -2,6 +2,13 @@ import type { BossDifficultyId } from '../types/save'
 import { defaultMinDifficultyByBossDifficulty } from './factDifficulty'
 
 export type BossGroup = 'basic' | 'advanced'
+export type BossAdvancedCategory = 'square' | 'pi' | 'development'
+
+export const advancedBossCategoryLabels: Record<BossAdvancedCategory, string> = {
+  square: 'へいほうすう',
+  pi: 'えんしゅうりつ',
+  development: 'はってん',
+}
 
 export type BossReward = {
   itemId?: string
@@ -28,7 +35,7 @@ export type BossDefinition = {
   emoji: string
   description: string
   stages?: number[]
-  advancedCategory?: 'square' | 'pi'
+  advancedCategory?: BossAdvancedCategory
   difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
   rewards: Record<BossDifficultyId, BossReward>
 }
@@ -167,6 +174,22 @@ export const bosses: BossDefinition[] = [
       gekimuzu: { timeLimitSeconds: 6, questionCount: 10, hp: 10 },
     },
     rewards: createRewards({ id: 'boss-pi', shortLabel: 'リングプラネット' }),
+  },
+  {
+    id: 'boss-development',
+    no: 12,
+    group: 'advanced',
+    label: 'にじいろキング',
+    shortLabel: 'にじいろキング',
+    emoji: '虹',
+    description: 'ミックスと発展問題の力をあつめたにじいろボス。',
+    advancedCategory: 'development',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 8 },
+      fast: { timeLimitSeconds: 5 },
+      gekimuzu: { timeLimitSeconds: 1.8, questionCount: 10, hp: 10 },
+    },
+    rewards: createRewards({ id: 'boss-development', shortLabel: 'にじいろキング' }),
   },
 ]
 

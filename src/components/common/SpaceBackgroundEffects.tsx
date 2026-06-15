@@ -35,7 +35,7 @@ function createShootingStar(id: number): ShootingStar {
   return {
     id,
     left: randomBetween(48, 96),
-    top: randomBetween(34, 86),
+    top: randomBetween(4, 38),
     distance: randomBetween(220, 460),
     duration: randomBetween(1.1, 1.7),
   }

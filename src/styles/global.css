@@ -111,6 +111,27 @@ a {
   padding: 14px clamp(12px, 4%, 32px) 34px;
 }
 
+.site-footer {
+  margin-top: clamp(20px, 4vw, 42px);
+  padding: 1.5rem 0 1rem;
+  border-top: 0.5px solid #e0e0e0;
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0 0 4px;
+  color: #888;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.site-footer p:last-child {
+  margin: 0;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .app-shell::before {
   position: fixed;
   top: 10%;
@@ -2380,7 +2401,7 @@ legend {
 
 .stats-column .stat-pill strong {
   color: #172136;
-  font-size: 1.55rem;
+  font-size: 1.78rem;
 }
 
 .home-character-window {
@@ -2694,7 +2715,8 @@ legend {
 }
 
 .home-stats-mini .stat-pill strong {
-  font-size: 1.15rem;
+  font-size: clamp(1.42rem, 4.8vw, 1.72rem);
+  line-height: 1;
 }
 
 .home-mission-compact {
@@ -2769,31 +2791,34 @@ legend {
   min-height: clamp(308px, 42vh, 420px);
   align-content: center;
   grid-template-rows: minmax(0, 1fr) auto;
-  padding: 18px 10px 14px;
+  padding: 22px 10px 14px;
 }
 
 .home-character-window .kukucchi {
   align-self: center;
-  min-height: 178px;
+  width: min(100%, 166px);
+  min-height: 170px;
+  transform: scale(0.9);
+  transform-origin: center;
 }
 
 .home-character-window .ufo-ring {
-  width: 178px;
+  width: min(150px, 86%);
 }
 
 .home-character-window .ufo-cockpit {
-  width: 100px;
-  height: 72px;
+  width: min(88px, 54%);
+  height: 64px;
 }
 
 .home-character-window .kukucchi-body {
-  width: 62px;
+  width: 56px;
 }
 
 .home-character-window .ufo-ship {
-  top: 98px;
-  width: 146px;
-  height: 44px;
+  top: 92px;
+  width: min(126px, 72%);
+  height: 40px;
 }
 
 .home-character-window .character-window-copy h2 {
@@ -3356,6 +3381,33 @@ legend {
   height: 68px;
 }
 
+.title-book-card {
+  align-items: center;
+  text-align: center;
+}
+
+.title-book-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border: 2px solid rgba(91, 233, 244, 0.62);
+  border-radius: 18px;
+  background:
+    linear-gradient(145deg, rgba(91, 233, 244, 0.9), rgba(77, 117, 255, 0.86)),
+    radial-gradient(circle at 28% 18%, rgba(255, 255, 255, 0.8), transparent 42%);
+  color: #06162e;
+  font-size: 1.8rem !important;
+  font-weight: 950;
+  box-shadow: 0 0 14px rgba(91, 233, 244, 0.38);
+}
+
+.silhouette .title-book-icon {
+  background: rgba(31, 54, 84, 0.86);
+  color: rgba(232, 251, 255, 0.54);
+  filter: grayscale(0.8);
+}
+
 .advanced-monster-sprite,
 .advanced-boss-sprite {
   display: block;
@@ -3834,6 +3886,14 @@ legend {
   box-shadow: 0 0 12px rgba(186, 141, 255, 0.95);
 }
 
+.ufo-badge-mixed .ufo-badge-dome {
+  background: linear-gradient(155deg, #fff2a8, #80f2ff 45%, #ff8ce8);
+}
+
+.ufo-badge-mixed .ufo-badge-body {
+  background: linear-gradient(90deg, #5be9f4, #7d8dff, #ff72b6, #ffe36e);
+}
+
 .ufo-badge-special {
   width: 154px;
   filter: drop-shadow(0 0 18px rgba(255, 231, 91, 0.62));
@@ -3903,11 +3963,11 @@ legend {
 
 .home-equipped-ufo {
   position: absolute;
-  top: 22px;
+  top: 14px;
   left: 50%;
   z-index: 4;
   transform: translateX(-50%);
-  width: 86px;
+  width: clamp(58px, 36%, 76px);
   animation: ufo-float-home 3.2s ease-in-out infinite;
 }
 
@@ -4245,6 +4305,18 @@ legend {
   opacity: 0.72;
 }
 
+.advanced-boss-category {
+  justify-self: start;
+  padding: 2px 8px;
+  border: 1px solid rgba(91, 233, 244, 0.52);
+  border-radius: 999px;
+  color: #dffcff;
+  font-size: 0.72rem;
+  font-weight: 950;
+  line-height: 1.1;
+  background: rgba(91, 233, 244, 0.12);
+}
+
 .advanced-ready-boss-card .boss-card-sprite {
   grid-row: 1 / span 2;
   width: 42px;
@@ -4523,12 +4595,12 @@ legend {
   }
 
   .home-character-window .ufo-ring {
-    width: 144px;
+    width: min(132px, 82%);
   }
 
   .home-character-window .ufo-ship {
     top: 80px;
-    width: 118px;
+    width: min(110px, 70%);
   }
 
   .home-character-window .character-window-copy h2 {
@@ -4688,7 +4760,7 @@ legend {
   }
   100% {
     opacity: 0;
-    transform: rotate(-22deg) translate3d(calc(var(--shoot-distance) * -1), calc(var(--shoot-distance) * -1), 0);
+    transform: rotate(-22deg) translate3d(calc(var(--shoot-distance) * -1), var(--shoot-distance), 0);
   }
 }
 
@@ -4709,6 +4781,23 @@ legend {
   flex-direction: column;
   gap: 8px;
   padding: 8px clamp(8px, 2.4vw, 18px) calc(8px + env(safe-area-inset-bottom));
+}
+
+.game-shell .site-footer {
+  flex: 0 0 auto;
+  margin-top: 0;
+  padding: 1px 0 0;
+  border-top-color: rgba(224, 224, 224, 0.22);
+}
+
+.game-shell .site-footer p:first-child {
+  display: none;
+}
+
+.game-shell .site-footer p:last-child {
+  color: rgba(232, 251, 255, 0.44);
+  font-size: 9px;
+  line-height: 1;
 }
 
 .game-shell .top-bar {

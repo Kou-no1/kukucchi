@@ -13,7 +13,7 @@ import {
   advancedProgressForCategory,
   isAdvancedMonsterOwned,
 } from '../../data/advancedMonsters'
-import { bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
+import { advancedBossCategoryLabels, bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
 import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
 import { keyTypes } from '../../data/keys'
 import { rocketBadges } from '../../data/rocketBadges'
@@ -25,6 +25,7 @@ import { calculateBookProgress } from '../../game-engine/collection/bookProgress
 import { getCollectionRecord } from '../../game-engine/collection/collectionRecords'
 import type { BookTabId } from '../../game-engine/collection/bookProgress'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
+import { getTitleDefinitions, titleRecordId } from '../../game-engine/rewards/titles'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { BossDifficultyId, SaveData } from '../../types/save'
 
@@ -35,6 +36,7 @@ const tabs: Array<{ id: BookTabId; label: string }> = [
   { id: 'ufos', label: 'UFO' },
   { id: 'treasures', label: 'おたから' },
   { id: 'collection', label: 'コレクション' },
+  { id: 'titles', label: 'しょうごう' },
 ]
 
 type BookDetail = {
@@ -70,6 +72,9 @@ function bossDanLabel(boss: BossDefinition): string {
   if (boss.advancedCategory === 'pi') {
     return '3.14'
   }
+  if (boss.advancedCategory === 'development') {
+    return '発'
+  }
   if (!boss.stages?.length) {
     return String(boss.no)
   }
@@ -82,6 +87,9 @@ function bossAccentDan(boss: BossDefinition): number {
   }
   if (boss.advancedCategory === 'pi') {
     return 3
+  }
+  if (boss.advancedCategory === 'development') {
+    return 9
   }
   return boss.stages?.at(-1) ?? 9
 }
@@ -106,6 +114,29 @@ export function MonsterBookPage() {
   const ownedBossItems = new Set(saveData.progress.bossItems)
   const ownedUfos = new Set(saveData.progress.ownedUfos)
   const ownedTreasureItems = new Set(saveData.progress.ownedTreasureItems.map((item) => item.id))
+  const ownedTitles = new Set(saveData.player?.titles ?? [])
+  const titleDefinitions = getTitleDefinitions()
+  const titleEntries = titleDefinitions
+    .map((title, index) => {
+      const owned = ownedTitles.has(title.label)
+      const record = getCollectionRecord(saveData.progress.collectionRecords, 'title', titleRecordId(title.label))
+      return {
+        ...title,
+        index,
+        owned,
+        acquiredAt: record?.acquiredAt ?? null,
+        method: record?.method ?? title.method,
+      }
+    })
+    .sort((left, right) => {
+      if (left.owned !== right.owned) {
+        return left.owned ? -1 : 1
+      }
+      if (!left.owned && !right.owned) {
+        return left.index - right.index
+      }
+      return (Date.parse(right.acquiredAt ?? '') || 0) - (Date.parse(left.acquiredAt ?? '') || 0)
+    })
   const monsterFacts = createMultiplicationFactPool({
     stages: [1, 2, 3, 4, 5, 6, 7, 8, 9],
     minDifficulty: 1,
@@ -379,7 +410,11 @@ export function MonsterBookPage() {
                 key={boss.id}
                 {...cardAction({
                   name: cleared ? boss.label : '？？？',
-                  description: cleared ? `ベスト ${formatBestTime(bestTime === Infinity ? null : bestTime)}` : 'まだ出会っていません',
+                  description: cleared
+                    ? `ベスト ${formatBestTime(bestTime === Infinity ? null : bestTime)}`
+                    : boss.advancedCategory
+                      ? `${advancedBossCategoryLabels[boss.advancedCategory]}をれんしゅうしよう`
+                      : 'まだ出会っていません',
                   acquiredAt: firstClearedAt,
                   method: cleared ? 'ボス討伐' : '？？？',
                   owned: cleared,
@@ -503,6 +538,31 @@ export function MonsterBookPage() {
         </>
       ) : null}
 
+      {activeTab === 'titles' ? (
+        <section className="monster-grid book-grid" aria-label="しょうごう図かん">
+          {titleEntries.map((title, index) => (
+            <article
+              className={title.owned ? 'book-card title-book-card' : 'book-card silhouette title-book-card'}
+              key={title.id}
+              {...cardAction({
+                name: title.owned ? title.label : '？？？',
+                description: title.owned ? title.description : '',
+                acquiredAt: title.owned ? title.acquiredAt : null,
+                method: title.owned ? title.method : '？？？',
+                owned: title.owned,
+              })}
+            >
+              <span className="boss-no">S-{String(index + 1).padStart(2, '0')}</span>
+              <span className="title-book-icon" aria-hidden="true">
+                {title.owned ? '称' : '◆'}
+              </span>
+              <h2>{title.owned ? title.label : '？？？'}</h2>
+              {title.owned ? <p>{title.description}</p> : <p>まだです</p>}
+            </article>
+          ))}
+        </section>
+      ) : null}
+
       {detail ? (
         <div className="book-detail-backdrop" role="presentation" onClick={() => setDetail(null)}>
           <section
@@ -513,7 +573,7 @@ export function MonsterBookPage() {
             onClick={(event) => event.stopPropagation()}
           >
             <h2 id="book-detail-title">{detail.name}</h2>
-            <p>{detail.description}</p>
+            {detail.description ? <p>{detail.description}</p> : null}
             <dl>
               <div>
                 <dt>入手日</dt>

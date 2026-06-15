@@ -6,9 +6,10 @@ import {
   getBossDifficulty,
   legendaryBossTitle,
 } from '../../data/bosses'
-import type { BossDefinition } from '../../data/bosses'
+import type { BossAdvancedCategory, BossDefinition } from '../../data/bosses'
 import { specialUfoId } from '../../data/ufos'
 import { addCollectionRecords } from '../collection/collectionRecords'
+import { titleRecordId } from '../rewards/titles'
 import type {
   BossDifficultyId,
   BossDifficultyProgress,
@@ -54,9 +55,14 @@ export function countCorrectForStages(save: SaveData, stages: number[]): number 
     .reduce((sum, fact) => sum + fact.correctCount, 0)
 }
 
-function countCorrectByCategory(save: SaveData, category: 'square' | 'pi'): number {
-  const categoryKey = category === 'square' ? 'multiplication-square' : 'pi-multiplication'
-  return save.progress.categoryCorrect[categoryKey] ?? 0
+function countCorrectByCategory(save: SaveData, category: BossAdvancedCategory): number {
+  if (category === 'square') {
+    return save.progress.categoryCorrect['multiplication-square'] ?? 0
+  }
+  if (category === 'pi') {
+    return save.progress.categoryCorrect['pi-multiplication'] ?? 0
+  }
+  return save.progress.categoryCorrect.development ?? 0
 }
 
 function areBasicStageBossesCleared(save: SaveData): boolean {
@@ -204,6 +210,12 @@ export function applyBossClearReward(
           acquiredAt: clearedAt,
           method: `${boss.label} げきムズ`,
         })),
+        ...rewardTitles.map((title) => ({
+          kind: 'title',
+          id: titleRecordId(title),
+          acquiredAt: clearedAt,
+          method: `${boss.label} ${getBossDifficulty(boss, difficulty).label}`,
+        })),
       ]),
       bossProgress: {
         ...save.progress.bossProgress,
@@ -239,6 +251,17 @@ export function applyBossClearReward(
           ...player,
           titles: Array.from(new Set([...player.titles, legendaryBossTitle])),
           currentTitle: legendaryBossTitle,
+        },
+        progress: {
+          ...withDifficulty.progress,
+          collectionRecords: addCollectionRecords(withDifficulty.progress.collectionRecords, [
+            {
+              kind: 'title',
+              id: titleRecordId(legendaryBossTitle),
+              acquiredAt: clearedAt,
+              method: '全ボスさいそく',
+            },
+          ]),
         },
       }
     : withDifficulty
@@ -291,6 +314,12 @@ export function applyBossClearReward(
           {
             kind: 'ufo',
             id: specialUfoId,
+            acquiredAt: clearedAt,
+            method: '全ボスげきムズ',
+          },
+          {
+            kind: 'title',
+            id: titleRecordId(allGekimuzuTitle),
             acquiredAt: clearedAt,
             method: '全ボスげきムズ',
           },

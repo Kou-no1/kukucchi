@@ -5,7 +5,7 @@ import {
 import { newlyOwnedAdvancedMonsters } from '../data/advancedMonsters'
 import { addCollectionRecords } from '../game-engine/collection/collectionRecords'
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
-import { judgeNewTitles } from '../game-engine/rewards/titles'
+import { judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
 import { applyRewardBudgetToSummary } from '../game-engine/school/dailyUsage'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
@@ -111,6 +111,12 @@ export function applySessionResult(
         id: monster.id,
         acquiredAt: effectiveSummary.finishedAt,
         method: `${monster.category === 'square' ? '平方数' : monster.category === 'pi' ? '3.14' : 'ミックス'} ${monster.threshold}もん`,
+      })),
+      ...newTitles.map((title) => ({
+        kind: 'title',
+        id: titleRecordId(title),
+        acquiredAt: effectiveSummary.finishedAt,
+        method: 'がくしゅうリザルト',
       })),
     ],
   )

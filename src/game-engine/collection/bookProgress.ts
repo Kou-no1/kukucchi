@@ -7,8 +7,9 @@ import { ufoDefinitions } from '../../data/ufos'
 import type { SaveData } from '../../types/save'
 import { createMultiplicationFactPool } from '../questions/factDifficulty'
 import { getDifficultyProgress } from '../bosses/bossEngine'
+import { getTitleDefinitions } from '../rewards/titles'
 
-export type BookTabId = 'kukucchi' | 'monsters' | 'ufos' | 'treasures' | 'collection'
+export type BookTabId = 'kukucchi' | 'monsters' | 'ufos' | 'treasures' | 'collection' | 'titles'
 
 export type BookProgressCount = {
   owned: number
@@ -49,6 +50,9 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const advancedMonsterOwned = advancedMonsterDefinitions.filter((monster) =>
     isAdvancedMonsterOwned(save.progress.categoryCorrect, monster),
   ).length
+  const titleDefinitions = getTitleDefinitions()
+  const definedTitles = new Set(titleDefinitions.map((title) => title.label))
+  const ownedTitleCount = new Set((save.player?.titles ?? []).filter((title) => definedTitles.has(title))).size
   const tabs: Record<BookTabId, BookProgressCount> = {
     kukucchi: countPercent(countKukucchiRecords(save), kukucchiRecordTotal + rocketBadges.length),
     monsters: countPercent(
@@ -62,6 +66,7 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
         keyTypes.filter((key) => (save.progress.treasureKeys[key.id]?.count ?? 0) > 0).length,
       treasureItems.length + keyTypes.length,
     ),
+    titles: countPercent(ownedTitleCount, titleDefinitions.length),
   }
   const overallTotal = Object.values(tabs).reduce((sum, tab) => sum + tab.total, 0)
   const overallOwned = Object.values(tabs).reduce((sum, tab) => sum + tab.owned, 0)

@@ -1,6 +1,6 @@
 import { bosses } from './bosses'
 
-export type UfoVariant = 'stage' | 'all' | 'square' | 'pi' | 'special'
+export type UfoVariant = 'stage' | 'all' | 'square' | 'pi' | 'mixed' | 'special'
 
 export type UfoDefinition = {
   id: string
@@ -96,6 +96,13 @@ const bossUfoSeeds: Record<
     lights: 3,
     motif: 'π',
   },
+  'boss-development': {
+    name: 'はってんレインボーごう',
+    description: 'ミックスと発展の色をぜんぶのせたUFO。',
+    variant: 'mixed',
+    lights: 9,
+    motif: '虹',
+  },
 }
 
 export const bossUfos: UfoDefinition[] = bosses.map((boss) => ({
@@ -107,10 +114,10 @@ export const bossUfos: UfoDefinition[] = bosses.map((boss) => ({
 
 export const specialUfo: UfoDefinition = {
   id: specialUfoId,
-  no: 12,
+  no: bosses.length + 1,
   bossId: null,
   name: 'にじいろレジェンドごう',
-  description: '11体のげきムズボスをすべてこえた特別なUFO。',
+  description: `${bosses.length}体のげきムズボスをすべてこえた特別なUFO。`,
   variant: 'special',
   lights: 12,
   motif: '虹',

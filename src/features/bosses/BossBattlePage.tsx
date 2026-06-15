@@ -8,7 +8,13 @@ import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
-import { bossDifficultyIds, bosses, getBossDifficulty, getBossLimitedItem } from '../../data/bosses'
+import {
+  advancedBossCategoryLabels,
+  bossDifficultyIds,
+  bosses,
+  getBossDifficulty,
+  getBossLimitedItem,
+} from '../../data/bosses'
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
 import {
@@ -439,6 +445,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
                   {unlocked ? boss.emoji : '◆'}
                 </span>
               )}
+              {boss.advancedCategory ? (
+                <small className="advanced-boss-category">
+                  {advancedBossCategoryLabels[boss.advancedCategory]}
+                </small>
+              ) : null}
               <h2>{unlocked ? boss.label : '？？？'}</h2>
               {!unlocked && remainingToUnlock !== null ? (
                 <p className="boss-unlock-progress">あと {remainingToUnlock}もん で かいほう！</p>

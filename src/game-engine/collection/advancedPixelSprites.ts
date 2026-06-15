@@ -256,5 +256,8 @@ export function advancedBossVariantForBossId(bossId: string): AdvancedBossVarian
   if (bossId === 'boss-pi') {
     return 'pi'
   }
+  if (bossId === 'boss-development') {
+    return 'mixed'
+  }
   return null
 }
