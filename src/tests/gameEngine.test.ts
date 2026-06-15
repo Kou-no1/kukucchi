@@ -38,7 +38,13 @@ import {
 import { bossDifficulties, bosses } from '../data/bosses'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
-import { equipShopItem, getEquippedItemForSlot, isShopTier2Unlocked, shopItems } from '../data/shopItems'
+import {
+  equipShopItem,
+  getEquippedItemForSlot,
+  getHomeShipVisuals,
+  isShopTier2Unlocked,
+  shopItems,
+} from '../data/shopItems'
 import { normalizeShipNameInput, validateShipName } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
@@ -1055,6 +1061,27 @@ describe('mastery, review, missions, and storage', () => {
     expect(Math.max(...prices)).toBe(10000)
     expect(isShopTier2Unlocked(shopItems.slice(0, 9).map((item) => item.id))).toBe(false)
     expect(isShopTier2Unlocked(shopItems.slice(0, 10).map((item) => item.id))).toBe(true)
+  })
+
+  it('maps equipped shop items to home ship visual layers', () => {
+    expect(shopItems.every((item) => item.visual.layer && item.visual.variant)).toBe(true)
+    const visuals = getHomeShipVisuals([
+      'green-cape',
+      'rainbow-suit',
+      'rocket-helmet',
+      'planet-view',
+      'crystal-desk',
+      'luna-pet',
+      'comet-burst',
+    ])
+    expect(visuals).toEqual({
+      wear: 'rainbow-suit',
+      hat: 'rocket-helmet',
+      window: 'planet-view',
+      furniture: 'crystal-desk',
+      buddy: 'luna-pet',
+      effect: 'comet-burst',
+    })
   })
 
   it('keeps one equipped shop item per home equipment slot', () => {

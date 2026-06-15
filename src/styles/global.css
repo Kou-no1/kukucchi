@@ -447,6 +447,289 @@ legend {
   box-shadow: inset 0 -10px 16px rgba(18, 104, 77, 0.24);
 }
 
+.kukucchi-window-layer,
+.kukucchi-effect-layer,
+.kukucchi-furniture-layer,
+.kukucchi-buddy-layer,
+.kukucchi-wear-layer,
+.kukucchi-hat-layer {
+  position: absolute;
+  pointer-events: none;
+}
+
+.kukucchi-window-layer {
+  inset: 12%;
+  z-index: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  opacity: 0;
+}
+
+.kukucchi-effect-layer {
+  inset: 8%;
+  z-index: 4;
+  opacity: 0;
+}
+
+.kukucchi-furniture-layer {
+  right: 18%;
+  bottom: 28%;
+  z-index: 2;
+  width: 24%;
+  height: 12%;
+  opacity: 0;
+}
+
+.kukucchi-buddy-layer {
+  right: 5%;
+  bottom: 20%;
+  z-index: 5;
+  width: 24%;
+  aspect-ratio: 1;
+  opacity: 0;
+}
+
+.kukucchi-wear-layer {
+  right: 13%;
+  bottom: 7%;
+  left: 13%;
+  z-index: 1;
+  height: 35%;
+  border-radius: 48% 48% 42% 42%;
+  opacity: 0;
+}
+
+.kukucchi-hat-layer {
+  top: -18%;
+  left: 50%;
+  z-index: 5;
+  width: 58%;
+  height: 28%;
+  opacity: 0;
+  transform: translateX(-50%);
+}
+
+.kukucchi-window-blue-neon-room .kukucchi-window-layer {
+  opacity: 1;
+  background:
+    linear-gradient(90deg, transparent 0 31%, rgba(91, 233, 244, 0.22) 32% 34%, transparent 35% 65%, rgba(91, 233, 244, 0.18) 66% 68%, transparent 69%),
+    linear-gradient(0deg, transparent 0 44%, rgba(91, 233, 244, 0.18) 45% 47%, transparent 48%),
+    radial-gradient(circle at 50% 50%, rgba(91, 233, 244, 0.14), transparent 70%);
+}
+
+.kukucchi-window-moon-window .kukucchi-window-layer {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 67% 26%, rgba(255, 236, 151, 0.92) 0 9%, transparent 10%),
+    radial-gradient(circle at 72% 23%, rgba(10, 29, 58, 0.92) 0 8%, transparent 9%),
+    radial-gradient(circle at 50% 50%, rgba(125, 141, 255, 0.16), transparent 70%);
+}
+
+.kukucchi-window-aurora-wall .kukucchi-window-layer {
+  opacity: 1;
+  background:
+    linear-gradient(118deg, transparent 18%, rgba(118, 240, 168, 0.28) 19% 31%, transparent 32%),
+    linear-gradient(66deg, transparent 36%, rgba(255, 114, 182, 0.24) 37% 48%, transparent 49%),
+    radial-gradient(circle at 50% 45%, rgba(91, 233, 244, 0.16), transparent 72%);
+}
+
+.kukucchi-window-planet-view .kukucchi-window-layer {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 74% 68%, rgba(255, 227, 110, 0.88) 0 13%, transparent 14%),
+    linear-gradient(16deg, transparent 0 63%, rgba(223, 252, 255, 0.24) 64% 67%, transparent 68%),
+    radial-gradient(circle at 48% 44%, rgba(91, 233, 244, 0.16), transparent 72%);
+}
+
+.kukucchi-window-cosmos-stage .kukucchi-window-layer {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 25% 24%, rgba(255, 227, 110, 0.8) 0 3%, transparent 4%),
+    radial-gradient(circle at 72% 31%, rgba(255, 114, 182, 0.78) 0 3%, transparent 4%),
+    radial-gradient(circle at 58% 75%, rgba(102, 242, 255, 0.72) 0 3%, transparent 4%),
+    linear-gradient(135deg, rgba(91, 233, 244, 0.22), rgba(139, 101, 255, 0.2), rgba(255, 114, 182, 0.16));
+}
+
+.kukucchi-wear-green-cape .kukucchi-wear-layer {
+  opacity: 1;
+  background: linear-gradient(135deg, rgba(118, 240, 168, 0.95), rgba(52, 211, 153, 0.72));
+}
+
+.kukucchi-wear-rainbow-suit .kukucchi-body {
+  background: linear-gradient(145deg, #d6ffba 0 28%, #5be9f4 29% 48%, #7d8dff 49% 68%, #ff72b6 69% 100%);
+}
+
+.kukucchi-wear-rainbow-suit .kukucchi-wear-layer {
+  opacity: 1;
+  background: linear-gradient(90deg, #5be9f4, #ffe36e, #ff72b6);
+}
+
+.kukucchi-wear-galaxy-cloak .kukucchi-wear-layer {
+  opacity: 1;
+  background:
+    radial-gradient(circle at 32% 36%, #ffffff 0 5%, transparent 6%),
+    radial-gradient(circle at 70% 62%, #ffe36e 0 5%, transparent 6%),
+    linear-gradient(145deg, rgba(43, 39, 113, 0.95), rgba(14, 25, 58, 0.92));
+}
+
+.kukucchi-hat-star-cap .kukucchi-hat-layer {
+  opacity: 1;
+  clip-path: polygon(50% 0%, 60% 35%, 96% 35%, 66% 55%, 76% 92%, 50% 68%, 24% 92%, 34% 55%, 4% 35%, 40% 35%);
+  background: #ffe36e;
+  filter: drop-shadow(0 0 7px rgba(255, 227, 110, 0.9));
+}
+
+.kukucchi-hat-rocket-helmet .kukucchi-hat-layer {
+  top: -23%;
+  width: 70%;
+  height: 34%;
+  opacity: 1;
+  border: 3px solid rgba(223, 252, 255, 0.94);
+  border-bottom-width: 0;
+  border-radius: 999px 999px 24% 24%;
+  background: linear-gradient(160deg, rgba(223, 252, 255, 0.94), rgba(91, 233, 244, 0.42));
+  box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.45);
+}
+
+.kukucchi-hat-crown-hat .kukucchi-hat-layer {
+  top: -20%;
+  width: 68%;
+  height: 30%;
+  opacity: 1;
+  clip-path: polygon(0 88%, 0 38%, 22% 62%, 36% 16%, 50% 58%, 64% 16%, 78% 62%, 100% 38%, 100% 88%);
+  background: linear-gradient(180deg, #fff4a2, #ffbe38);
+  filter: drop-shadow(0 0 7px rgba(255, 227, 110, 0.88));
+}
+
+.kukucchi-furniture-starry-seat .kukucchi-furniture-layer,
+.kukucchi-furniture-soft-sofa .kukucchi-furniture-layer,
+.kukucchi-furniture-crystal-desk .kukucchi-furniture-layer {
+  opacity: 1;
+}
+
+.kukucchi-furniture-starry-seat .kukucchi-furniture-layer {
+  border-radius: 50% 50% 22% 22%;
+  background:
+    radial-gradient(circle at 22% 45%, #ffe36e 0 10%, transparent 11%),
+    radial-gradient(circle at 72% 45%, #5be9f4 0 10%, transparent 11%),
+    linear-gradient(180deg, rgba(223, 252, 255, 0.58), rgba(83, 101, 160, 0.72));
+}
+
+.kukucchi-furniture-soft-sofa .kukucchi-furniture-layer {
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 210, 236, 0.92), rgba(139, 101, 255, 0.64));
+}
+
+.kukucchi-furniture-crystal-desk .kukucchi-furniture-layer {
+  clip-path: polygon(18% 0, 82% 0, 100% 64%, 50% 100%, 0 64%);
+  background: linear-gradient(145deg, rgba(223, 252, 255, 0.9), rgba(91, 233, 244, 0.46));
+}
+
+.kukucchi-effect-comet-ship .kukucchi-effect-layer,
+.kukucchi-effect-sparkle-trail .kukucchi-effect-layer,
+.kukucchi-effect-comet-burst .kukucchi-effect-layer {
+  opacity: 1;
+}
+
+.kukucchi-effect-comet-ship .kukucchi-effect-layer::before,
+.kukucchi-effect-sparkle-trail .kukucchi-effect-layer::before,
+.kukucchi-effect-comet-burst .kukucchi-effect-layer::before {
+  position: absolute;
+  content: '';
+}
+
+.kukucchi-effect-comet-ship .kukucchi-effect-layer::before {
+  top: 15%;
+  right: 5%;
+  width: 42%;
+  height: 5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(91, 233, 244, 0.92), #ffffff);
+  box-shadow: 0 0 12px rgba(91, 233, 244, 0.72);
+  transform: rotate(-18deg);
+}
+
+.kukucchi-effect-sparkle-trail .kukucchi-effect-layer::before {
+  top: 14%;
+  left: 18%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    38px 14px 0 #ffe36e,
+    78px 50px 0 #5be9f4,
+    12px 84px 0 #ff72b6;
+  filter: drop-shadow(0 0 6px rgba(223, 252, 255, 0.8));
+}
+
+.kukucchi-effect-comet-burst .kukucchi-effect-layer::before {
+  inset: 4%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(255, 227, 110, 0.78) 0 3%, transparent 4%),
+    radial-gradient(circle at 74% 26%, rgba(255, 114, 182, 0.68) 0 3%, transparent 4%),
+    radial-gradient(circle at 30% 80%, rgba(91, 233, 244, 0.8) 0 3%, transparent 4%),
+    radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.72) 0 3%, transparent 4%);
+}
+
+.kukucchi-buddy-mini-orbit-pet .kukucchi-buddy-layer,
+.kukucchi-buddy-pico-pet .kukucchi-buddy-layer,
+.kukucchi-buddy-luna-pet .kukucchi-buddy-layer {
+  opacity: 1;
+}
+
+.kukucchi-buddy-mini-orbit-pet .kukucchi-buddy-layer {
+  border: 2px solid rgba(223, 252, 255, 0.78);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(118, 240, 168, 0.98) 0 33%, transparent 34%),
+    linear-gradient(20deg, transparent 37%, rgba(91, 233, 244, 0.7) 38% 47%, transparent 48%);
+}
+
+.kukucchi-buddy-pico-pet .kukucchi-buddy-layer {
+  border: 2px solid rgba(223, 252, 255, 0.78);
+  border-radius: 36% 36% 48% 48%;
+  background:
+    radial-gradient(circle at 35% 42%, #07172d 0 7%, transparent 8%),
+    radial-gradient(circle at 65% 42%, #07172d 0 7%, transparent 8%),
+    linear-gradient(180deg, #ffb4dd, #8b65ff);
+}
+
+.kukucchi-buddy-luna-pet .kukucchi-buddy-layer {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 68% 35%, rgba(6, 22, 46, 0.88) 0 24%, transparent 25%),
+    radial-gradient(circle at 50% 50%, #fff4a2 0 54%, transparent 55%);
+  box-shadow: 0 0 12px rgba(255, 227, 110, 0.68);
+}
+
+.kukucchi-ufo-stage .ufo-ship {
+  background: linear-gradient(180deg, #d7f5ff, #6f94c8 60%, #405c92);
+}
+
+.kukucchi-ufo-all .ufo-ship {
+  background: linear-gradient(180deg, #fff7b4, #65e7ff 54%, #4d75ff);
+}
+
+.kukucchi-ufo-square .ufo-ship {
+  background: linear-gradient(180deg, #e7fbff, #86c7ff 52%, #526486);
+  border-radius: 34% 34% 50% 50%;
+}
+
+.kukucchi-ufo-pi .ufo-ship {
+  background: linear-gradient(180deg, #d9ccff, #8b65ff 52%, #3d315f);
+}
+
+.kukucchi-ufo-mixed .ufo-ship {
+  background: linear-gradient(90deg, #5be9f4, #7d8dff, #ff72b6, #ffe36e);
+}
+
+.kukucchi-ufo-special .ufo-ship {
+  background: linear-gradient(90deg, #fff4a2, #5be9f4, #ff72b6);
+  box-shadow: 0 0 24px rgba(255, 227, 110, 0.42);
+}
+
 .kukucchi-cheer .ufo-ring {
   animation: hoverShip 0.65s ease-in-out infinite alternate;
 }

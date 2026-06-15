@@ -6,7 +6,7 @@ import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { getPlayerIcon } from '../../data/playerIcons'
-import { equipmentSlots, getEquippedItemForSlot } from '../../data/shopItems'
+import { equipmentSlots, getEquippedItemForSlot, getHomeShipVisuals } from '../../data/shopItems'
 import { defaultShipName } from '../../data/shipName'
 import { getUfoById } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
@@ -17,6 +17,11 @@ export function HomePage() {
   const player = saveData.player
   const weakFacts = getWeakFacts(saveData.progress.facts, 3)
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
+  const shipVisuals = getHomeShipVisuals(saveData.progress.equippedItems)
+  const characterVisuals = {
+    ...shipVisuals,
+    ufo: equippedUfo?.variant,
+  }
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
   const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
   const playerIcon = getPlayerIcon(player?.icon)
@@ -103,7 +108,7 @@ export function HomePage() {
 
         <aside className="character-window home-character-window" aria-label="くくっち">
           {equippedUfo ? <UfoBadge ufo={equippedUfo} compact className="home-equipped-ufo" /> : null}
-          <KukucchiCharacter level={player?.level ?? 1} mood="happy" />
+          <KukucchiCharacter level={player?.level ?? 1} mood="happy" visual={characterVisuals} />
           <div className="character-window-copy">
             <p className="welcome">{crewTitle}</p>
             <h2>{shipName}号</h2>

@@ -7,6 +7,19 @@ export type ShopItemKind =
   | 'effect'
   | 'pet'
 
+export type ShopItemVisualLayer =
+  | 'wear'
+  | 'hat'
+  | 'window'
+  | 'furniture'
+  | 'effect'
+  | 'buddy'
+
+export type ShopItemVisual = {
+  layer: ShopItemVisualLayer
+  variant: string
+}
+
 export type ShopItem = {
   id: string
   no: number
@@ -15,7 +28,10 @@ export type ShopItem = {
   price: number
   emoji: string
   kind: ShopItemKind
+  visual: ShopItemVisual
 }
+
+export type HomeShipVisuals = Partial<Record<ShopItemVisualLayer, string>>
 
 export type EquipmentSlotId = 'wear' | 'hat' | 'room' | 'buddy'
 
@@ -64,6 +80,7 @@ export const shopItems: ShopItem[] = [
     price: 50,
     emoji: '💎',
     kind: 'wallpaper',
+    visual: { layer: 'window', variant: 'blue-neon-room' },
   },
   {
     id: 'starry-seat',
@@ -73,6 +90,7 @@ export const shopItems: ShopItem[] = [
     price: 80,
     emoji: '🌌',
     kind: 'furniture',
+    visual: { layer: 'furniture', variant: 'starry-seat' },
   },
   {
     id: 'comet-ship',
@@ -82,6 +100,7 @@ export const shopItems: ShopItem[] = [
     price: 120,
     emoji: '☄️',
     kind: 'effect',
+    visual: { layer: 'effect', variant: 'comet-ship' },
   },
   {
     id: 'mini-orbit-pet',
@@ -91,6 +110,7 @@ export const shopItems: ShopItem[] = [
     price: 180,
     emoji: '🛰️',
     kind: 'pet',
+    visual: { layer: 'buddy', variant: 'mini-orbit-pet' },
   },
   {
     id: 'green-cape',
@@ -100,6 +120,7 @@ export const shopItems: ShopItem[] = [
     price: 250,
     emoji: '🟢',
     kind: 'wear',
+    visual: { layer: 'wear', variant: 'green-cape' },
   },
   {
     id: 'star-cap',
@@ -109,6 +130,7 @@ export const shopItems: ShopItem[] = [
     price: 350,
     emoji: '⭐',
     kind: 'hat',
+    visual: { layer: 'hat', variant: 'star-cap' },
   },
   {
     id: 'moon-window',
@@ -118,6 +140,7 @@ export const shopItems: ShopItem[] = [
     price: 480,
     emoji: '🌙',
     kind: 'background',
+    visual: { layer: 'window', variant: 'moon-window' },
   },
   {
     id: 'soft-sofa',
@@ -127,6 +150,7 @@ export const shopItems: ShopItem[] = [
     price: 650,
     emoji: '🛋️',
     kind: 'furniture',
+    visual: { layer: 'furniture', variant: 'soft-sofa' },
   },
   {
     id: 'sparkle-trail',
@@ -136,6 +160,7 @@ export const shopItems: ShopItem[] = [
     price: 880,
     emoji: '✨',
     kind: 'effect',
+    visual: { layer: 'effect', variant: 'sparkle-trail' },
   },
   {
     id: 'pico-pet',
@@ -145,6 +170,7 @@ export const shopItems: ShopItem[] = [
     price: 1200,
     emoji: '🔵',
     kind: 'pet',
+    visual: { layer: 'buddy', variant: 'pico-pet' },
   },
   {
     id: 'rainbow-suit',
@@ -154,6 +180,7 @@ export const shopItems: ShopItem[] = [
     price: 1500,
     emoji: '🌈',
     kind: 'wear',
+    visual: { layer: 'wear', variant: 'rainbow-suit' },
   },
   {
     id: 'rocket-helmet',
@@ -163,6 +190,7 @@ export const shopItems: ShopItem[] = [
     price: 2000,
     emoji: '🚀',
     kind: 'hat',
+    visual: { layer: 'hat', variant: 'rocket-helmet' },
   },
   {
     id: 'aurora-wall',
@@ -172,6 +200,7 @@ export const shopItems: ShopItem[] = [
     price: 2600,
     emoji: '🩵',
     kind: 'wallpaper',
+    visual: { layer: 'window', variant: 'aurora-wall' },
   },
   {
     id: 'planet-view',
@@ -181,6 +210,7 @@ export const shopItems: ShopItem[] = [
     price: 3300,
     emoji: '🪐',
     kind: 'background',
+    visual: { layer: 'window', variant: 'planet-view' },
   },
   {
     id: 'crystal-desk',
@@ -190,6 +220,7 @@ export const shopItems: ShopItem[] = [
     price: 4100,
     emoji: '💠',
     kind: 'furniture',
+    visual: { layer: 'furniture', variant: 'crystal-desk' },
   },
   {
     id: 'comet-burst',
@@ -199,6 +230,7 @@ export const shopItems: ShopItem[] = [
     price: 5000,
     emoji: '💥',
     kind: 'effect',
+    visual: { layer: 'effect', variant: 'comet-burst' },
   },
   {
     id: 'luna-pet',
@@ -208,6 +240,7 @@ export const shopItems: ShopItem[] = [
     price: 6200,
     emoji: '🌝',
     kind: 'pet',
+    visual: { layer: 'buddy', variant: 'luna-pet' },
   },
   {
     id: 'galaxy-cloak',
@@ -217,6 +250,7 @@ export const shopItems: ShopItem[] = [
     price: 7500,
     emoji: '🌠',
     kind: 'wear',
+    visual: { layer: 'wear', variant: 'galaxy-cloak' },
   },
   {
     id: 'crown-hat',
@@ -226,6 +260,7 @@ export const shopItems: ShopItem[] = [
     price: 9000,
     emoji: '👑',
     kind: 'hat',
+    visual: { layer: 'hat', variant: 'crown-hat' },
   },
   {
     id: 'cosmos-stage',
@@ -235,6 +270,7 @@ export const shopItems: ShopItem[] = [
     price: 10000,
     emoji: '🌟',
     kind: 'background',
+    visual: { layer: 'window', variant: 'cosmos-stage' },
   },
 ]
 
@@ -264,6 +300,19 @@ export function getEquippedItemForSlot(
     return undefined
   }
   return equippedItems.map(getShopItemById).find((item) => item && slot.kinds.includes(item.kind))
+}
+
+export function getHomeShipVisuals(equippedItems: string[]): HomeShipVisuals {
+  return equippedItems.reduce<HomeShipVisuals>((visuals, itemId) => {
+    const item = getShopItemById(itemId)
+    if (!item) {
+      return visuals
+    }
+    return {
+      ...visuals,
+      [item.visual.layer]: item.visual.variant,
+    }
+  }, {})
 }
 
 export function equipShopItem(currentEquippedItems: string[], itemId: string): string[] {
