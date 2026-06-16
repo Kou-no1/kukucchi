@@ -158,6 +158,7 @@ export function ResultPage() {
   const { budgetMinutes, shouldShowNotice } = useDailyUsage()
   const summary = (location.state as { summary?: GameSessionSummary } | null)?.summary
   const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
+  const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null
   const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
   const budgetNoticeOpen = rewardBudgetPaused && shouldShowNotice && !budgetNoticeDismissed
 
@@ -201,6 +202,13 @@ export function ResultPage() {
         <section className="reward-paused-card" aria-live="polite">
           <strong>{budgetMinutes}分 たったよ</strong>
           <span>このあとは コインとけいけんちは たまらないよ</span>
+        </section>
+      ) : null}
+
+      {!rewardBudgetPaused && schoolRewardScalePercent !== null && schoolRewardScalePercent < 100 ? (
+        <section className="reward-paused-card school-reward-card" aria-live="polite">
+          <strong>マスター！すごい！</strong>
+          <span>とくいな式は ごほうび少なめ（{schoolRewardScalePercent}%）</span>
         </section>
       ) : null}
 

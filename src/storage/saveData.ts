@@ -8,9 +8,11 @@ import { coerceShipName, defaultShipName } from '../data/shipName'
 import { specialUfoId } from '../data/ufos'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
 import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
+import { DEFAULT_SCHOOL_MODE_2_ENABLED } from '../game-engine/school/schoolMode2'
 import { titleRecordId } from '../game-engine/rewards/titles'
 
-export const SAVE_DATA_VERSION = 10
+export const SAVE_DATA_VERSION = 11
+const LEGACY_ADVANCED_BOSS_RESET_VERSION = 10
 
 const legacyAdvancedBossIds = ['boss-square', 'boss-pi'] as const
 const legacyAdvancedBossIdSet = new Set<string>(legacyAdvancedBossIds)
@@ -155,6 +157,7 @@ export function createDefaultSaveData(): SaveData {
       speechEnabled: true,
       reduceMotion: false,
       dailyBudgetMinutes: DEFAULT_DAILY_BUDGET_MINUTES,
+      schoolMode2Enabled: DEFAULT_SCHOOL_MODE_2_ENABLED,
     },
     progress: {
       facts: {},
@@ -211,6 +214,7 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
       speechEnabled: true,
       reduceMotion: false,
       dailyBudgetMinutes: DEFAULT_DAILY_BUDGET_MINUTES,
+      schoolMode2Enabled: DEFAULT_SCHOOL_MODE_2_ENABLED,
     },
     progress: {
       ...defaults.progress,
@@ -232,7 +236,8 @@ export function migrateSaveData(raw: unknown): SaveData {
 
   const candidate = raw as Partial<SaveData>
   const defaults = createDefaultSaveData()
-  const shouldResetLegacyAdvancedBosses = (candidate.version ?? 0) < SAVE_DATA_VERSION
+  const shouldResetLegacyAdvancedBosses =
+    (candidate.version ?? 0) < LEGACY_ADVANCED_BOSS_RESET_VERSION
   if (candidate.version === SAVE_DATA_VERSION) {
     return {
       ...defaults,

@@ -24,6 +24,7 @@ export type SettingsData = {
   speechEnabled: boolean
   reduceMotion: boolean
   dailyBudgetMinutes: DailyBudgetMinutes
+  schoolMode2Enabled: boolean
 }
 
 export type BestRecord = {

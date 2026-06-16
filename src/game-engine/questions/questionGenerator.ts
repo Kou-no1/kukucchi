@@ -5,6 +5,7 @@ import type {
   QuestionCategory,
 } from '../../types/game'
 import { getReviewQueue } from '../review/weakFacts'
+import { selectAdaptiveMultiplicationFact } from '../school/schoolMode2'
 import { createMultiplicationFactPool, factDifficulty } from './factDifficulty'
 
 export type RandomSource = () => number
@@ -15,6 +16,8 @@ export type GenerateQuestionOptions = {
   stages?: number[]
   answerMode?: AnswerMode
   minDifficulty?: number
+  schoolMode2Enabled?: boolean
+  recentIncorrectCount?: number
   rng?: RandomSource
 }
 
@@ -202,6 +205,16 @@ export function generateAdaptiveMultiplicationQuestion(
   options: GenerateQuestionOptions = {},
 ): Question {
   const rng = options.rng ?? Math.random
+  if (options.schoolMode2Enabled) {
+    const fact = selectAdaptiveMultiplicationFact({
+      facts,
+      stages: options.stage ? [options.stage] : options.stages,
+      minDifficulty: options.minDifficulty ?? 1,
+      rng,
+      recentIncorrectCount: options.recentIncorrectCount ?? 0,
+    })
+    return generateMultiplicationFactQuestion(fact.left, fact.right, options)
+  }
   const queue = getReviewQueue(facts, new Date(), 8)
   if (queue.length > 0 && rng() < 0.7) {
     const fact = pick(queue, rng)

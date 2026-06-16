@@ -25,7 +25,9 @@ export function SettingsPage() {
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
   const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
 
-  function updateSetting(key: 'soundEnabled' | 'speechEnabled' | 'reduceMotion') {
+  function updateSetting(
+    key: 'soundEnabled' | 'speechEnabled' | 'reduceMotion' | 'schoolMode2Enabled',
+  ) {
     updateSaveData((current) => ({
       ...current,
       settings: {
@@ -296,6 +298,17 @@ export function SettingsPage() {
                   </button>
                 ))}
               </div>
+              <label className="switch-row">
+                <input
+                  type="checkbox"
+                  checked={saveData.settings.schoolMode2Enabled}
+                  onChange={() => updateSetting('schoolMode2Enabled')}
+                />
+                がっこうモード2：とくいな式のごほうびを少なめにする
+              </label>
+              <p className="quiet-text">
+                オフにすると、すべての式でこれまでどおりのコインとEXPになります。
+              </p>
             </div>
           )}
         </div>

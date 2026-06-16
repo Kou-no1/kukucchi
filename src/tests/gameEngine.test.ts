@@ -84,6 +84,11 @@ import {
   shouldCountActiveUsage,
   shouldShowDailyBudgetNotice,
 } from '../game-engine/school/dailyUsage'
+import {
+  classifySchoolMastery,
+  rewardScaleForFact,
+  selectAdaptiveMultiplicationFact,
+} from '../game-engine/school/schoolMode2'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import { applySessionResult } from '../services/resultService'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
@@ -589,7 +594,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(getMonsterOvercomeProgress(overcome).message).toBeNull()
   })
 
-  it('re-applies stale time-only monster cleanup from v8 to v10', () => {
+  it('re-applies stale time-only monster cleanup from v8 to v11', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -621,19 +626,21 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v8Save)
-    expect(migrated.version).toBe(10)
+    expect(migrated.version).toBe(11)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
-    expect(save.version).toBe(10)
+    expect(save.version).toBe(11)
     expect(save.settings.dailyBudgetMinutes).toBe(10)
+    expect(save.settings.schoolMode2Enabled).toBe(true)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(10)
+    expect(migrated.version).toBe(11)
     expect(migrated.settings.dailyBudgetMinutes).toBe(10)
+    expect(migrated.settings.schoolMode2Enabled).toBe(true)
     expect(migrated.player).toBeNull()
     expect(migrated.tutorial.homeSeen).toBe(false)
     expect(migrated.progress.bossProgress).toEqual({})
@@ -829,6 +836,158 @@ describe('mastery, review, missions, and storage', () => {
     expect(backup).not.toContain('noticeShownDate')
   })
 
+  it('tapers practice rewards for mastered facts while keeping beginner facts full', () => {
+    const save = createSaveWithPlayer()
+    const mastered = {
+      ...createFactProgress(2, 2),
+      correctCount: 7,
+      consecutiveCorrect: 4,
+      averageResponseTimeMs: 2200,
+      masteryLevel: 5 as const,
+    }
+    const developing = {
+      ...createFactProgress(3, 4),
+      correctCount: 3,
+      consecutiveCorrect: 2,
+      averageResponseTimeMs: 3600,
+      masteryLevel: 3 as const,
+    }
+    const facts = {
+      [mastered.id]: mastered,
+      [developing.id]: developing,
+    }
+    expect(classifySchoolMastery(undefined)).toBe('beginner')
+    expect(classifySchoolMastery(developing)).toBe('developing')
+    expect(rewardScaleForFact(mastered)).toBe(0.2)
+
+    const summary: GameSessionSummary = {
+      id: 'school-mode-2',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 10,
+      earnedExp: 30,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [result({ questionId: '2x2', difficulty: 2 })],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const tapered = applySessionResult(
+      {
+        ...save,
+        progress: {
+          ...save.progress,
+          facts,
+        },
+      },
+      summary,
+    )
+    expect(tapered.summary.earnedCoins).toBe(2)
+    expect(tapered.summary.earnedExp).toBe(6)
+    expect(tapered.summary.details?.schoolRewardScalePercent).toBe(20)
+
+    const beginner = applySessionResult(save, {
+      ...summary,
+      id: 'school-mode-2-beginner',
+      results: [result({ questionId: '7x8', difficulty: 5 })],
+    })
+    expect(beginner.summary.earnedCoins).toBe(10)
+    expect(beginner.summary.earnedExp).toBe(30)
+  })
+
+  it('keeps full practice rewards when school mode 2 is off', () => {
+    const mastered = {
+      ...createFactProgress(2, 2),
+      correctCount: 7,
+      consecutiveCorrect: 4,
+      averageResponseTimeMs: 2200,
+      masteryLevel: 5 as const,
+    }
+    const save = {
+      ...createSaveWithPlayer(),
+      settings: {
+        ...createSaveWithPlayer().settings,
+        schoolMode2Enabled: false,
+      },
+      progress: {
+        ...createSaveWithPlayer().progress,
+        facts: {
+          [mastered.id]: mastered,
+        },
+      },
+    }
+    const summary: GameSessionSummary = {
+      id: 'school-mode-2-off',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 10,
+      earnedExp: 30,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [result({ questionId: '2x2', difficulty: 2 })],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+    const applied = applySessionResult(save, summary)
+    expect(applied.summary.earnedCoins).toBe(10)
+    expect(applied.summary.earnedExp).toBe(30)
+    expect(applied.summary.details?.schoolRewardScalePercent).toBeUndefined()
+  })
+
+  it('biases adaptive practice toward unmastered facts and returns easier facts after misses', () => {
+    let seed = 12345
+    const rng = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296
+      return seed / 4294967296
+    }
+    const facts = Object.fromEntries(
+      Array.from({ length: 9 }, (_, index) => {
+        const right = index + 1
+        const fact = createFactProgress(7, right)
+        return [
+          fact.id,
+          {
+            ...fact,
+            correctCount: right === 8 ? 0 : 8,
+            consecutiveCorrect: right === 8 ? 0 : 5,
+            averageResponseTimeMs: right === 8 ? 0 : 2200,
+            masteryLevel: right === 8 ? 0 as const : 5 as const,
+          },
+        ]
+      }),
+    )
+    const selected = Array.from({ length: 120 }, () =>
+      selectAdaptiveMultiplicationFact({
+        facts,
+        stages: [7],
+        rng,
+      }),
+    )
+    const unmasteredCount = selected.filter((fact) => fact.left === 7 && fact.right === 8).length
+    expect(unmasteredCount).toBeGreaterThan(40)
+
+    const easier = selectAdaptiveMultiplicationFact({
+      facts,
+      stages: [7],
+      recentIncorrectCount: 2,
+      rng: () => 0,
+    })
+    expect(easier.difficulty).toBeLessThanOrEqual(2)
+  })
+
   it('validates spaceship names and migrates legacy saves with a default ship name', () => {
     expect(normalizeShipNameInput('あいうえおか')).toBe('あいうえお')
     expect(validateShipName('スター')).toBeNull()
@@ -846,11 +1005,11 @@ describe('mastery, review, missions, and storage', () => {
     }
     delete (legacy.player as Record<string, unknown>).shipName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(10)
+    expect(migrated.version).toBe(11)
     expect(migrated.player?.shipName).toBe('くくっち')
   })
 
-  it('migrates v4 save data into v10 and removes time-only monsters', () => {
+  it('migrates v4 save data into v11 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -882,7 +1041,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(10)
+    expect(migrated.version).toBe(11)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -933,7 +1092,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(10)
+    expect(applied.save.version).toBe(11)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
@@ -1248,7 +1407,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(isBossUnlocked(developmentBoss, developmentOnly)).toBe(true)
   })
 
-  it('resets legacy high-grade boss clears and rewards during v10 migration', () => {
+  it('resets legacy high-grade boss clears and rewards during v11 migration', () => {
     const legacy = createSaveWithPlayer()
     const squareTitle = bosses.find((boss) => boss.id === 'boss-square')?.rewards.normal.title ?? ''
     const squareItem = 'boss-square-normal-item'
@@ -1311,7 +1470,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     })
 
-    expect(migrated.version).toBe(10)
+    expect(migrated.version).toBe(11)
     expect(migrated.progress.bossProgress['boss-square']).toBeUndefined()
     expect(migrated.progress.bossProgress['boss-development']).toBeTruthy()
     expect(migrated.progress.bossItems).not.toContain(squareItem)
@@ -1328,6 +1487,32 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.collectionRecords).toContainEqual(
       expect.objectContaining({ id: collectionRecordId('ufo', 'boss-development-ufo') }),
     )
+  })
+
+  it('does not re-run the legacy high-grade boss reset for v10 saves', () => {
+    const legacy = createSaveWithPlayer()
+    const migrated = migrateSaveData({
+      ...legacy,
+      version: 10,
+      progress: {
+        ...legacy.progress,
+        bossProgress: {
+          'boss-square': {
+            bossId: 'boss-square',
+            difficulties: {
+              normal: {
+                cleared: true,
+                clearCount: 1,
+                firstClearedAt: '2026-01-01T00:00:00.000Z',
+                bestTimeMs: 8000,
+              },
+            },
+          },
+        },
+      },
+    })
+    expect(migrated.version).toBe(11)
+    expect(migrated.progress.bossProgress['boss-square']).toBeTruthy()
   })
 
   it('grants fixed boss rewards only on first clear', () => {

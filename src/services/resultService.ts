@@ -8,6 +8,7 @@ import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFac
 import { judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
 import { applyRewardBudgetToSummary } from '../game-engine/school/dailyUsage'
+import { applySchoolRewardTaperingToSummary } from '../game-engine/school/schoolMode2'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
 
@@ -45,8 +46,13 @@ export function applySessionResult(
   summary: GameSessionSummary,
   options: { rewardBudgetPaused?: boolean } = {},
 ): { save: SaveData; summary: GameSessionSummary } {
-  const effectiveSummary = applyRewardBudgetToSummary(
+  const schoolSummary = applySchoolRewardTaperingToSummary(
     summary,
+    save.progress.facts,
+    save.settings.schoolMode2Enabled,
+  )
+  const effectiveSummary = applyRewardBudgetToSummary(
+    schoolSummary,
     options.rewardBudgetPaused === true,
   )
   const facts = { ...save.progress.facts }

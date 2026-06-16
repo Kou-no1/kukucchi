@@ -3518,6 +3518,26 @@ legend {
   text-shadow: 0 0 10px rgba(91, 233, 244, 0.58);
 }
 
+.tokui-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  border: 1px solid rgba(124, 245, 255, 0.75);
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  background: rgba(124, 245, 255, 0.12);
+  color: #e9fbff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  box-shadow: 0 0 12px rgba(124, 245, 255, 0.18);
+}
+
+.school-reward-card {
+  border-color: rgba(124, 245, 255, 0.72);
+  background: rgba(19, 66, 92, 0.72);
+}
+
 .advanced-command {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;

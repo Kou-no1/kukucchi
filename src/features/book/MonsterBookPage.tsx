@@ -26,6 +26,7 @@ import { getCollectionRecord } from '../../game-engine/collection/collectionReco
 import type { BookTabId } from '../../game-engine/collection/bookProgress'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import { getTitleDefinitions, titleRecordId } from '../../game-engine/rewards/titles'
+import { isTokuiFact } from '../../game-engine/school/schoolMode2'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { BossDifficultyId, SaveData } from '../../types/save'
 
@@ -283,6 +284,7 @@ export function MonsterBookPage() {
               {monsterFacts.map((fact, index) => {
                 const factId = `${fact.left}x${fact.right}`
                 const owned = monsterBook.has(factId)
+                const tokui = isTokuiFact(saveData.progress.facts[factId])
                 return (
                   <article
                     className={owned ? 'book-card' : 'book-card silhouette'}
@@ -303,6 +305,7 @@ export function MonsterBookPage() {
                       className="book-pixel-icon"
                     />
                     <h2>{owned ? `${fact.left} × ${fact.right}` : '？？？'}</h2>
+                    {owned && tokui ? <small className="tokui-mark">★ とくい</small> : null}
                     <p>{owned ? 'なかま' : 'まだ出会っていません'}</p>
                   </article>
                 )

@@ -16,6 +16,7 @@ import {
 } from '../../game-engine/review/weakFacts'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { isTokuiFact, resultIncorrectStreak } from '../../game-engine/school/schoolMode2'
 import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
@@ -39,9 +40,13 @@ export function ReviewPage() {
   )
   const [started, setStarted] = useState(false)
   const [question, setQuestion] = useState<Question>(() =>
-    reviewQueue[0]
-      ? generateMultiplicationFactQuestion(reviewQueue[0].left, reviewQueue[0].right)
-      : generateAdaptiveMultiplicationQuestion(saveData.progress.facts),
+    saveData.settings.schoolMode2Enabled
+      ? generateAdaptiveMultiplicationQuestion(saveData.progress.facts, {
+          schoolMode2Enabled: true,
+        })
+      : reviewQueue[0]
+        ? generateMultiplicationFactQuestion(reviewQueue[0].left, reviewQueue[0].right)
+        : generateAdaptiveMultiplicationQuestion(saveData.progress.facts),
   )
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
@@ -52,7 +57,13 @@ export function ReviewPage() {
   })
   const startedAtRef = useRef(Date.now())
 
-  function createReviewQuestion(index: number): Question {
+  function createReviewQuestion(index: number, completedResults = results): Question {
+    if (saveData.settings.schoolMode2Enabled) {
+      return generateAdaptiveMultiplicationQuestion(saveData.progress.facts, {
+        schoolMode2Enabled: true,
+        recentIncorrectCount: resultIncorrectStreak(completedResults),
+      })
+    }
     const fact = reviewQueue[index % Math.max(1, reviewQueue.length)]
     if (fact) {
       return generateMultiplicationFactQuestion(fact.left, fact.right)
@@ -113,7 +124,7 @@ export function ReviewPage() {
       if (nextResults.length >= reviewGoal) {
         finish(nextResults, nextScoreState)
       } else {
-        setQuestion(createReviewQuestion(nextResults.length))
+        setQuestion(createReviewQuestion(nextResults.length, nextResults))
         setFeedback('idle')
         startedAtRef.current = Date.now()
       }
@@ -142,6 +153,7 @@ export function ReviewPage() {
                   <span>
                     {fact.left} × {fact.right}
                     <small>Lv {fact.masteryLevel}</small>
+                    {isTokuiFact(fact) ? <small className="tokui-mark">★ とくい</small> : null}
                     {overcomeProgress?.message ? (
                       <small className="monster-overcome-progress">
                         {overcomeProgress.message}
