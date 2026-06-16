@@ -4,11 +4,12 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { playerIcons } from '../../data/playerIcons'
-import { defaultShipName, normalizeShipNameInput, validateShipName } from '../../data/shipName'
+import { defaultShipName, normalizeShipNameInput } from '../../data/shipName'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine/school/dailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
+import { validateShipName } from '../../utils/bannedWords'
 
 const teacherSettingsCode = '9631'
 
@@ -69,18 +70,19 @@ export function SettingsPage() {
 
   function updateShipName(value: string) {
     const nextValue = normalizeShipNameInput(value)
-    const result = validateShipName(nextValue)
+    const error = validateShipName(nextValue)
     setShipNameInput(nextValue)
-    setShipNameMessage(result.message)
-    if (!result.ok) {
+    if (error) {
+      setShipNameMessage(error)
       return
     }
+    setShipNameMessage('ほぞんしました')
     updateSaveData((current) => ({
       ...current,
       player: current.player
         ? {
             ...current.player,
-            shipName: result.value,
+            shipName: nextValue,
           }
         : current.player,
     }))

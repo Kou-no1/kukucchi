@@ -45,9 +45,10 @@ import {
   isShopTier2Unlocked,
   shopItems,
 } from '../data/shopItems'
-import { normalizeShipNameInput, validateShipName } from '../data/shipName'
+import { normalizeShipNameInput } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
+import { containsBannedWord, validateShipName } from '../utils/bannedWords'
 import {
   applyBossClearReward,
   getDifficultyProgress,
@@ -830,9 +831,12 @@ describe('mastery, review, missions, and storage', () => {
 
   it('validates spaceship names and migrates legacy saves with a default ship name', () => {
     expect(normalizeShipNameInput('あいうえおか')).toBe('あいうえお')
-    expect(validateShipName('スター').ok).toBe(true)
-    expect(validateShipName('abc').ok).toBe(false)
-    expect(validateShipName('うんこ').ok).toBe(false)
+    expect(validateShipName('スター')).toBeNull()
+    expect(validateShipName('abc')).toBeNull()
+    expect(validateShipName('あいうえおか')).toBe('なまえは　5もじまでだよ')
+    expect(validateShipName('うんこ')).toBe('そのなまえは　つかえないよ')
+    expect(containsBannedWord('だいおうんこ')).toBe(true)
+    expect(containsBannedWord('バカごう')).toBe(true)
 
     const legacyPlayer = { ...createSaveWithPlayer().player! }
     const legacy = {
