@@ -4,24 +4,109 @@ import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
-import { UfoBadge } from '../../components/collection/UfoBadge'
 import { getPlayerIcon } from '../../data/playerIcons'
-import { equipmentSlots, getEquippedItemForSlot, getHomeShipVisuals } from '../../data/shopItems'
+import {
+  equipShopItem,
+  equipmentSlots,
+  getEquippedItemForSlot,
+  getHomeShipPreviewVisuals,
+  shopItems,
+} from '../../data/shopItems'
 import { defaultShipName } from '../../data/shipName'
-import { getUfoById } from '../../data/ufos'
+import { getUfoById, ufoDefinitions } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
+
+type PreviewChoice = {
+  id: string
+  label: string
+  detail?: string
+  selected: boolean
+}
+
+function PreviewOptionGroup({
+  label,
+  emptyLabel,
+  choices,
+  onChoose,
+}: {
+  label: string
+  emptyLabel: string
+  choices: PreviewChoice[]
+  onChoose: (id: string) => void
+}) {
+  return (
+    <section className="preview-option-group" aria-label={label}>
+      <h3>{label}</h3>
+      {choices.length ? (
+        <div className="preview-option-row">
+          {choices.map((choice) => (
+            <button
+              className={choice.selected ? 'preview-equip-chip selected' : 'preview-equip-chip'}
+              type="button"
+              key={choice.id}
+              onClick={() => onChoose(choice.id)}
+              aria-pressed={choice.selected}
+            >
+              <strong>{choice.label}</strong>
+              {choice.detail ? <span>{choice.detail}</span> : null}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p>{emptyLabel}</p>
+      )}
+    </section>
+  )
+}
 
 export function HomePage() {
   const { saveData, updateSaveData } = useSaveData()
   const player = saveData.player
   const weakFacts = getWeakFacts(saveData.progress.facts, 3)
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
-  const shipVisuals = getHomeShipVisuals(saveData.progress.equippedItems)
-  const characterVisuals = {
-    ...shipVisuals,
-    ufo: equippedUfo?.variant,
-  }
+  const characterVisuals = getHomeShipPreviewVisuals(
+    saveData.progress.equippedItems,
+    equippedUfo?.variant,
+  )
+  const ownedItemIds = new Set(saveData.progress.ownedItems)
+  const equippedItemIds = new Set(saveData.progress.equippedItems)
+  const ownedBackgroundChoices = shopItems
+    .filter(
+      (item) =>
+        item.visual.layer === 'window' &&
+        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
+    )
+    .map((item) => ({
+      id: item.id,
+      label: item.name,
+      detail: item.kind === 'wallpaper' ? 'かべがみ' : 'はいけい',
+      selected: saveData.progress.equippedItems.includes(item.id),
+    }))
+  const ownedHatChoices = shopItems
+    .filter(
+      (item) =>
+        item.visual.layer === 'hat' &&
+        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
+    )
+    .map((item) => ({
+      id: item.id,
+      label: item.name,
+      detail: 'ぼうし',
+      selected: saveData.progress.equippedItems.includes(item.id),
+    }))
+  const ownedUfoChoices = ufoDefinitions
+    .filter(
+      (ufo) =>
+        saveData.progress.ownedUfos.includes(ufo.id) ||
+        saveData.progress.equippedUfoId === ufo.id,
+    )
+    .map((ufo) => ({
+      id: ufo.id,
+      label: ufo.name,
+      detail: 'UFO',
+      selected: saveData.progress.equippedUfoId === ufo.id,
+    }))
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
   const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
   const playerIcon = getPlayerIcon(player?.icon)
@@ -49,6 +134,36 @@ export function HomePage() {
           }
         : current.player,
     }))
+  }
+
+  function choosePreviewItem(itemId: string) {
+    updateSaveData((current) => {
+      if (!current.progress.ownedItems.includes(itemId)) {
+        return current
+      }
+      return {
+        ...current,
+        progress: {
+          ...current.progress,
+          equippedItems: equipShopItem(current.progress.equippedItems, itemId),
+        },
+      }
+    })
+  }
+
+  function choosePreviewUfo(ufoId: string) {
+    updateSaveData((current) => {
+      if (!current.progress.ownedUfos.includes(ufoId)) {
+        return current
+      }
+      return {
+        ...current,
+        progress: {
+          ...current.progress,
+          equippedUfoId: ufoId,
+        },
+      }
+    })
   }
 
   return (
@@ -107,13 +222,37 @@ export function HomePage() {
         </div>
 
         <aside className="character-window home-character-window" aria-label="くくっち">
-          {equippedUfo ? <UfoBadge ufo={equippedUfo} compact className="home-equipped-ufo" /> : null}
           <KukucchiCharacter level={player?.level ?? 1} mood="happy" visual={characterVisuals} />
           <div className="character-window-copy">
             <p className="welcome">{crewTitle}</p>
             <h2>{shipName}号</h2>
           </div>
         </aside>
+      </section>
+
+      <section className="home-preview-customizer" aria-labelledby="preview-customizer-heading">
+        <div className="preview-customizer-heading">
+          <p className="welcome">くくっち号</p>
+          <h2 id="preview-customizer-heading">カスタム</h2>
+        </div>
+        <PreviewOptionGroup
+          label="はいけい"
+          emptyLabel="もっている はいけい が まだありません"
+          choices={ownedBackgroundChoices}
+          onChoose={choosePreviewItem}
+        />
+        <PreviewOptionGroup
+          label="UFO"
+          emptyLabel="ボスを たおすと UFO が ふえます"
+          choices={ownedUfoChoices}
+          onChoose={choosePreviewUfo}
+        />
+        <PreviewOptionGroup
+          label="ぼうし"
+          emptyLabel="もっている ぼうし が まだありません"
+          choices={ownedHatChoices}
+          onChoose={choosePreviewItem}
+        />
       </section>
 
       <section className="home-card-grid home-main-actions" aria-label="メインメニュー">

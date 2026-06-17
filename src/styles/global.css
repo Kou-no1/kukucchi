@@ -426,7 +426,7 @@ legend {
 
 .ufo-cockpit {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   width: 116px;
   height: 86px;
@@ -459,7 +459,7 @@ legend {
 
 .kukucchi-window-layer {
   inset: 12%;
-  z-index: 0;
+  z-index: 1;
   overflow: hidden;
   border-radius: 50%;
   opacity: 0;
@@ -467,7 +467,7 @@ legend {
 
 .kukucchi-effect-layer {
   inset: 8%;
-  z-index: 4;
+  z-index: 6;
   opacity: 0;
 }
 
@@ -502,7 +502,7 @@ legend {
 .kukucchi-hat-layer {
   top: -18%;
   left: 50%;
-  z-index: 5;
+  z-index: 4;
   width: 58%;
   height: 28%;
   opacity: 0;
@@ -834,7 +834,7 @@ legend {
   position: absolute;
   top: 112px;
   left: 50%;
-  z-index: 1;
+  z-index: 2;
   width: 168px;
   height: 50px;
   border: 4px solid rgba(185, 221, 255, 0.58);
@@ -2832,6 +2832,10 @@ legend {
     grid-template-columns: minmax(0, 1fr) 190px;
   }
 
+  .home-preview-customizer {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .home-profile {
     grid-template-columns: 1fr;
   }
@@ -2857,6 +2861,10 @@ legend {
   .home-command,
   .home-main-actions,
   .home-sub-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .home-preview-customizer {
     grid-template-columns: 1fr;
   }
 
@@ -3068,6 +3076,117 @@ legend {
   background: linear-gradient(135deg, rgba(20, 69, 110, 0.86), rgba(9, 24, 50, 0.86));
 }
 
+.home-preview-customizer {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.8fr) repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
+  border: 2px solid rgba(91, 233, 244, 0.58);
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 8% 8%, rgba(91, 233, 244, 0.22), transparent 12rem),
+    rgba(8, 23, 45, 0.78);
+  box-shadow:
+    0 0 22px rgba(91, 233, 244, 0.18),
+    inset 0 0 20px rgba(91, 233, 244, 0.08);
+}
+
+.preview-customizer-heading {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+}
+
+.preview-customizer-heading h2,
+.preview-option-group h3 {
+  margin: 0;
+  color: #dffcff;
+  text-shadow:
+    0 0 8px rgba(91, 233, 244, 0.85),
+    0 0 18px rgba(91, 233, 244, 0.42);
+}
+
+.preview-customizer-heading h2 {
+  font-size: 1.3rem;
+}
+
+.preview-option-group {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+}
+
+.preview-option-group h3 {
+  font-size: 0.92rem;
+}
+
+.preview-option-group p {
+  margin: 0;
+  color: rgba(223, 252, 255, 0.7);
+  font-weight: 850;
+}
+
+.preview-option-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.preview-equip-chip {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 116px;
+  min-height: 48px;
+  padding: 7px 10px;
+  border: 2px solid rgba(255, 216, 106, 0.8);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, #fff7a8, #ffd86a 58%, #ffbf47),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.55), transparent 6rem);
+  color: #4a2c00;
+  cursor: pointer;
+  font-weight: 900;
+  line-height: 1.15;
+  text-align: left;
+  box-shadow:
+    0 8px 14px rgba(0, 0, 0, 0.18),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+}
+
+.preview-equip-chip strong,
+.preview-equip-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-equip-chip span {
+  color: rgba(74, 44, 0, 0.7);
+  font-size: 0.74rem;
+}
+
+.preview-equip-chip.selected {
+  border-color: rgba(255, 159, 67, 0.92);
+  background:
+    linear-gradient(135deg, #ffd2a2, #ff9f43 58%, #ff7a2d),
+    radial-gradient(circle at 18% 12%, rgba(255, 255, 255, 0.5), transparent 6rem);
+  color: #351700;
+}
+
+@media (max-width: 860px) {
+  .home-preview-customizer {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-preview-customizer {
+    grid-template-columns: 1fr;
+  }
+}
+
 .home-character-window {
   justify-self: end;
   width: 100%;
@@ -3102,6 +3221,18 @@ legend {
   top: 92px;
   width: min(126px, 72%);
   height: 40px;
+}
+
+.home-character-window .kukucchi-buddy-layer {
+  border: 2px dashed rgba(223, 252, 255, 0.45);
+  border-radius: 50%;
+  opacity: 0.2;
+}
+
+.home-character-window .kukucchi-effect-layer {
+  border: 2px dashed rgba(91, 233, 244, 0.28);
+  border-radius: 50%;
+  opacity: 0.12;
 }
 
 .home-character-window .character-window-copy h2 {

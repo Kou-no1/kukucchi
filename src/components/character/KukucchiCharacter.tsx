@@ -1,4 +1,4 @@
-import type { HomeShipVisuals } from '../../data/shopItems'
+import { homeShipPreviewLayers, type HomeShipVisuals } from '../../data/shopItems'
 
 export type KukucchiShipVisuals = HomeShipVisuals & {
   ufo?: string
@@ -35,15 +35,20 @@ export function KukucchiCharacter({
 
   return (
     <div className={rootClassName} aria-label="くくっち">
-      <div className="ufo-ring">
-        <span className="kukucchi-window-layer" aria-hidden="true" />
-        <span className="kukucchi-effect-layer" aria-hidden="true" />
-        <div className="ufo-cockpit">
+      <div className="ufo-ring" data-preview-layers={homeShipPreviewLayers.join('>')}>
+        <span className="kukucchi-window-layer" data-preview-layer="window" aria-hidden="true" />
+        <div className="ufo-ship" data-preview-layer="ufo">
+          <span className="ufo-light light-a" />
+          <span className="ufo-light light-b" />
+          <span className="ufo-light light-c" />
+          <span className="ufo-light light-d" />
+        </div>
+        <div className="ufo-cockpit" data-preview-layer="body">
           <div className="kukucchi-body">
             <span className="antenna antenna-left" />
             <span className="antenna antenna-right" />
             <span className="kukucchi-wear-layer" aria-hidden="true" />
-            <span className="kukucchi-hat-layer" aria-hidden="true" />
+            <span className="kukucchi-hat-layer" data-preview-layer="hat" aria-hidden="true" />
             <span className="eye left-eye" />
             <span className="eye right-eye" />
             <span className="mouth" />
@@ -51,13 +56,8 @@ export function KukucchiCharacter({
           </div>
         </div>
         <span className="kukucchi-furniture-layer" aria-hidden="true" />
-        <div className="ufo-ship">
-          <span className="ufo-light light-a" />
-          <span className="ufo-light light-b" />
-          <span className="ufo-light light-c" />
-          <span className="ufo-light light-d" />
-        </div>
-        <span className="kukucchi-buddy-layer" aria-hidden="true" />
+        <span className="kukucchi-buddy-layer" data-preview-layer="buddy" aria-hidden="true" />
+        <span className="kukucchi-effect-layer" data-preview-layer="effect" aria-hidden="true" />
       </div>
       <div className="kukucchi-shadow" />
     </div>

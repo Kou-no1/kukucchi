@@ -33,6 +33,21 @@ export type ShopItem = {
 
 export type HomeShipVisuals = Partial<Record<ShopItemVisualLayer, string>>
 
+export const homeShipPreviewLayers = [
+  'window',
+  'ufo',
+  'body',
+  'hat',
+  'buddy',
+  'effect',
+] as const
+
+export type HomeShipPreviewLayer = (typeof homeShipPreviewLayers)[number]
+
+export type HomeShipPreviewVisuals = Pick<HomeShipVisuals, 'window' | 'hat'> & {
+  ufo?: string
+}
+
 export type EquipmentSlotId = 'wear' | 'hat' | 'room' | 'buddy'
 
 export type EquipmentSlot = {
@@ -313,6 +328,18 @@ export function getHomeShipVisuals(equippedItems: string[]): HomeShipVisuals {
       [item.visual.layer]: item.visual.variant,
     }
   }, {})
+}
+
+export function getHomeShipPreviewVisuals(
+  equippedItems: string[],
+  ufoVariant?: string | null,
+): HomeShipPreviewVisuals {
+  const visuals = getHomeShipVisuals(equippedItems)
+  return {
+    window: visuals.window,
+    hat: visuals.hat,
+    ufo: ufoVariant ?? undefined,
+  }
 }
 
 export function equipShopItem(currentEquippedItems: string[], itemId: string): string[] {

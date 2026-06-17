@@ -41,7 +41,9 @@ import { rocketBadges } from '../data/rocketBadges'
 import {
   equipShopItem,
   getEquippedItemForSlot,
+  getHomeShipPreviewVisuals,
   getHomeShipVisuals,
+  homeShipPreviewLayers,
   isShopTier2Unlocked,
   shopItems,
 } from '../data/shopItems'
@@ -1245,6 +1247,42 @@ describe('mastery, review, missions, and storage', () => {
       buddy: 'luna-pet',
       effect: 'comet-burst',
     })
+  })
+
+  it('builds the Phase 15-1 home preview from background, UFO, and hat only', () => {
+    expect(homeShipPreviewLayers).toEqual(['window', 'ufo', 'body', 'hat', 'buddy', 'effect'])
+    const preview = getHomeShipPreviewVisuals(
+      [
+        'rainbow-suit',
+        'rocket-helmet',
+        'planet-view',
+        'crystal-desk',
+        'luna-pet',
+        'comet-burst',
+      ],
+      'special',
+    )
+
+    expect(preview).toEqual({
+      window: 'planet-view',
+      ufo: 'special',
+      hat: 'rocket-helmet',
+    })
+    expect('wear' in preview).toBe(false)
+    expect('furniture' in preview).toBe(false)
+    expect('buddy' in preview).toBe(false)
+    expect('effect' in preview).toBe(false)
+  })
+
+  it('reflects equipped preview item switches without changing save structure', () => {
+    const withBackground = equipShopItem(['blue-neon-room', 'star-cap'], 'planet-view')
+    expect(getHomeShipPreviewVisuals(withBackground).window).toBe('planet-view')
+
+    const withHat = equipShopItem(withBackground, 'rocket-helmet')
+    expect(getHomeShipPreviewVisuals(withHat).hat).toBe('rocket-helmet')
+    expect(withHat).toContain('planet-view')
+    expect(withHat).toContain('rocket-helmet')
+    expect(withHat).not.toContain('star-cap')
   })
 
   it('keeps one equipped shop item per home equipment slot', () => {
