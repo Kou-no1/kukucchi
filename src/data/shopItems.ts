@@ -1,11 +1,15 @@
+import { shopBuddyDefinitions } from './buddies'
+
 export type ShopItemKind =
   | 'wear'
+  | 'suit'
   | 'hat'
   | 'furniture'
   | 'wallpaper'
   | 'background'
   | 'effect'
   | 'pet'
+  | 'buddy'
 
 export type ShopItemVisualLayer =
   | 'wear'
@@ -29,6 +33,8 @@ export type ShopItem = {
   emoji: string
   kind: ShopItemKind
   visual: ShopItemVisual
+  tier?: 1 | 2
+  countsTowardTierUnlock?: boolean
 }
 
 export type HomeShipVisuals = Partial<Record<ShopItemVisualLayer, string>>
@@ -44,11 +50,11 @@ export const homeShipPreviewLayers = [
 
 export type HomeShipPreviewLayer = (typeof homeShipPreviewLayers)[number]
 
-export type HomeShipPreviewVisuals = Pick<HomeShipVisuals, 'window' | 'hat'> & {
+export type HomeShipPreviewVisuals = Pick<HomeShipVisuals, 'window' | 'wear' | 'hat'> & {
   ufo?: string
 }
 
-export type EquipmentSlotId = 'wear' | 'hat' | 'room' | 'buddy'
+export type EquipmentSlotId = 'wear' | 'hat' | 'room' | 'buddy' | 'effect'
 
 export type EquipmentSlot = {
   id: EquipmentSlotId
@@ -62,9 +68,9 @@ export const shopTier2UnlockPurchaseCount = 10
 export const equipmentSlots: EquipmentSlot[] = [
   {
     id: 'wear',
-    label: 'ふく',
-    emptyLabel: 'ふくなし',
-    kinds: ['wear'],
+    label: 'スーツ',
+    emptyLabel: 'スーツなし',
+    kinds: ['wear', 'suit'],
   },
   {
     id: 'hat',
@@ -82,11 +88,17 @@ export const equipmentSlots: EquipmentSlot[] = [
     id: 'buddy',
     label: 'なかま',
     emptyLabel: 'なかまなし',
-    kinds: ['effect', 'pet'],
+    kinds: ['pet', 'buddy'],
+  },
+  {
+    id: 'effect',
+    label: 'ひかり',
+    emptyLabel: 'ひかりなし',
+    kinds: ['effect'],
   },
 ]
 
-export const shopItems: ShopItem[] = [
+const coreShopItems: ShopItem[] = [
   {
     id: 'blue-neon-room',
     no: 1,
@@ -289,9 +301,99 @@ export const shopItems: ShopItem[] = [
   },
 ]
 
+export const suitShopItems: ShopItem[] = [
+  {
+    id: 'suit-navy',
+    no: 21,
+    name: 'ネイビースーツ',
+    description: 'きりっとした あおいスーツ',
+    price: 200,
+    emoji: '🔷',
+    kind: 'suit',
+    visual: { layer: 'wear', variant: 'suit-navy' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: 'suit-white',
+    no: 22,
+    name: 'ホワイトスーツ',
+    description: 'ぴかっとひかる しろいスーツ',
+    price: 250,
+    emoji: '🤍',
+    kind: 'suit',
+    visual: { layer: 'wear', variant: 'suit-white' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: 'suit-red',
+    no: 23,
+    name: 'レッドスーツ',
+    description: 'げんきがでる あかいスーツ',
+    price: 300,
+    emoji: '❤️',
+    kind: 'suit',
+    visual: { layer: 'wear', variant: 'suit-red' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: 'suit-green',
+    no: 24,
+    name: 'グリーンスーツ',
+    description: 'やさしい みどりのスーツ',
+    price: 350,
+    emoji: '💚',
+    kind: 'suit',
+    visual: { layer: 'wear', variant: 'suit-green' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: 'suit-purple',
+    no: 25,
+    name: 'パープルスーツ',
+    description: 'うちゅうっぽい むらさきスーツ',
+    price: 400,
+    emoji: '💜',
+    kind: 'suit',
+    visual: { layer: 'wear', variant: 'suit-purple' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+]
+
+export const buddyShopItems: ShopItem[] = shopBuddyDefinitions.map((buddy, index) => ({
+  id: buddy.id,
+  no: 26 + index,
+  name: buddy.name,
+  description: buddy.description,
+  price: buddy.price,
+  emoji: buddy.theme === 'robot' ? '🤖' : buddy.theme === 'celestial' ? '⭐' : '👾',
+  kind: 'buddy',
+  visual: { layer: 'buddy', variant: buddy.id },
+  tier: 1,
+  countsTowardTierUnlock: false,
+}))
+
+export const shopItems: ShopItem[] = [...coreShopItems, ...suitShopItems, ...buddyShopItems]
+
+export function countsTowardShopTier(item: ShopItem): boolean {
+  return item.countsTowardTierUnlock ?? item.no <= 20
+}
+
+export function getShopItemTier(item: ShopItem): 1 | 2 {
+  return item.tier ?? (item.no <= 10 ? 1 : 2)
+}
+
+export function isShopItemVisible(item: ShopItem, tier2Unlocked: boolean): boolean {
+  return getShopItemTier(item) === 1 || tier2Unlocked
+}
+
 export function purchasedShopItemCount(ownedItems: string[]): number {
   const owned = new Set(ownedItems)
-  return shopItems.filter((item) => owned.has(item.id)).length
+  return shopItems.filter((item) => owned.has(item.id) && countsTowardShopTier(item)).length
 }
 
 export function isShopTier2Unlocked(ownedItems: string[]): boolean {
@@ -337,6 +439,7 @@ export function getHomeShipPreviewVisuals(
   const visuals = getHomeShipVisuals(equippedItems)
   return {
     window: visuals.window,
+    wear: visuals.wear,
     hat: visuals.hat,
     ufo: ufoVariant ?? undefined,
   }

@@ -16,7 +16,7 @@ import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
 import { DEFAULT_SCHOOL_MODE_2_ENABLED } from '../game-engine/school/schoolMode2'
 import { titleRecordId } from '../game-engine/rewards/titles'
 
-export const SAVE_DATA_VERSION = 12
+export const SAVE_DATA_VERSION = 13
 const LEGACY_ADVANCED_BOSS_RESET_VERSION = 10
 
 const legacyAdvancedBossIds = ['boss-square', 'boss-pi'] as const
@@ -179,6 +179,7 @@ export function createDefaultSaveData(): SaveData {
       equippedUfoId: null,
       ownedItems: ['basic-room'],
       equippedItems: ['basic-room'],
+      equippedBuddyId: null,
       speedSettings: {
         selectedStages: [...defaultSpeedStages],
         durationSeconds: speedDurations[0],
@@ -263,6 +264,7 @@ export function migrateSaveData(raw: unknown): SaveData {
           bossItems: candidate.progress?.bossItems ?? [],
           ownedUfos: candidate.progress?.ownedUfos ?? [],
           equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+          equippedBuddyId: candidate.progress?.equippedBuddyId ?? null,
           speedSettings: {
             ...defaults.progress.speedSettings,
             ...candidate.progress?.speedSettings,
@@ -310,6 +312,7 @@ export function migrateSaveData(raw: unknown): SaveData {
         bossItems: candidate.progress?.bossItems ?? [],
         ownedUfos: candidate.progress?.ownedUfos ?? [],
         equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+        equippedBuddyId: candidate.progress?.equippedBuddyId ?? null,
         speedSettings: {
           ...defaults.progress.speedSettings,
           ...candidate.progress?.speedSettings,

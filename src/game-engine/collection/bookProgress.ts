@@ -1,6 +1,7 @@
 import { bossLimitedItems, bosses, bossDifficultyIds } from '../../data/bosses'
 import { advancedMonsterDefinitions, isAdvancedMonsterOwned } from '../../data/advancedMonsters'
 import { keyTypes } from '../../data/keys'
+import { buddyDefinitions } from '../../data/buddies'
 import { rocketBadges } from '../../data/rocketBadges'
 import { treasureItems } from '../../data/treasureItems'
 import { ufoDefinitions } from '../../data/ufos'
@@ -9,7 +10,14 @@ import { createMultiplicationFactPool } from '../questions/factDifficulty'
 import { getDifficultyProgress } from '../bosses/bossEngine'
 import { getTitleDefinitions } from '../rewards/titles'
 
-export type BookTabId = 'kukucchi' | 'monsters' | 'ufos' | 'treasures' | 'collection' | 'titles'
+export type BookTabId =
+  | 'kukucchi'
+  | 'monsters'
+  | 'buddies'
+  | 'ufos'
+  | 'treasures'
+  | 'collection'
+  | 'titles'
 
 export type BookProgressCount = {
   owned: number
@@ -53,12 +61,16 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const titleDefinitions = getTitleDefinitions()
   const definedTitles = new Set(titleDefinitions.map((title) => title.label))
   const ownedTitleCount = new Set((save.player?.titles ?? []).filter((title) => definedTitles.has(title))).size
+  const ownedBuddyCount = save.progress.collectionRecords.filter((record) =>
+    record.id.startsWith('buddy:'),
+  ).length
   const tabs: Record<BookTabId, BookProgressCount> = {
     kukucchi: countPercent(countKukucchiRecords(save), kukucchiRecordTotal + rocketBadges.length),
     monsters: countPercent(
       new Set(save.progress.monsterBook).size + advancedMonsterOwned,
       monsterTotal + advancedMonsterDefinitions.length,
     ),
+    buddies: countPercent(new Set(save.progress.monsterBook).size + ownedBuddyCount, monsterTotal + buddyDefinitions.length),
     ufos: countPercent(new Set(save.progress.ownedUfos).size, ufoDefinitions.length),
     treasures: countPercent(new Set(save.progress.bossItems).size + bossOwned, bossLimitedItems.length + bosses.length),
     collection: countPercent(

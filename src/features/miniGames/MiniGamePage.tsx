@@ -196,6 +196,8 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         treasurePoolExhausted?: boolean
         treasureItemId?: string
         treasureItemName?: string
+        treasureBuddyId?: string
+        treasureBuddyName?: string | null
         treasureKeyIds?: string[]
         treasureKeys?: number
         treasureMethod?: string
@@ -228,7 +230,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         details.treasureBonusCoins = options.treasureBonusCoins ?? 0
         details.treasureDuplicate = options.treasureDuplicate ?? false
         details.treasurePoolExhausted = options.treasurePoolExhausted ?? false
-        details.treasureItemName = options.treasureItemName ?? null
+        details.treasureItemName = options.treasureItemName ?? options.treasureBuddyName ?? null
         details.treasureKeyNames = (options.treasureKeyIds ?? earnedKeyIds)
           .map((keyId) => getKeyTypeById(keyId)?.name)
           .filter((name): name is string => Boolean(name))
@@ -301,11 +303,22 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         const alreadyOwned = options.treasureItemId
           ? nextSave.progress.ownedTreasureItems.some((item) => item.id === options.treasureItemId)
           : true
+        const buddyRecords = options.treasureBuddyId
+          ? addCollectionRecords(nextSave.progress.collectionRecords, [
+              {
+                kind: 'buddy',
+                id: options.treasureBuddyId,
+                acquiredAt: openedAt,
+                method: options.treasureMethod ?? 'たからばこから入手',
+              },
+            ])
+          : nextSave.progress.collectionRecords
         nextSave = {
           ...nextSave,
           progress: {
             ...nextSave.progress,
             treasureKeys: nextTreasureKeys,
+            collectionRecords: buddyRecords,
             ownedTreasureItems:
               options.treasureItemId && !alreadyOwned
                 ? [
@@ -459,9 +472,14 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   function openChest(chest: (typeof treasureChestTypes)[number]) {
     const openedAt = new Date().toISOString()
+    const ownedBuddyIds = saveData.progress.collectionRecords
+      .filter((record) => record.id.startsWith('buddy:'))
+      .map((record) => record.id.replace(/^buddy:/, ''))
     const reward = openTreasureChest({
       chestId: chest.id,
       ownedItemIds: saveData.progress.ownedTreasureItems.map((item) => item.id),
+      ownedBuddyIds,
+      includeBuddyRewards: true,
       openedAt,
     })
     finish(results, scoreState, {
@@ -471,6 +489,8 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       treasurePoolExhausted: reward.poolExhausted,
       treasureItemId: reward.item?.id,
       treasureItemName: reward.item?.name,
+      treasureBuddyId: reward.buddyId ?? undefined,
+      treasureBuddyName: reward.buddyName,
       treasureKeyIds: earnedKeyIds,
       treasureKeys: keys,
       treasureMethod: reward.method,

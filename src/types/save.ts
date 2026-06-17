@@ -84,6 +84,7 @@ export type ProgressData = {
   equippedUfoId: string | null
   ownedItems: string[]
   equippedItems: string[]
+  equippedBuddyId: string | null
   speedSettings: {
     selectedStages: number[]
     durationSeconds: number

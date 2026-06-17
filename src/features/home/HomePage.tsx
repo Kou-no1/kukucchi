@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
+import { BuddySprite } from '../../components/collection/BuddySprite'
+import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getPlayerIcon } from '../../data/playerIcons'
 import {
@@ -14,6 +16,12 @@ import {
 } from '../../data/shopItems'
 import { defaultCharacterName, defaultShipName } from '../../data/shipName'
 import { getUfoById, ufoDefinitions } from '../../data/ufos'
+import {
+  coerceEquippedBuddyId,
+  getOwnedBuddySelections,
+  parseDedicatedBuddySelectionId,
+  parseMonsterBuddySelectionId,
+} from '../../game-engine/collection/buddies'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
 
@@ -60,6 +68,21 @@ function PreviewOptionGroup({
   )
 }
 
+function renderSelectedBuddy(selectionId: string | null) {
+  const monster = parseMonsterBuddySelectionId(selectionId)
+  if (monster) {
+    return (
+      <MonsterSprite
+        left={monster.left}
+        right={monster.right}
+        className="home-buddy-sprite"
+      />
+    )
+  }
+  const buddyId = parseDedicatedBuddySelectionId(selectionId)
+  return buddyId ? <BuddySprite buddyId={buddyId} className="home-buddy-sprite" /> : null
+}
+
 export function HomePage() {
   const { saveData, updateSaveData } = useSaveData()
   const player = saveData.player
@@ -69,6 +92,8 @@ export function HomePage() {
     saveData.progress.equippedItems,
     equippedUfo?.variant,
   )
+  const equippedBuddyId = coerceEquippedBuddyId(saveData)
+  const buddyContent = renderSelectedBuddy(equippedBuddyId)
   const ownedItemIds = new Set(saveData.progress.ownedItems)
   const equippedItemIds = new Set(saveData.progress.equippedItems)
   const ownedBackgroundChoices = shopItems
@@ -95,6 +120,18 @@ export function HomePage() {
       detail: 'ぼうし',
       selected: saveData.progress.equippedItems.includes(item.id),
     }))
+  const ownedSuitChoices = shopItems
+    .filter(
+      (item) =>
+        item.visual.layer === 'wear' &&
+        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
+    )
+    .map((item) => ({
+      id: item.id,
+      label: item.name,
+      detail: item.kind === 'suit' ? 'スーツ' : 'ふく',
+      selected: saveData.progress.equippedItems.includes(item.id),
+    }))
   const ownedUfoChoices = ufoDefinitions
     .filter(
       (ufo) =>
@@ -107,6 +144,21 @@ export function HomePage() {
       detail: 'UFO',
       selected: saveData.progress.equippedUfoId === ufo.id,
     }))
+  const ownedBuddySelections = getOwnedBuddySelections(saveData)
+  const ownedBuddyChoices = [
+    {
+      id: 'none',
+      label: 'なし',
+      detail: 'なかまをしまう',
+      selected: equippedBuddyId === null,
+    },
+    ...ownedBuddySelections.map((buddy) => ({
+      id: buddy.id,
+      label: buddy.label,
+      detail: buddy.type === 'monster' ? 'こくふくなかま' : 'なかま',
+      selected: equippedBuddyId === buddy.id,
+    })),
+  ]
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
   const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
   const playerIcon = getPlayerIcon(player?.icon)
@@ -162,6 +214,23 @@ export function HomePage() {
         progress: {
           ...current.progress,
           equippedUfoId: ufoId,
+        },
+      }
+    })
+  }
+
+  function choosePreviewBuddy(selectionId: string) {
+    updateSaveData((current) => {
+      const nextBuddyId = selectionId === 'none' ? null : selectionId
+      const owned = nextBuddyId === null || getOwnedBuddySelections(current).some((buddy) => buddy.id === nextBuddyId)
+      if (!owned) {
+        return current
+      }
+      return {
+        ...current,
+        progress: {
+          ...current.progress,
+          equippedBuddyId: nextBuddyId,
         },
       }
     })
@@ -227,6 +296,7 @@ export function HomePage() {
             level={player?.level ?? 1}
             mood="happy"
             visual={characterVisuals}
+            buddyContent={buddyContent}
             label={characterName}
           />
           <div className="character-window-copy">
@@ -242,6 +312,12 @@ export function HomePage() {
           <p className="welcome">くくっち号</p>
           <h2 id="preview-customizer-heading">カスタム</h2>
         </div>
+        <PreviewOptionGroup
+          label="スーツ"
+          emptyLabel="もっている スーツが まだありません"
+          choices={ownedSuitChoices}
+          onChoose={choosePreviewItem}
+        />
         <PreviewOptionGroup
           label="はいけい"
           emptyLabel="もっている はいけい が まだありません"
@@ -259,6 +335,12 @@ export function HomePage() {
           emptyLabel="もっている ぼうし が まだありません"
           choices={ownedHatChoices}
           onChoose={choosePreviewItem}
+        />
+        <PreviewOptionGroup
+          label="なかま"
+          emptyLabel="こくふくやショップで なかまに あえます"
+          choices={ownedBuddyChoices}
+          onChoose={choosePreviewBuddy}
         />
       </section>
 

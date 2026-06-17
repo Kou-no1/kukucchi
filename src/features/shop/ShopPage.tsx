@@ -2,47 +2,61 @@ import { useState } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import {
   equipShopItem,
+  getShopItemTier,
   isShopTier2Unlocked,
+  isShopItemVisible,
   purchasedShopItemCount,
   shopItems,
   shopTier2UnlockPurchaseCount,
 } from '../../data/shopItems'
 import type { ShopItemKind } from '../../data/shopItems'
+import { addCollectionRecords } from '../../game-engine/collection/collectionRecords'
+import { dedicatedBuddySelectionId } from '../../game-engine/collection/buddies'
 import { useSaveData } from '../../hooks/useSaveData'
 
-const shopKindFilters: Array<{ id: 'all' | ShopItemKind; label: string }> = [
+type ShopKindFilterId = 'all' | ShopItemKind | 'companion'
+
+const shopKindFilters: Array<{ id: ShopKindFilterId; label: string }> = [
   { id: 'all', label: 'ぜんぶ' },
+  { id: 'suit', label: 'スーツ' },
   { id: 'hat', label: 'ぼうし' },
   { id: 'wear', label: 'ふく' },
   { id: 'background', label: 'はいけい' },
   { id: 'wallpaper', label: 'かべがみ' },
   { id: 'furniture', label: 'かぐ' },
   { id: 'effect', label: 'ひかり' },
-  { id: 'pet', label: 'なかま' },
+  { id: 'companion', label: 'なかま' },
 ]
 
 function kindLabel(kind: string): string {
   const labels: Record<string, string> = {
     wear: 'ふく',
+    suit: 'スーツ',
     hat: 'ぼうし',
     furniture: 'かぐ',
     wallpaper: 'かべがみ',
     background: 'はいけい',
     effect: 'ひかり',
     pet: 'なかま',
+    buddy: 'なかま',
   }
   return labels[kind] ?? kind
 }
 
 export function ShopPage() {
   const { saveData, updateSaveData } = useSaveData()
-  const [activeKind, setActiveKind] = useState<'all' | ShopItemKind>('all')
+  const [activeKind, setActiveKind] = useState<ShopKindFilterId>('all')
   const coins = saveData.player?.coins ?? 0
   const purchasedCount = purchasedShopItemCount(saveData.progress.ownedItems)
   const tier2Unlocked = isShopTier2Unlocked(saveData.progress.ownedItems)
   const visibleItems = shopItems
-    .filter((item) => item.no <= 10 || tier2Unlocked)
-    .filter((item) => activeKind === 'all' || item.kind === activeKind)
+    .filter((item) => isShopItemVisible(item, tier2Unlocked))
+    .filter(
+      (item) =>
+        activeKind === 'all' ||
+        item.kind === activeKind ||
+        (activeKind === 'companion' && (item.kind === 'pet' || item.kind === 'buddy')),
+    )
   const unlockRemaining = Math.max(0, shopTier2UnlockPurchaseCount - purchasedCount)
   const equippedKinds = new Set(
     saveData.progress.equippedItems
@@ -71,6 +85,17 @@ export function ShopPage() {
         progress: {
           ...current.progress,
           ownedItems: [...current.progress.ownedItems, item.id],
+          collectionRecords:
+            item.kind === 'buddy'
+              ? addCollectionRecords(current.progress.collectionRecords, [
+                  {
+                    kind: 'buddy',
+                    id: item.id,
+                    acquiredAt: new Date().toISOString(),
+                    method: 'ショップ',
+                  },
+                ])
+              : current.progress.collectionRecords,
         },
       }
     })
@@ -86,6 +111,10 @@ export function ShopPage() {
         progress: {
           ...current.progress,
           equippedItems: equipShopItem(current.progress.equippedItems, itemId),
+          equippedBuddyId:
+            shopItems.find((item) => item.id === itemId)?.kind === 'buddy'
+              ? dedicatedBuddySelectionId(itemId)
+              : current.progress.equippedBuddyId,
         },
       }
     })
@@ -109,7 +138,11 @@ export function ShopPage() {
       <section className="shop-filter-bar" aria-label="しょうひんしぼりこみ">
         {shopKindFilters.map((filter) => {
           const selected = activeKind === filter.id
-          const equipped = filter.id !== 'all' && equippedKinds.has(filter.id)
+          const equipped =
+            filter.id !== 'all' &&
+            (filter.id === 'companion'
+              ? equippedKinds.has('pet') || equippedKinds.has('buddy')
+              : equippedKinds.has(filter.id))
           return (
             <button
               className={[
@@ -136,7 +169,7 @@ export function ShopPage() {
           const owned = saveData.progress.ownedItems.includes(item.id)
           const equipped = saveData.progress.equippedItems.includes(item.id)
           const canBuy = coins >= item.price
-          const hiddenTier2 = item.no > 10 && !owned
+          const hiddenTier2 = getShopItemTier(item) === 2 && !owned
           return (
             <article className={hiddenTier2 ? 'shop-card silhouette' : 'shop-card'} key={item.id}>
               <span className="shop-emoji" aria-hidden="true">

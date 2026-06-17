@@ -1,0 +1,122 @@
+import { buddyDefinitions, getBuddyById } from '../../data/buddies'
+import type { SaveData } from '../../types/save'
+import { collectionRecordId, getCollectionRecord } from './collectionRecords'
+
+export type BuddySelection =
+  | {
+      type: 'monster'
+      id: string
+      left: number
+      right: number
+      label: string
+      acquiredAt: string | null
+      method: string
+    }
+  | {
+      type: 'buddy'
+      id: string
+      buddyId: string
+      label: string
+      acquiredAt: string | null
+      method: string
+    }
+
+export function monsterBuddySelectionId(left: number, right: number): string {
+  return `monster:${left}x${right}`
+}
+
+export function dedicatedBuddySelectionId(buddyId: string): string {
+  return `buddy:${buddyId}`
+}
+
+export function parseMonsterBuddySelectionId(
+  selectionId: string | null | undefined,
+): { left: number; right: number } | null {
+  const match = selectionId?.match(/^monster:(\d+)x(\d+)$/)
+  if (!match) {
+    return null
+  }
+  return {
+    left: Number(match[1]),
+    right: Number(match[2]),
+  }
+}
+
+export function parseDedicatedBuddySelectionId(
+  selectionId: string | null | undefined,
+): string | null {
+  const match = selectionId?.match(/^buddy:(.+)$/)
+  return match?.[1] ?? null
+}
+
+export function isDedicatedBuddyOwned(save: SaveData, buddyId: string): boolean {
+  return Boolean(getCollectionRecord(save.progress.collectionRecords, 'buddy', buddyId))
+}
+
+export function isBuddySelectionOwned(save: SaveData, selectionId: string | null): boolean {
+  if (!selectionId) {
+    return true
+  }
+  const monster = parseMonsterBuddySelectionId(selectionId)
+  if (monster) {
+    return save.progress.monsterBook.includes(`${monster.left}x${monster.right}`)
+  }
+  const buddyId = parseDedicatedBuddySelectionId(selectionId)
+  return buddyId ? isDedicatedBuddyOwned(save, buddyId) : false
+}
+
+export function getOwnedBuddySelections(save: SaveData): BuddySelection[] {
+  const overcomeMonsters = save.progress.monsterBook
+    .map((factId) => {
+      const [leftText, rightText] = factId.split('x')
+      const left = Number(leftText)
+      const right = Number(rightText)
+      if (!left || !right) {
+        return null
+      }
+      const record = getCollectionRecord(save.progress.collectionRecords, 'monster', factId)
+      return {
+        type: 'monster' as const,
+        id: monsterBuddySelectionId(left, right),
+        left,
+        right,
+        label: `${left}×${right}`,
+        acquiredAt: record?.acquiredAt ?? null,
+        method: record?.method ?? 'にがてをこくふく',
+      }
+    })
+    .filter(
+      (selection): selection is Extract<BuddySelection, { type: 'monster' }> =>
+        selection !== null,
+    )
+
+  const dedicated = buddyDefinitions
+    .filter((buddy) => isDedicatedBuddyOwned(save, buddy.id))
+    .map((buddy) => {
+      const record = getCollectionRecord(save.progress.collectionRecords, 'buddy', buddy.id)
+      return {
+        type: 'buddy' as const,
+        id: dedicatedBuddySelectionId(buddy.id),
+        buddyId: buddy.id,
+        label: buddy.name,
+        acquiredAt: record?.acquiredAt ?? null,
+        method: record?.method ?? (buddy.source === 'shop' ? 'ショップ' : 'たからばこ'),
+      }
+    })
+
+  return [...overcomeMonsters, ...dedicated]
+}
+
+export function coerceEquippedBuddyId(save: SaveData): string | null {
+  return isBuddySelectionOwned(save, save.progress.equippedBuddyId)
+    ? save.progress.equippedBuddyId
+    : null
+}
+
+export function buddyCollectionRecordId(buddyId: string): string {
+  return collectionRecordId('buddy', buddyId)
+}
+
+export function resolveBuddyName(buddyId: string): string {
+  return getBuddyById(buddyId)?.name ?? buddyId
+}

@@ -41,15 +41,18 @@ import {
   newlyOwnedAdvancedMonsters,
 } from '../data/advancedMonsters'
 import { bossDifficulties, bosses } from '../data/bosses'
+import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
 import {
   equipShopItem,
   getEquippedItemForSlot,
+  getShopItemTier,
   getHomeShipPreviewVisuals,
   getHomeShipVisuals,
   homeShipPreviewLayers,
   isShopTier2Unlocked,
+  suitShopItems,
   shopItems,
 } from '../data/shopItems'
 import { normalizeCharacterNameInput, normalizeShipNameInput } from '../data/shipName'
@@ -66,10 +69,16 @@ import {
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
 import {
+  dedicatedBuddySelectionId,
+  getOwnedBuddySelections,
+  monsterBuddySelectionId,
+} from '../game-engine/collection/buddies'
+import {
   buildMonsterSprite,
   buildTrophySprite,
   getTrophyKindForDifficulty,
 } from '../game-engine/collection/pixelSprites'
+import { buildBuddySprite } from '../game-engine/collection/buddySprites'
 import {
   advancedBossDisplayNames,
   advancedBossVariantForBossId,
@@ -188,6 +197,17 @@ describe('question generation', () => {
     expect(sprite.signature).not.toBe(reversed.signature)
     expect(sprite.colors.base).toBe(danPalette[2].base)
     expect(reversed.colors.base).toBe(danPalette[3].base)
+    expect(sprite.body.length).toBeGreaterThan(20)
+    expect(sprite.outline.length).toBeGreaterThan(0)
+  })
+
+  it('builds deterministic buddy sprites from buddy ids', () => {
+    expect(buddyDefinitions).toHaveLength(12)
+    const sprite = buildBuddySprite('star-jelly')
+    const same = buildBuddySprite('star-jelly')
+    const other = buildBuddySprite('navi-robo')
+    expect(sprite.signature).toBe(same.signature)
+    expect(sprite.signature).not.toBe(other.signature)
     expect(sprite.body.length).toBeGreaterThan(20)
     expect(sprite.outline.length).toBeGreaterThan(0)
   })
@@ -663,19 +683,19 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v8Save)
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
-    expect(save.version).toBe(12)
+    expect(save.version).toBe(13)
     expect(save.settings.dailyBudgetMinutes).toBe(10)
     expect(save.settings.schoolMode2Enabled).toBe(true)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.settings.dailyBudgetMinutes).toBe(10)
     expect(migrated.settings.schoolMode2Enabled).toBe(true)
     expect(migrated.player).toBeNull()
@@ -683,6 +703,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.bossProgress).toEqual({})
     expect(migrated.progress.ownedUfos).toEqual([])
     expect(migrated.progress.equippedUfoId).toBeNull()
+    expect(migrated.progress.equippedBuddyId).toBeNull()
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
     expect(migrated.progress.rocketBadges).toEqual([])
@@ -1044,7 +1065,7 @@ describe('mastery, review, missions, and storage', () => {
     delete (legacy.player as Record<string, unknown>).shipName
     delete (legacy.player as Record<string, unknown>).characterName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.player?.shipName).toBe('くくっち')
     expect(migrated.player?.characterName).toBe('くくっち')
   })
@@ -1081,7 +1102,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -1132,7 +1153,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(12)
+    expect(applied.save.version).toBe(13)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
@@ -1179,6 +1200,32 @@ describe('mastery, review, missions, and storage', () => {
       rng: createSeededRandom(999),
     })
     expect(exhausted.item).toBeNull()
+    expect(exhausted.poolExhausted).toBe(true)
+    expect(exhausted.convertedCoins).toBe(110)
+  })
+
+  it('can award the treasure-only buddy from rainbow-or-higher chests', () => {
+    const rainbowPoolIds = getTreasurePoolForChest('rainbow-chest').map((item) => item.id)
+    const reward = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: rainbowPoolIds,
+      ownedBuddyIds: [],
+      includeBuddyRewards: true,
+      rng: createSeededRandom(1),
+      openedAt: '2026-01-03T00:00:00.000Z',
+    })
+    expect(reward.item).toBeNull()
+    expect(reward.buddyId).toBe('rainbow-star')
+    expect(reward.buddyName).toBe('にじほし')
+    expect(reward.poolExhausted).toBe(false)
+
+    const exhausted = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: rainbowPoolIds,
+      ownedBuddyIds: ['rainbow-star'],
+      includeBuddyRewards: true,
+      rng: createSeededRandom(1),
+    })
     expect(exhausted.poolExhausted).toBe(true)
     expect(exhausted.convertedCoins).toBe(110)
   })
@@ -1250,20 +1297,56 @@ describe('mastery, review, missions, and storage', () => {
     }
     const progress = calculateBookProgress(withCollection)
     expect(progress.tabs.monsters.owned).toBe(1)
+    expect(progress.tabs.buddies.owned).toBe(1)
+    expect(progress.tabs.buddies.total).toBe(93)
     expect(progress.tabs.collection.owned).toBe(2)
     expect(progress.tabs.collection.total).toBe(25)
     expect(progress.overall.owned).toBeGreaterThanOrEqual(3)
   })
 
+  it('lists overcome monsters and owned buddy records as selectable buddies', () => {
+    const save = createSaveWithPlayer()
+    const withBuddies: SaveData = {
+      ...save,
+      progress: {
+        ...save.progress,
+        monsterBook: ['2x3'],
+        collectionRecords: [
+          {
+            id: collectionRecordId('monster', '2x3'),
+            acquiredAt: '2026-01-03T00:00:00.000Z',
+            method: 'にがてをこくふく',
+          },
+          {
+            id: collectionRecordId('buddy', 'star-jelly'),
+            acquiredAt: '2026-01-04T00:00:00.000Z',
+            method: 'ショップ',
+          },
+        ],
+      },
+    }
+    expect(getOwnedBuddySelections(withBuddies).map((buddy) => buddy.id)).toEqual([
+      monsterBuddySelectionId(2, 3),
+      dedicatedBuddySelectionId('star-jelly'),
+    ])
+  })
+
   it('validates shop prices and tier unlock rules', () => {
-    expect(shopItems).toHaveLength(20)
-    const prices = shopItems.map((item) => item.price)
+    const coreShopItems = shopItems.filter((item) => item.no <= 20)
+    expect(coreShopItems).toHaveLength(20)
+    expect(suitShopItems).toHaveLength(5)
+    expect(shopBuddyDefinitions).toHaveLength(11)
+    expect(shopItems).toHaveLength(36)
+    const prices = coreShopItems.map((item) => item.price)
     expect(prices.at(0)).toBe(50)
     expect(prices.at(-1)).toBe(10000)
     expect(prices.every((price, index) => index === 0 || price >= prices[index - 1])).toBe(true)
     expect(Math.max(...prices)).toBe(10000)
-    expect(isShopTier2Unlocked(shopItems.slice(0, 9).map((item) => item.id))).toBe(false)
-    expect(isShopTier2Unlocked(shopItems.slice(0, 10).map((item) => item.id))).toBe(true)
+    expect(isShopTier2Unlocked(coreShopItems.slice(0, 9).map((item) => item.id))).toBe(false)
+    expect(isShopTier2Unlocked(coreShopItems.slice(0, 10).map((item) => item.id))).toBe(true)
+    expect(suitShopItems.map((item) => item.price)).toEqual([200, 250, 300, 350, 400])
+    expect(suitShopItems.every((item) => item.kind === 'suit' && getShopItemTier(item) === 1)).toBe(true)
+    expect(shopBuddyDefinitions.every((buddy) => buddy.source === 'shop')).toBe(true)
   })
 
   it('maps equipped shop items to home ship visual layers', () => {
@@ -1287,7 +1370,7 @@ describe('mastery, review, missions, and storage', () => {
     })
   })
 
-  it('builds the Phase 15-1 home preview from background, UFO, and hat only', () => {
+  it('builds the Phase 15-2 home preview from background, UFO, suit, and hat', () => {
     expect(homeShipPreviewLayers).toEqual(['window', 'ufo', 'body', 'hat', 'buddy', 'effect'])
     const preview = getHomeShipPreviewVisuals(
       [
@@ -1303,10 +1386,10 @@ describe('mastery, review, missions, and storage', () => {
 
     expect(preview).toEqual({
       window: 'planet-view',
+      wear: 'rainbow-suit',
       ufo: 'special',
       hat: 'rocket-helmet',
     })
-    expect('wear' in preview).toBe(false)
     expect('furniture' in preview).toBe(false)
     expect('buddy' in preview).toBe(false)
     expect('effect' in preview).toBe(false)
@@ -1546,7 +1629,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     })
 
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.progress.bossProgress['boss-square']).toBeUndefined()
     expect(migrated.progress.bossProgress['boss-development']).toBeTruthy()
     expect(migrated.progress.bossItems).not.toContain(squareItem)
@@ -1587,7 +1670,7 @@ describe('mastery, review, missions, and storage', () => {
         },
       },
     })
-    expect(migrated.version).toBe(12)
+    expect(migrated.version).toBe(13)
     expect(migrated.progress.bossProgress['boss-square']).toBeTruthy()
   })
 

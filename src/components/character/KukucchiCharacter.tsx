@@ -1,4 +1,5 @@
 import { homeShipPreviewLayers, type HomeShipVisuals } from '../../data/shopItems'
+import type { ReactNode } from 'react'
 
 export type KukucchiShipVisuals = HomeShipVisuals & {
   ufo?: string
@@ -16,11 +17,13 @@ export function KukucchiCharacter({
   mood = 'happy',
   level = 1,
   visual,
+  buddyContent,
   label = 'くくっち',
 }: {
   mood?: 'happy' | 'thinking' | 'cheer'
   level?: number
   visual?: KukucchiShipVisuals
+  buddyContent?: ReactNode
   label?: string
 }) {
   const rootClassName = classNames(
@@ -58,7 +61,13 @@ export function KukucchiCharacter({
           </div>
         </div>
         <span className="kukucchi-furniture-layer" aria-hidden="true" />
-        <span className="kukucchi-buddy-layer" data-preview-layer="buddy" aria-hidden="true" />
+        <span
+          className={classNames('kukucchi-buddy-layer', buddyContent ? 'has-buddy' : undefined)}
+          data-preview-layer="buddy"
+          aria-hidden="true"
+        >
+          {buddyContent}
+        </span>
         <span className="kukucchi-effect-layer" data-preview-layer="effect" aria-hidden="true" />
       </div>
       <div className="kukucchi-shadow" />

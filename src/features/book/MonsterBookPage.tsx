@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import { AdvancedMonsterSprite } from '../../components/collection/AdvancedMonsterSprite'
+import { BuddySprite } from '../../components/collection/BuddySprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
@@ -13,6 +14,7 @@ import {
   advancedProgressForCategory,
   isAdvancedMonsterOwned,
 } from '../../data/advancedMonsters'
+import { buddyDefinitions, buddyThemeLabels } from '../../data/buddies'
 import { advancedBossCategoryLabels, bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
 import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
 import { keyTypes } from '../../data/keys'
@@ -34,6 +36,7 @@ const difficultyIds: BossDifficultyId[] = [...bossDifficultyIds]
 const tabs: Array<{ id: BookTabId; label: string }> = [
   { id: 'kukucchi', label: 'くくっち' },
   { id: 'monsters', label: 'モンスター' },
+  { id: 'buddies', label: 'なかま' },
   { id: 'ufos', label: 'UFO' },
   { id: 'treasures', label: 'おたから' },
   { id: 'collection', label: 'コレクション' },
@@ -116,6 +119,11 @@ export function MonsterBookPage() {
   const ownedUfos = new Set(saveData.progress.ownedUfos)
   const ownedTreasureItems = new Set(saveData.progress.ownedTreasureItems.map((item) => item.id))
   const ownedTitles = new Set(saveData.player?.titles ?? [])
+  const ownedBuddyRecords = new Set(
+    saveData.progress.collectionRecords
+      .filter((record) => record.id.startsWith('buddy:'))
+      .map((record) => record.id.replace(/^buddy:/, '')),
+  )
   const titleDefinitions = getTitleDefinitions()
   const titleEntries = titleDefinitions
     .map((title, index) => {
@@ -343,6 +351,72 @@ export function MonsterBookPage() {
                         ? monster.description
                         : `${progressCount}/${monster.threshold}もん`}
                     </p>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+        </>
+      ) : null}
+
+      {activeTab === 'buddies' ? (
+        <>
+          <section className="collection-section" aria-labelledby="overcome-buddies-title">
+            <h2 id="overcome-buddies-title">にがてをこくふく！</h2>
+            <div className="monster-grid book-grid" aria-label="こくふくなかま図かん">
+              {monsterFacts.map((fact, index) => {
+                const factId = `${fact.left}x${fact.right}`
+                const owned = monsterBook.has(factId)
+                const record = getCollectionRecord(saveData.progress.collectionRecords, 'monster', factId)
+                return (
+                  <article
+                    className={owned ? 'book-card buddy-book-card' : 'book-card silhouette buddy-book-card'}
+                    key={`buddy-${factId}`}
+                    {...cardAction({
+                      name: owned ? `${fact.left} × ${fact.right} なかま` : '？？？',
+                      description: owned ? 'にがてをこくふくして同乗できるよ' : 'にがてをこくふくすると同乗できるよ',
+                      acquiredAt: owned ? record?.acquiredAt ?? null : null,
+                      method: owned ? record?.method ?? 'にがてをこくふく' : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">M-{String(index + 1).padStart(2, '0')}</span>
+                    <MonsterSprite
+                      left={fact.left}
+                      right={fact.right}
+                      locked={!owned}
+                      className="book-pixel-icon"
+                    />
+                    <h2>{owned ? `${fact.left} × ${fact.right}` : '？？？'}</h2>
+                    <p>{owned ? 'こくふくなかま' : 'まだです'}</p>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+          <section className="collection-section" aria-labelledby="shop-buddies-title">
+            <h2 id="shop-buddies-title">ショップとたからばこ</h2>
+            <div className="monster-grid book-grid" aria-label="なかま図かん">
+              {buddyDefinitions.map((buddy) => {
+                const owned = ownedBuddyRecords.has(buddy.id)
+                const record = getCollectionRecord(saveData.progress.collectionRecords, 'buddy', buddy.id)
+                return (
+                  <article
+                    className={owned ? 'book-card buddy-book-card' : 'book-card silhouette buddy-book-card'}
+                    key={buddy.id}
+                    {...cardAction({
+                      name: owned ? buddy.name : '？？？',
+                      description: owned ? buddy.description : `${buddyThemeLabels[buddy.theme]}のなかま`,
+                      acquiredAt: owned ? record?.acquiredAt ?? null : null,
+                      method: owned ? record?.method ?? (buddy.source === 'shop' ? 'ショップ' : 'たからばこ') : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">N-{String(buddy.no).padStart(2, '0')}</span>
+                    <BuddySprite buddyId={buddy.id} locked={!owned} className="book-pixel-icon" />
+                    <h2>{owned ? buddy.name : '？？？'}</h2>
+                    <p>{owned ? buddy.description : 'シルエット'}</p>
+                    <small>{buddy.source === 'shop' ? `${buddy.price}コイン` : 'にじいろカギ以上'}</small>
                   </article>
                 )
               })}
