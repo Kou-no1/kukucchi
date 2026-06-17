@@ -270,7 +270,7 @@ export function generateSquareQuestion(rng: RandomSource = Math.random): Questio
 }
 
 export function generatePiQuestion(rng: RandomSource = Math.random): Question {
-  const values = [...Array.from({ length: 20 }, (_, index) => index + 1), 25, 50, 100]
+  const values = Array.from({ length: 9 }, (_, index) => index + 1)
   const value = pick(values, rng)
   const answer = Number((3.14 * value).toFixed(2))
   const choices = generateNumberChoices(
@@ -287,7 +287,7 @@ export function generatePiQuestion(rng: RandomSource = Math.random): Question {
     answer,
     choices,
     explanation: `3.14を${value}こぶんで ${answer}`,
-    difficulty: value <= 10 ? 6 : 8,
+    difficulty: 6,
     metadata: { value, answerMode: 'choice' },
   }
 }

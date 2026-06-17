@@ -6,6 +6,7 @@ import {
   generateChoices,
   generateMissingFactorQuestion,
   generateMultiplicationQuestion,
+  generatePiQuestion,
 } from '../game-engine/questions/questionGenerator'
 import {
   createMultiplicationFactPool,
@@ -64,6 +65,7 @@ import {
   getDifficultyProgress,
   isBossUnlocked,
   isDifficultyUnlocked,
+  keyRewardsForBossClear,
   remainingQuestionsToUnlockBoss,
 } from '../game-engine/bosses/bossEngine'
 import { calculateBookProgress } from '../game-engine/collection/bookProgress'
@@ -100,6 +102,12 @@ import {
   shouldCountActiveUsage,
   shouldShowDailyBudgetNotice,
 } from '../game-engine/school/dailyUsage'
+import {
+  NAME_CHANGE_COOLDOWN_MS,
+  canChangeName,
+  formatNameCooldownMessage,
+  recordNameChange,
+} from '../game-engine/settings/nameCooldown'
 import {
   classifySchoolMastery,
   rewardScaleForFact,
@@ -317,6 +325,16 @@ describe('question generation', () => {
       }),
     )
     expect(questions.every((question) => question.metadata?.left === 4)).toBe(true)
+  })
+
+  it('generates pi multiplication questions only with one-digit multipliers', () => {
+    const samples = Array.from({ length: 25 }, (_, index) =>
+      generatePiQuestion(createSeededRandom(100 + index)),
+    )
+    expect(samples.every((question) => question.category === 'pi-multiplication')).toBe(true)
+    expect(samples.every((question) => Number(question.metadata?.value) >= 1)).toBe(true)
+    expect(samples.every((question) => Number(question.metadata?.value) <= 9)).toBe(true)
+    expect(samples.every((question) => !/×\s*[1-9][0-9]/.test(question.prompt))).toBe(true)
   })
 
   it('keeps generated choices unique and includes close mistakes', () => {
@@ -1070,6 +1088,16 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.player?.characterName).toBe('くくっち')
   })
 
+  it('limits character and ship name changes to once every seven days', () => {
+    const changedAt = Date.parse('2026-06-17T00:00:00.000+09:00')
+    const state = recordNameChange({}, 'ship', changedAt)
+    expect(canChangeName(state, 'ship', changedAt + NAME_CHANGE_COOLDOWN_MS - 1)).toBe(false)
+    expect(canChangeName(state, 'ship', changedAt + NAME_CHANGE_COOLDOWN_MS)).toBe(true)
+    expect(canChangeName(state, 'character', changedAt)).toBe(true)
+    expect(formatNameCooldownMessage(state, 'ship', changedAt + 1000)).toContain(
+      'つぎに かえられるのは',
+    )
+  })
   it('migrates v4 save data into v12 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
@@ -1506,6 +1534,43 @@ describe('mastery, review, missions, and storage', () => {
     }
     expect(remainingQuestionsToUnlockBoss(boss, unlocked)).toBeNull()
     expect(remainingQuestionsToUnlockBoss(allBoss, save)).toBeNull()
+  })
+
+  it('grants upper treasure keys on first gekimuzu boss clears', () => {
+    const basicBoss = bosses.find((candidate) => candidate.id === 'boss-stage-2')
+    const allBoss = bosses.find((candidate) => candidate.id === 'boss-all-kuku')
+    const advancedBoss = bosses.find((candidate) => candidate.id === 'boss-square')
+    expect(basicBoss).toBeTruthy()
+    expect(allBoss).toBeTruthy()
+    expect(advancedBoss).toBeTruthy()
+    if (!basicBoss || !allBoss || !advancedBoss) {
+      return
+    }
+
+    expect(keyRewardsForBossClear(basicBoss, 'gekimuzu', true)).toEqual(['rainbow'])
+    expect(keyRewardsForBossClear(allBoss, 'gekimuzu', true)).toEqual(['star'])
+    expect(keyRewardsForBossClear(advancedBoss, 'gekimuzu', true)).toEqual(['star'])
+    expect(keyRewardsForBossClear(basicBoss, 'fast', true)).toEqual([])
+    expect(keyRewardsForBossClear(basicBoss, 'gekimuzu', false)).toEqual([])
+
+    const save = createSaveWithPlayer()
+    const cleared = applyBossClearReward(
+      save,
+      basicBoss.id,
+      'gekimuzu',
+      8000,
+      '2026-01-02T00:00:00.000Z',
+    ).save
+    expect(cleared.progress.treasureKeys.rainbow.count).toBe(1)
+    expect(cleared.progress.treasureKeys.rainbow.firstAcquiredAt).toBe('2026-01-02T00:00:00.000Z')
+    const repeated = applyBossClearReward(
+      cleared,
+      basicBoss.id,
+      'gekimuzu',
+      7600,
+      '2026-01-03T00:00:00.000Z',
+    ).save
+    expect(repeated.progress.treasureKeys.rainbow.count).toBe(1)
   })
 
   it('unlocks high-grade boss categories independently', () => {

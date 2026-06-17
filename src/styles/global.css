@@ -1051,6 +1051,36 @@ legend {
   text-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
 }
 
+.treasure-result-visuals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.treasure-result-figure {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  min-width: 72px;
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.treasure-result-icon {
+  width: 64px;
+  height: 64px;
+  filter: drop-shadow(0 0 12px rgba(91, 233, 244, 0.35));
+}
+
+.treasure-result-icon.wide {
+  width: 88px;
+}
+
 .exp-progress-track {
   overflow: hidden;
   height: 14px;
@@ -1475,7 +1505,11 @@ legend {
 }
 
 .choice-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 86px;
+  padding: 8px;
   background: rgba(104, 244, 255, 0.14);
   color: var(--cyan);
   font-family: ui-monospace, 'SFMono-Regular', Consolas, monospace;
@@ -4730,8 +4764,8 @@ legend {
 .mode-ready-shell .mode-start-screen {
   height: 100%;
   grid-template-columns: minmax(72px, 0.18fr) minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  gap: 8px 12px;
+  grid-template-rows: minmax(76px, auto) minmax(0, 1fr) auto;
+  gap: clamp(6px, 1.1dvh, 10px) 12px;
   align-content: start;
   padding: clamp(8px, 1.8dvh, 12px);
   overflow: hidden;
@@ -4805,17 +4839,26 @@ legend {
   grid-column: 2;
   grid-row: 1;
   align-self: center;
+  display: grid;
+  min-height: 0;
   gap: 3px;
+  overflow: hidden;
 }
 
 .mode-ready-shell .mode-start-copy h2 {
-  font-size: clamp(1.45rem, 5vw, 2.35rem);
+  font-size: clamp(1.22rem, 4.1vw, 2.05rem);
+  line-height: 1.05;
 }
 
 .mode-ready-shell .mode-start-copy .welcome,
 .mode-ready-shell .mode-start-copy .title-line {
   margin: 0;
-  line-height: 1.12;
+  line-height: 1.18;
+  overflow-wrap: anywhere;
+}
+
+.mode-ready-shell .mode-start-copy .title-line {
+  font-size: clamp(0.78rem, 2.5vw, 0.98rem);
 }
 
 .mode-ready-shell .mode-start-options {
@@ -4876,15 +4919,21 @@ legend {
 .mode-ready-shell .mode-start-actions {
   grid-column: 1 / -1;
   grid-row: 3;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(88px, max-content);
   align-items: stretch;
   gap: 6px;
+  min-width: 0;
 }
 
 .mode-ready-shell .mode-start-actions .primary-action,
 .mode-ready-shell .mode-start-actions .secondary-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
   min-height: 44px;
   padding: 7px 10px;
+  white-space: nowrap;
 }
 
 .mode-ready-shell .mode-start-actions .speed-start-button {
@@ -5547,36 +5596,36 @@ legend {
 .game-shell .speed-companion {
   height: 100%;
   min-height: 0;
-  grid-template-columns: minmax(74px, 0.18fr) minmax(0, 1fr);
+  grid-template-columns: minmax(58px, 0.16fr) minmax(0, 1fr);
   align-items: center;
   padding: 6px 10px;
   overflow: hidden;
 }
 
 .game-shell .speed-companion .kukucchi {
-  width: 76px;
-  max-height: 66px;
+  width: 62px;
+  max-height: 58px;
   transform: none;
 }
 
 .game-shell .speed-companion .ufo-ring {
-  width: 76px;
-  border-width: 5px;
+  width: 62px;
+  border-width: 4px;
 }
 
 .game-shell .speed-companion .ufo-cockpit {
-  width: 46px;
-  height: 34px;
+  width: 39px;
+  height: 29px;
   border-width: 3px;
 }
 
 .game-shell .speed-companion .kukucchi-body {
-  width: 30px;
+  width: 25px;
 }
 
 .game-shell .speed-companion .antenna {
-  top: -18px;
-  height: 20px;
+  top: -15px;
+  height: 17px;
 }
 
 .game-shell .speed-companion .antenna-left {
@@ -5613,15 +5662,15 @@ legend {
 }
 
 .game-shell .speed-companion .ufo-ship {
-  top: 43px;
-  width: 66px;
-  height: 20px;
+  top: 36px;
+  width: 56px;
+  height: 17px;
   border-width: 3px;
 }
 
 .game-shell .speed-companion .ufo-light {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .game-shell .speed-companion .light-a {

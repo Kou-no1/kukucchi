@@ -12,6 +12,14 @@ import {
 } from '../../data/shipName'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine/school/dailyUsage'
+import {
+  canChangeName,
+  formatNameCooldownMessage,
+  readNameCooldownState,
+  recordNameChange,
+  writeNameCooldownState,
+  type NameChangeTarget,
+} from '../../game-engine/settings/nameCooldown'
 import { useSaveData } from '../../hooks/useSaveData'
 import { parseSaveData } from '../../storage/saveData'
 import { validateShipName } from '../../utils/bannedWords'
@@ -22,12 +30,17 @@ export function SettingsPage() {
   const { saveData, setSaveData, updateSaveData, resetSaveData } = useSaveData()
   const [importText, setImportText] = useState('')
   const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [nameCooldown, setNameCooldown] = useState(readNameCooldownState)
   const [shipNameInput, setShipNameInput] = useState(saveData.player?.shipName ?? defaultShipName)
-  const [shipNameMessage, setShipNameMessage] = useState('かな5もじまで')
+  const [shipNameMessage, setShipNameMessage] = useState(
+    () => formatNameCooldownMessage(nameCooldown, 'ship') ?? 'かな5もじまで',
+  )
   const [characterNameInput, setCharacterNameInput] = useState(
     saveData.player?.characterName ?? defaultCharacterName,
   )
-  const [characterNameMessage, setCharacterNameMessage] = useState('かな5もじまで')
+  const [characterNameMessage, setCharacterNameMessage] = useState(
+    () => formatNameCooldownMessage(nameCooldown, 'character') ?? 'かな5もじまで',
+  )
   const [teacherUnlocked, setTeacherUnlocked] = useState(false)
   const [teacherCodeInput, setTeacherCodeInput] = useState('')
   const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
@@ -79,44 +92,61 @@ export function SettingsPage() {
     }))
   }
 
-  function updateShipName(value: string) {
-    const nextValue = normalizeShipNameInput(value)
+  function cooldownMessage(target: NameChangeTarget): string {
+    return formatNameCooldownMessage(nameCooldown, target) ?? 'かな5もじまで'
+  }
+
+  function saveNameChange(target: NameChangeTarget) {
+    const nextValue =
+      target === 'ship'
+        ? normalizeShipNameInput(shipNameInput)
+        : normalizeCharacterNameInput(characterNameInput)
     const error = validateShipName(nextValue)
-    setShipNameInput(nextValue)
+    const setMessage = target === 'ship' ? setShipNameMessage : setCharacterNameMessage
+    if (target === 'ship') {
+      setShipNameInput(nextValue)
+    } else {
+      setCharacterNameInput(nextValue)
+    }
     if (error) {
-      setShipNameMessage(error)
+      setMessage(error)
       return
     }
-    setShipNameMessage('ほぞんしました')
+    const currentValue =
+      target === 'ship'
+        ? saveData.player?.shipName ?? defaultShipName
+        : saveData.player?.characterName ?? defaultCharacterName
+    if (nextValue === currentValue) {
+      setMessage('ほぞんしました')
+      return
+    }
+    if (!canChangeName(nameCooldown, target)) {
+      setMessage(formatNameCooldownMessage(nameCooldown, target) ?? 'かな5もじまで')
+      return
+    }
+    const nextCooldown = recordNameChange(nameCooldown, target)
+    setNameCooldown(nextCooldown)
+    writeNameCooldownState(nextCooldown)
+    setMessage('ほぞんしました')
     updateSaveData((current) => ({
       ...current,
       player: current.player
         ? {
             ...current.player,
-            shipName: nextValue,
+            ...(target === 'ship' ? { shipName: nextValue } : { characterName: nextValue }),
           }
         : current.player,
     }))
   }
 
-  function updateCharacterName(value: string) {
-    const nextValue = normalizeCharacterNameInput(value)
-    const error = validateShipName(nextValue)
-    setCharacterNameInput(nextValue)
-    if (error) {
-      setCharacterNameMessage(error)
-      return
-    }
-    setCharacterNameMessage('ほぞんしました')
-    updateSaveData((current) => ({
-      ...current,
-      player: current.player
-        ? {
-            ...current.player,
-            characterName: nextValue,
-          }
-        : current.player,
-    }))
+  function updateShipNameInput(value: string) {
+    setShipNameInput(normalizeShipNameInput(value))
+    setShipNameMessage(cooldownMessage('ship'))
+  }
+
+  function updateCharacterNameInput(value: string) {
+    setCharacterNameInput(normalizeCharacterNameInput(value))
+    setCharacterNameMessage(cooldownMessage('character'))
   }
 
   function updateCurrentTitle(title: string) {
@@ -152,9 +182,9 @@ export function SettingsPage() {
       const nextSave = parseSaveData(text)
       setSaveData(nextSave)
       setShipNameInput(nextSave.player?.shipName ?? defaultShipName)
-      setShipNameMessage('かな5もじまで')
+      setShipNameMessage(cooldownMessage('ship'))
       setCharacterNameInput(nextSave.player?.characterName ?? defaultCharacterName)
-      setCharacterNameMessage('かな5もじまで')
+      setCharacterNameMessage(cooldownMessage('character'))
       setImportText('')
     } catch (error) {
       console.error('ひきつぎに失敗しました', error)
@@ -221,11 +251,18 @@ export function SettingsPage() {
           <input
             value={characterNameInput}
             maxLength={5}
-            onChange={(event) => updateCharacterName(event.target.value)}
+            onChange={(event) => updateCharacterNameInput(event.target.value)}
             placeholder={defaultCharacterName}
             aria-describedby="character-name-help"
           />
         </label>
+        <button
+          className="secondary-action compact-action equip-action"
+          type="button"
+          onClick={() => saveNameChange('character')}
+        >
+          ほぞん
+        </button>
         <p
           className={characterNameMessage === 'ほぞんしました' ? 'quiet-text' : 'form-help'}
           id="character-name-help"
@@ -237,11 +274,18 @@ export function SettingsPage() {
           <input
             value={shipNameInput}
             maxLength={5}
-            onChange={(event) => updateShipName(event.target.value)}
+            onChange={(event) => updateShipNameInput(event.target.value)}
             placeholder={defaultShipName}
             aria-describedby="ship-name-help"
           />
         </label>
+        <button
+          className="secondary-action compact-action equip-action"
+          type="button"
+          onClick={() => saveNameChange('ship')}
+        >
+          ほぞん
+        </button>
         <p
           className={shipNameMessage === 'ほぞんしました' ? 'quiet-text' : 'form-help'}
           id="ship-name-help"

@@ -278,6 +278,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
           description={`${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきムズはミスなしでクリア！`}
           level={saveData.player?.level ?? 1}
           backTo={backTo}
+          onBack={() => {
+            setActiveBoss(null)
+            setActiveDifficulty(null)
+            setPhase('select')
+          }}
           onStart={() => startBattle(activeBoss, activeDifficulty)}
         >
           <div className="boss-start-summary" aria-label="ボスバトルのじゅんび">

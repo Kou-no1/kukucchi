@@ -7,6 +7,7 @@ import {
   legendaryBossTitle,
 } from '../../data/bosses'
 import type { BossAdvancedCategory, BossDefinition } from '../../data/bosses'
+import type { KeyTypeId } from '../../data/keys'
 import { specialUfoId } from '../../data/ufos'
 import { addCollectionRecords } from '../collection/collectionRecords'
 import { titleRecordId } from '../rewards/titles'
@@ -140,6 +141,39 @@ function hasAllGekimuzuClears(save: SaveData): boolean {
   return bosses.every((boss) => getDifficultyProgress(save, boss.id, 'gekimuzu').cleared)
 }
 
+function addTreasureKeyRewards(
+  treasureKeys: SaveData['progress']['treasureKeys'],
+  keyIds: KeyTypeId[],
+  acquiredAt: string,
+): SaveData['progress']['treasureKeys'] {
+  if (keyIds.length === 0) {
+    return treasureKeys
+  }
+  const nextTreasureKeys = { ...treasureKeys }
+  for (const keyId of keyIds) {
+    const current = nextTreasureKeys[keyId] ?? { count: 0, firstAcquiredAt: null }
+    nextTreasureKeys[keyId] = {
+      count: current.count + 1,
+      firstAcquiredAt: current.firstAcquiredAt ?? acquiredAt,
+    }
+  }
+  return nextTreasureKeys
+}
+
+export function keyRewardsForBossClear(
+  boss: BossDefinition,
+  difficulty: BossDifficultyId,
+  firstClear: boolean,
+): KeyTypeId[] {
+  if (!firstClear || difficulty !== 'gekimuzu') {
+    return []
+  }
+  if (boss.group === 'advanced' || boss.id === 'boss-all-kuku') {
+    return ['star']
+  }
+  return ['rainbow']
+}
+
 export function applyBossClearReward(
   save: SaveData,
   bossId: string,
@@ -184,6 +218,7 @@ export function applyBossClearReward(
   const rewardItemIds = firstClear && reward.itemId ? [reward.itemId] : []
   const rewardUfoIds = firstClear && reward.ufoId ? [reward.ufoId] : []
   const rewardTitles = firstClear ? [reward.title] : []
+  const rewardKeyIds = keyRewardsForBossClear(boss, difficulty, firstClear)
   const withDifficulty: SaveData = {
     ...save,
     player: {
@@ -197,6 +232,7 @@ export function applyBossClearReward(
       bossItems: Array.from(new Set([...save.progress.bossItems, ...rewardItemIds])),
       ownedUfos: Array.from(new Set([...save.progress.ownedUfos, ...rewardUfoIds])),
       equippedUfoId: save.progress.equippedUfoId ?? rewardUfoIds[0] ?? null,
+      treasureKeys: addTreasureKeyRewards(save.progress.treasureKeys, rewardKeyIds, clearedAt),
       collectionRecords: addCollectionRecords(save.progress.collectionRecords, [
         ...rewardItemIds.map((itemId) => ({
           kind: 'boss-item',

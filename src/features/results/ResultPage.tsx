@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { BuddySprite } from '../../components/collection/BuddySprite'
+import { KeyIcon } from '../../components/collection/KeyIcon'
+import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
+import { getKeyTypeById } from '../../data/keys'
+import { getTreasureItemById } from '../../data/treasureItems'
 import {
   buildExpProgressAnimationSteps,
   expProgressToNextLevel,
@@ -114,6 +119,10 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
   if (summary.mode === 'treasure') {
     const chests = detailStrings(summary, 'chestLabels')
     const keyNames = detailStrings(summary, 'treasureKeyNames')
+    const keyIds = detailStrings(summary, 'treasureKeyIds')
+    const treasureItemId = detailString(summary, 'treasureItemId')
+    const treasureBuddyId = detailString(summary, 'treasureBuddyId')
+    const treasureItem = treasureItemId ? getTreasureItemById(treasureItemId) : undefined
     const itemName = detailString(summary, 'treasureItemName')
     const duplicate = summary.details?.treasureDuplicate === true
     const poolExhausted = summary.details?.treasurePoolExhausted === true
@@ -126,6 +135,31 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
           <StatPill label="あけた" value={detailNumber(summary, 'openedChests') ?? 0} />
           <StatPill label="コイン" value={`+${summary.earnedCoins}`} />
         </div>
+        {keyIds.length > 0 || treasureItem || treasureBuddyId ? (
+          <div className="treasure-result-visuals" aria-label="たからばこのけっか">
+            {keyIds.map((keyId) => {
+              const keyType = getKeyTypeById(keyId)
+              return keyType ? (
+                <figure className="treasure-result-figure" key={keyId}>
+                  <KeyIcon keyType={keyType} className="treasure-result-icon wide" />
+                  <figcaption>{keyType.name}</figcaption>
+                </figure>
+              ) : null
+            })}
+            {treasureItem ? (
+              <figure className="treasure-result-figure">
+                <TreasureIcon item={treasureItem} className="treasure-result-icon" />
+                <figcaption>{treasureItem.name}</figcaption>
+              </figure>
+            ) : null}
+            {treasureBuddyId ? (
+              <figure className="treasure-result-figure">
+                <BuddySprite buddyId={treasureBuddyId} className="treasure-result-icon" />
+                <figcaption>{itemName}</figcaption>
+              </figure>
+            ) : null}
+          </div>
+        ) : null}
         {keyNames.length > 0 ? <p className="title-line">カギ: {keyNames.join('、')}</p> : null}
         {poolExhausted ? (
           <p className="title-line">ぜんぶ あつめた！ {treasureBonusCoins}コインに なったよ</p>

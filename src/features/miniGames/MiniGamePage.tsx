@@ -231,6 +231,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         details.treasureDuplicate = options.treasureDuplicate ?? false
         details.treasurePoolExhausted = options.treasurePoolExhausted ?? false
         details.treasureItemName = options.treasureItemName ?? options.treasureBuddyName ?? null
+        details.treasureItemId = options.treasureItemId ?? null
+        details.treasureBuddyId = options.treasureBuddyId ?? null
+        details.treasureKeyIds = options.treasureKeyIds ?? earnedKeyIds
         details.treasureKeyNames = (options.treasureKeyIds ?? earnedKeyIds)
           .map((keyId) => getKeyTypeById(keyId)?.name)
           .filter((name): name is string => Boolean(name))
