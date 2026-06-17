@@ -12,7 +12,7 @@ import {
   getHomeShipPreviewVisuals,
   shopItems,
 } from '../../data/shopItems'
-import { defaultShipName } from '../../data/shipName'
+import { defaultCharacterName, defaultShipName } from '../../data/shipName'
 import { getUfoById, ufoDefinitions } from '../../data/ufos'
 import { getWeakFacts } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -112,6 +112,7 @@ export function HomePage() {
   const playerIcon = getPlayerIcon(player?.icon)
   const crewTitle = player?.currentTitle ?? 'はじめのいっぽ'
   const shipName = player?.shipName ?? defaultShipName
+  const characterName = player?.characterName ?? defaultCharacterName
 
   function closeTutorial() {
     setTutorialOpen(false)
@@ -222,9 +223,15 @@ export function HomePage() {
         </div>
 
         <aside className="character-window home-character-window" aria-label="くくっち">
-          <KukucchiCharacter level={player?.level ?? 1} mood="happy" visual={characterVisuals} />
+          <KukucchiCharacter
+            level={player?.level ?? 1}
+            mood="happy"
+            visual={characterVisuals}
+            label={characterName}
+          />
           <div className="character-window-copy">
             <p className="welcome">{crewTitle}</p>
+            <strong className="character-name-line">{characterName}</strong>
             <h2>{shipName}号</h2>
           </div>
         </aside>

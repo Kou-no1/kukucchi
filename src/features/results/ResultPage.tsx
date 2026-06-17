@@ -1,9 +1,13 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
-import { expProgressToNextLevel, expToLevel } from '../../game-engine/rewards/rewards'
+import {
+  buildExpProgressAnimationSteps,
+  expProgressToNextLevel,
+  expToLevel,
+} from '../../game-engine/rewards/rewards'
 import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { GameSessionSummary } from '../../types/game'
@@ -161,10 +165,59 @@ export function ResultPage() {
   const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null
   const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
   const budgetNoticeOpen = rewardBudgetPaused && shouldShowNotice && !budgetNoticeDismissed
+  const playerExp = saveData.player?.exp ?? summary?.earnedExp ?? 0
+  const earnedExp = summary?.earnedExp ?? 0
+  const previousExp = Math.max(0, playerExp - earnedExp)
+  const expAnimationSteps = useMemo(
+    () => buildExpProgressAnimationSteps(previousExp, earnedExp),
+    [earnedExp, previousExp],
+  )
+  const [expStepIndex, setExpStepIndex] = useState(0)
+  const [animatedExpPercent, setAnimatedExpPercent] = useState(
+    expAnimationSteps[0]?.fromPercent ?? 0,
+  )
+  const [expAnimationDone, setExpAnimationDone] = useState(false)
+  const currentExpStep =
+    expAnimationSteps[Math.min(expStepIndex, Math.max(0, expAnimationSteps.length - 1))]
 
   function closeBudgetNotice() {
     setBudgetNoticeDismissed(true)
   }
+
+  function skipExpAnimation() {
+    const lastStep = expAnimationSteps.at(-1)
+    if (!lastStep) {
+      return
+    }
+    setExpStepIndex(Math.max(0, expAnimationSteps.length - 1))
+    setAnimatedExpPercent(lastStep.toPercent)
+    setExpAnimationDone(true)
+  }
+
+  useEffect(() => {
+    const step = expAnimationSteps[expStepIndex]
+    if (!step || expAnimationDone) {
+      return undefined
+    }
+
+    const animationFrame = window.requestAnimationFrame(() => {
+      setAnimatedExpPercent(step.toPercent)
+    })
+    const durationMs = step.leveledUp ? 980 : 760
+    const timer = window.setTimeout(() => {
+      if (expStepIndex < expAnimationSteps.length - 1) {
+        setExpStepIndex((current) => current + 1)
+        setAnimatedExpPercent(expAnimationSteps[expStepIndex + 1]?.fromPercent ?? 0)
+      } else {
+        setExpAnimationDone(true)
+      }
+    }, durationMs)
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      window.clearTimeout(timer)
+    }
+  }, [expAnimationDone, expAnimationSteps, expStepIndex])
 
   if (!summary) {
     return (
@@ -179,11 +232,15 @@ export function ResultPage() {
     )
   }
 
-  const playerExp = saveData.player?.exp ?? summary.earnedExp
-  const previousLevel = expToLevel(Math.max(0, playerExp - summary.earnedExp))
+  const previousLevel = expToLevel(previousExp)
   const currentProgress = expProgressToNextLevel(playerExp)
   const levelSpan = currentProgress.nextLevelExp - currentProgress.currentLevelExp
   const levelUp = currentProgress.level > previousLevel
+  const displayedLevel = expAnimationDone ? currentProgress.level : currentExpStep?.level ?? currentProgress.level
+  const displayedGainedExp = expAnimationDone
+    ? currentProgress.gainedInLevel
+    : currentExpStep?.toExp ?? currentProgress.gainedInLevel
+  const displayedLevelSpan = currentExpStep?.levelSpan ?? levelSpan
 
   return (
     <AppShell title="けっか">
@@ -223,14 +280,28 @@ export function ResultPage() {
       <section className="exp-progress-card" aria-label="つぎのレベル">
         <div>
           <h2>つぎのレベルまで あと{currentProgress.remainingExp}EXP</h2>
-          <span>Lv {currentProgress.level}</span>
+          <span>Lv {displayedLevel}</span>
         </div>
-        <div className="exp-progress-track" aria-hidden="true">
-          <span style={{ width: `${currentProgress.percent}%` }} />
+        <div
+          className={levelUp ? 'exp-progress-track level-up' : 'exp-progress-track'}
+          aria-hidden="true"
+          onClick={skipExpAnimation}
+        >
+          <span style={{ width: `${animatedExpPercent}%` }} />
         </div>
+        {levelUp && !expAnimationDone ? (
+          <strong className="level-up-burst" aria-live="polite">
+            レベルアップ！
+          </strong>
+        ) : null}
         <p className="quiet-text">
-          {currentProgress.gainedInLevel}/{levelSpan} EXP
+          {displayedGainedExp}/{displayedLevelSpan} EXP
         </p>
+        {!expAnimationDone && earnedExp > 0 ? (
+          <button className="secondary-action exp-skip-button" type="button" onClick={skipExpAnimation}>
+            スキップ
+          </button>
+        ) : null}
       </section>
 
       <ModeResultDetails summary={summary} />

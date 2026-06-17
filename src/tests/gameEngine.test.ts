@@ -15,7 +15,12 @@ import {
   applyAnswerToScore,
   calculateSpeedBonus,
 } from '../game-engine/scoring/score'
-import { calculateCoins, calculateExp, expProgressToNextLevel } from '../game-engine/rewards/rewards'
+import {
+  buildExpProgressAnimationSteps,
+  calculateCoins,
+  calculateExp,
+  expProgressToNextLevel,
+} from '../game-engine/rewards/rewards'
 import { getTitleDefinitions, judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import {
   createFactProgress,
@@ -47,7 +52,7 @@ import {
   isShopTier2Unlocked,
   shopItems,
 } from '../data/shopItems'
-import { normalizeShipNameInput } from '../data/shipName'
+import { normalizeCharacterNameInput, normalizeShipNameInput } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
 import { getUfoForBoss, specialUfoId } from '../data/ufos'
 import { containsBannedWord, validateShipName } from '../utils/bannedWords'
@@ -117,6 +122,7 @@ function createSaveWithPlayer(): SaveData {
       nickname: 'テスト',
       icon: 'たまご',
       shipName: 'くくっち',
+      characterName: 'くくっち',
       learningLevel: 'first' as const,
       level: 1,
       exp: 0,
@@ -404,6 +410,35 @@ describe('scoring and rewards', () => {
       percent: 0,
     })
   })
+
+  it('builds level-up animation steps across level boundaries', () => {
+    expect(buildExpProgressAnimationSteps(40, 6)).toEqual([
+      expect.objectContaining({
+        level: 1,
+        fromPercent: 50,
+        toPercent: 57,
+        leveledUp: false,
+      }),
+    ])
+
+    const steps = buildExpProgressAnimationSteps(79, 10)
+    expect(steps).toHaveLength(2)
+    expect(steps[0]).toMatchObject({
+      level: 1,
+      fromPercent: 99,
+      toPercent: 100,
+      leveledUp: true,
+    })
+    expect(steps[1]).toMatchObject({
+      level: 2,
+      fromPercent: 0,
+      leveledUp: false,
+    })
+
+    const multiLevel = buildExpProgressAnimationSteps(79, 1000)
+    expect(multiLevel.filter((step) => step.leveledUp).length).toBeGreaterThan(1)
+    expect(multiLevel.at(-1)?.toPercent).toBeGreaterThan(0)
+  })
 })
 
 describe('mastery, review, missions, and storage', () => {
@@ -596,7 +631,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(getMonsterOvercomeProgress(overcome).message).toBeNull()
   })
 
-  it('re-applies stale time-only monster cleanup from v8 to v11', () => {
+  it('re-applies stale time-only monster cleanup from v8 to v12', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -628,19 +663,19 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v8Save)
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
-    expect(save.version).toBe(11)
+    expect(save.version).toBe(12)
     expect(save.settings.dailyBudgetMinutes).toBe(10)
     expect(save.settings.schoolMode2Enabled).toBe(true)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.settings.dailyBudgetMinutes).toBe(10)
     expect(migrated.settings.schoolMode2Enabled).toBe(true)
     expect(migrated.player).toBeNull()
@@ -990,8 +1025,9 @@ describe('mastery, review, missions, and storage', () => {
     expect(easier.difficulty).toBeLessThanOrEqual(2)
   })
 
-  it('validates spaceship names and migrates legacy saves with a default ship name', () => {
+  it('validates ship and character names and migrates legacy saves with defaults', () => {
     expect(normalizeShipNameInput('あいうえおか')).toBe('あいうえお')
+    expect(normalizeCharacterNameInput('スター号')).toBe('スター号')
     expect(validateShipName('スター')).toBeNull()
     expect(validateShipName('abc')).toBeNull()
     expect(validateShipName('あいうえおか')).toBe('なまえは　5もじまでだよ')
@@ -1006,12 +1042,14 @@ describe('mastery, review, missions, and storage', () => {
       player: legacyPlayer,
     }
     delete (legacy.player as Record<string, unknown>).shipName
+    delete (legacy.player as Record<string, unknown>).characterName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.player?.shipName).toBe('くくっち')
+    expect(migrated.player?.characterName).toBe('くくっち')
   })
 
-  it('migrates v4 save data into v11 and removes time-only monsters', () => {
+  it('migrates v4 save data into v12 and removes time-only monsters', () => {
     const timeOnly = {
       ...createFactProgress(8, 8),
       correctCount: 2,
@@ -1043,7 +1081,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -1094,7 +1132,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(11)
+    expect(applied.save.version).toBe(12)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
@@ -1187,10 +1225,10 @@ describe('mastery, review, missions, and storage', () => {
     )
   })
 
-  it('sets the final rocket badge milestone to 900m', () => {
+  it('sets the final rocket badge milestone to 920m', () => {
     expect(rocketBadges.at(-1)).toMatchObject({
       id: 'rocket-cosmos',
-      distance: 900,
+      distance: 920,
     })
   })
 
@@ -1445,7 +1483,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(isBossUnlocked(developmentBoss, developmentOnly)).toBe(true)
   })
 
-  it('resets legacy high-grade boss clears and rewards during v11 migration', () => {
+  it('resets legacy high-grade boss clears and rewards during v12 migration', () => {
     const legacy = createSaveWithPlayer()
     const squareTitle = bosses.find((boss) => boss.id === 'boss-square')?.rewards.normal.title ?? ''
     const squareItem = 'boss-square-normal-item'
@@ -1508,7 +1546,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     })
 
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.progress.bossProgress['boss-square']).toBeUndefined()
     expect(migrated.progress.bossProgress['boss-development']).toBeTruthy()
     expect(migrated.progress.bossItems).not.toContain(squareItem)
@@ -1549,7 +1587,7 @@ describe('mastery, review, missions, and storage', () => {
         },
       },
     })
-    expect(migrated.version).toBe(11)
+    expect(migrated.version).toBe(12)
     expect(migrated.progress.bossProgress['boss-square']).toBeTruthy()
   })
 

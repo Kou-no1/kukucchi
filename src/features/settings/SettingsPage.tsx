@@ -4,7 +4,12 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { playerIcons } from '../../data/playerIcons'
-import { defaultShipName, normalizeShipNameInput } from '../../data/shipName'
+import {
+  defaultCharacterName,
+  defaultShipName,
+  normalizeCharacterNameInput,
+  normalizeShipNameInput,
+} from '../../data/shipName'
 import { createFactProgress } from '../../game-engine/mastery/mastery'
 import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine/school/dailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
@@ -19,6 +24,10 @@ export function SettingsPage() {
   const [tutorialOpen, setTutorialOpen] = useState(false)
   const [shipNameInput, setShipNameInput] = useState(saveData.player?.shipName ?? defaultShipName)
   const [shipNameMessage, setShipNameMessage] = useState('かな5もじまで')
+  const [characterNameInput, setCharacterNameInput] = useState(
+    saveData.player?.characterName ?? defaultCharacterName,
+  )
+  const [characterNameMessage, setCharacterNameMessage] = useState('かな5もじまで')
   const [teacherUnlocked, setTeacherUnlocked] = useState(false)
   const [teacherCodeInput, setTeacherCodeInput] = useState('')
   const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
@@ -90,6 +99,26 @@ export function SettingsPage() {
     }))
   }
 
+  function updateCharacterName(value: string) {
+    const nextValue = normalizeCharacterNameInput(value)
+    const error = validateShipName(nextValue)
+    setCharacterNameInput(nextValue)
+    if (error) {
+      setCharacterNameMessage(error)
+      return
+    }
+    setCharacterNameMessage('ほぞんしました')
+    updateSaveData((current) => ({
+      ...current,
+      player: current.player
+        ? {
+            ...current.player,
+            characterName: nextValue,
+          }
+        : current.player,
+    }))
+  }
+
   function updateCurrentTitle(title: string) {
     updateSaveData((current) => ({
       ...current,
@@ -124,6 +153,8 @@ export function SettingsPage() {
       setSaveData(nextSave)
       setShipNameInput(nextSave.player?.shipName ?? defaultShipName)
       setShipNameMessage('かな5もじまで')
+      setCharacterNameInput(nextSave.player?.characterName ?? defaultCharacterName)
+      setCharacterNameMessage('かな5もじまで')
       setImportText('')
     } catch (error) {
       console.error('ひきつぎに失敗しました', error)
@@ -185,6 +216,22 @@ export function SettingsPage() {
 
       <section className="settings-section" aria-labelledby="ship-title">
         <h2 id="ship-title">うちゅうせん</h2>
+        <label>
+          キャラのなまえ
+          <input
+            value={characterNameInput}
+            maxLength={5}
+            onChange={(event) => updateCharacterName(event.target.value)}
+            placeholder={defaultCharacterName}
+            aria-describedby="character-name-help"
+          />
+        </label>
+        <p
+          className={characterNameMessage === 'ほぞんしました' ? 'quiet-text' : 'form-help'}
+          id="character-name-help"
+        >
+          {characterNameMessage}
+        </p>
         <label>
           ふねのなまえ
           <input

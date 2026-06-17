@@ -1,6 +1,7 @@
 import { validateShipName } from '../utils/bannedWords'
 
 export const defaultShipName = 'くくっち'
+export const defaultCharacterName = 'くくっち'
 export const maxShipNameLength = 5
 
 export function normalizeShipNameInput(value: string): string {
@@ -13,4 +14,14 @@ export function coerceShipName(value: unknown): string {
   }
   const normalized = normalizeShipNameInput(value)
   return validateShipName(normalized) ? defaultShipName : normalized
+}
+
+export const normalizeCharacterNameInput = normalizeShipNameInput
+
+export function coerceCharacterName(value: unknown): string {
+  if (typeof value !== 'string') {
+    return defaultCharacterName
+  }
+  const normalized = normalizeCharacterNameInput(value)
+  return validateShipName(normalized) ? defaultCharacterName : normalized
 }

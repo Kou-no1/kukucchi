@@ -4,14 +4,19 @@ import type { OnboardingInput, SaveData } from '../types/save'
 import { allGekimuzuTitle, bosses, bossLimitedItems, legendaryBossTitle } from '../data/bosses'
 import { defaultSpeedStages, speedDurations } from '../data/factDifficulty'
 import { keyTypes } from '../data/keys'
-import { coerceShipName, defaultShipName } from '../data/shipName'
+import {
+  coerceCharacterName,
+  coerceShipName,
+  defaultCharacterName,
+  defaultShipName,
+} from '../data/shipName'
 import { specialUfoId } from '../data/ufos'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
 import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
 import { DEFAULT_SCHOOL_MODE_2_ENABLED } from '../game-engine/school/schoolMode2'
 import { titleRecordId } from '../game-engine/rewards/titles'
 
-export const SAVE_DATA_VERSION = 11
+export const SAVE_DATA_VERSION = 12
 const LEGACY_ADVANCED_BOSS_RESET_VERSION = 10
 
 const legacyAdvancedBossIds = ['boss-square', 'boss-pi'] as const
@@ -96,6 +101,7 @@ function normalizePlayer(player: SaveData['player'] | undefined | null): SaveDat
   return {
     ...player,
     shipName: coerceShipName(partialPlayer.shipName),
+    characterName: coerceCharacterName(partialPlayer.characterName),
   }
 }
 
@@ -200,6 +206,7 @@ export function createPlayerFromOnboarding(input: OnboardingInput): SaveData {
       nickname: input.nickname.trim() || 'くくとも',
       icon: input.icon,
       shipName: defaultShipName,
+      characterName: defaultCharacterName,
       learningLevel: input.learningLevel,
       level: 1,
       exp: 0,

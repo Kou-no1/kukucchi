@@ -47,6 +47,73 @@ export function expProgressToNextLevel(exp: number): {
   }
 }
 
+export type ExpProgressAnimationStep = {
+  level: number
+  fromPercent: number
+  toPercent: number
+  fromExp: number
+  toExp: number
+  levelSpan: number
+  leveledUp: boolean
+}
+
+function expPercentWithinLevel(exp: number, level: number): number {
+  const currentLevelExp = expRequiredForLevel(level)
+  const nextLevelExp = expRequiredForLevel(level + 1)
+  const levelSpan = Math.max(1, nextLevelExp - currentLevelExp)
+  return Math.min(100, Math.round(((exp - currentLevelExp) / levelSpan) * 100))
+}
+
+export function buildExpProgressAnimationSteps(
+  previousExp: number,
+  earnedExp: number,
+): ExpProgressAnimationStep[] {
+  const startExp = Math.max(0, previousExp)
+  const endExp = Math.max(startExp, startExp + Math.max(0, earnedExp))
+
+  if (startExp === endExp) {
+    const level = expToLevel(startExp)
+    const currentLevelExp = expRequiredForLevel(level)
+    const nextLevelExp = expRequiredForLevel(level + 1)
+    return [
+      {
+        level,
+        fromPercent: expPercentWithinLevel(startExp, level),
+        toPercent: expPercentWithinLevel(startExp, level),
+        fromExp: startExp - currentLevelExp,
+        toExp: startExp - currentLevelExp,
+        levelSpan: nextLevelExp - currentLevelExp,
+        leveledUp: false,
+      },
+    ]
+  }
+
+  const steps: ExpProgressAnimationStep[] = []
+  let cursor = startExp
+
+  while (cursor < endExp) {
+    const level = expToLevel(cursor)
+    const currentLevelExp = expRequiredForLevel(level)
+    const nextLevelExp = expRequiredForLevel(level + 1)
+    const levelSpan = Math.max(1, nextLevelExp - currentLevelExp)
+    const segmentEnd = Math.min(endExp, nextLevelExp)
+
+    steps.push({
+      level,
+      fromPercent: expPercentWithinLevel(cursor, level),
+      toPercent: segmentEnd >= nextLevelExp ? 100 : expPercentWithinLevel(segmentEnd, level),
+      fromExp: Math.max(0, cursor - currentLevelExp),
+      toExp: Math.min(levelSpan, Math.max(0, segmentEnd - currentLevelExp)),
+      levelSpan,
+      leveledUp: segmentEnd >= nextLevelExp,
+    })
+
+    cursor = segmentEnd
+  }
+
+  return steps
+}
+
 function modeExpBonus(mode: GameSessionSummary['mode']): number {
   if (mode === 'speed') {
     return 10

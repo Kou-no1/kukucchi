@@ -15,6 +15,7 @@ describe('save repository', () => {
         nickname: 'テスト',
         icon: 'たまご',
         shipName: 'くくっち',
+        characterName: 'くくっち',
         learningLevel: 'first',
         level: 1,
         exp: 0,

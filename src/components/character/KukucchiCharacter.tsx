@@ -16,10 +16,12 @@ export function KukucchiCharacter({
   mood = 'happy',
   level = 1,
   visual,
+  label = 'くくっち',
 }: {
   mood?: 'happy' | 'thinking' | 'cheer'
   level?: number
   visual?: KukucchiShipVisuals
+  label?: string
 }) {
   const rootClassName = classNames(
     'kukucchi',
@@ -34,7 +36,7 @@ export function KukucchiCharacter({
   )
 
   return (
-    <div className={rootClassName} aria-label="くくっち">
+    <div className={rootClassName} aria-label={label}>
       <div className="ufo-ring" data-preview-layers={homeShipPreviewLayers.join('>')}>
         <span className="kukucchi-window-layer" data-preview-layer="window" aria-hidden="true" />
         <div className="ufo-ship" data-preview-layer="ufo">

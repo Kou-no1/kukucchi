@@ -9,6 +9,7 @@ export type PlayerData = {
   nickname: string
   icon: string
   shipName: string
+  characterName: string
   learningLevel: LearningLevel
   level: number
   exp: number

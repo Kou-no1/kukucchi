@@ -68,7 +68,7 @@ export const rocketBadges: RocketBadgeDefinition[] = [
     id: 'rocket-cosmos',
     no: 8,
     name: 'こすもすれじぇんど',
-    distance: 900,
+    distance: 920,
     emoji: '✦',
     description: 'うちゅうのはてにちかづいたしるし。',
   },

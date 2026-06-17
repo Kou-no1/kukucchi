@@ -900,6 +900,7 @@ legend {
 
 .exp-progress-card,
 .mode-result-card {
+  position: relative;
   display: grid;
   gap: 8px;
   margin-top: 12px;
@@ -951,6 +952,63 @@ legend {
   border-radius: inherit;
   background: linear-gradient(90deg, #5be9f4, #4d75ff);
   box-shadow: 0 0 16px rgba(91, 233, 244, 0.58);
+  transition: width 0.72s cubic-bezier(0.22, 0.86, 0.36, 1);
+}
+
+.exp-progress-track.level-up span {
+  background: linear-gradient(90deg, #5be9f4, #ffe36e, #ff72b6);
+  box-shadow:
+    0 0 16px rgba(91, 233, 244, 0.7),
+    0 0 24px rgba(255, 227, 110, 0.44);
+}
+
+.level-up-burst {
+  display: inline-grid;
+  min-height: 42px;
+  place-items: center;
+  padding: 8px 14px;
+  border: 2px solid rgba(255, 227, 110, 0.74);
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 22% 24%, rgba(255, 255, 255, 0.72), transparent 1.6rem),
+    linear-gradient(135deg, rgba(91, 233, 244, 0.92), rgba(139, 101, 255, 0.9), rgba(255, 114, 182, 0.9));
+  color: #ffffff;
+  font-size: clamp(1.2rem, 5vw, 1.7rem);
+  text-align: center;
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.72);
+  animation: levelUpBurst 0.9s ease-in-out infinite alternate;
+}
+
+.level-up-burst::before,
+.level-up-burst::after {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    28px -12px 0 #ffe36e,
+    52px 8px 0 #5be9f4,
+    -26px 10px 0 #ff72b6;
+  content: '';
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.68));
+}
+
+.level-up-burst::before {
+  top: 12px;
+  left: 18px;
+}
+
+.level-up-burst::after {
+  right: 28px;
+  bottom: 12px;
+  transform: rotate(180deg);
+}
+
+.exp-skip-button {
+  justify-self: end;
+  min-height: 42px;
+  padding: 8px 14px;
 }
 
 .compact-stats {
@@ -1428,6 +1486,18 @@ summary {
   }
 }
 
+@keyframes levelUpBurst {
+  from {
+    transform: scale(1);
+    filter: drop-shadow(0 0 10px rgba(91, 233, 244, 0.5));
+  }
+
+  to {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 22px rgba(255, 227, 110, 0.72));
+  }
+}
+
 @media (max-width: 760px) {
   .home-hero,
   .result-hero,
@@ -1505,6 +1575,10 @@ summary {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+  }
+
+  .exp-progress-track span {
+    transition: none;
   }
 }
 
@@ -3237,6 +3311,16 @@ legend {
 
 .home-character-window .character-window-copy h2 {
   font-size: 1.1rem;
+}
+
+.home-character-window .character-name-line {
+  display: block;
+  color: #ffffff;
+  font-size: clamp(1rem, 3vw, 1.28rem);
+  line-height: 1.15;
+  text-shadow:
+    0 0 10px rgba(255, 255, 255, 0.42),
+    0 0 18px rgba(91, 233, 244, 0.62);
 }
 
 .home-character-window .character-window-copy .welcome {
