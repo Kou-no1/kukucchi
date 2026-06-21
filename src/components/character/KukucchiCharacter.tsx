@@ -1,5 +1,6 @@
 import { homeShipPreviewLayers, type HomeShipVisuals } from '../../data/shopItems'
-import type { ReactNode } from 'react'
+import { chooseEffectPerformanceMode, type EffectPerformanceMode } from '../../game-engine/effects/effectPerformance'
+import { useEffect, useState, type ReactNode } from 'react'
 
 export type KukucchiShipVisuals = HomeShipVisuals & {
   ufo?: string
@@ -26,9 +27,53 @@ export function KukucchiCharacter({
   buddyContent?: ReactNode
   label?: string
 }) {
+  const [effectPerformanceMode, setEffectPerformanceMode] =
+    useState<EffectPerformanceMode>('rich')
+
+  useEffect(() => {
+    if (!visual?.effect || typeof window === 'undefined') {
+      return
+    }
+    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    if (reducedMotion || !window.requestAnimationFrame) {
+      const timer = window.setTimeout(() => {
+        setEffectPerformanceMode(
+          chooseEffectPerformanceMode({ frameIntervalsMs: [], prefersReducedMotion: reducedMotion }),
+        )
+      }, 0)
+      return () => window.clearTimeout(timer)
+    }
+
+    let frame = 0
+    let previous = performance.now()
+    let cancelled = false
+    const intervals: number[] = []
+    const sample = (timestamp: number) => {
+      if (cancelled) {
+        return
+      }
+      intervals.push(timestamp - previous)
+      previous = timestamp
+      frame += 1
+      if (frame >= 12) {
+        setEffectPerformanceMode(
+          chooseEffectPerformanceMode({ frameIntervalsMs: intervals, prefersReducedMotion: false }),
+        )
+        return
+      }
+      window.requestAnimationFrame(sample)
+    }
+    const handle = window.requestAnimationFrame(sample)
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame?.(handle)
+    }
+  }, [visual?.effect])
+
   const rootClassName = classNames(
     'kukucchi',
     `kukucchi-${mood}`,
+    `effect-${effectPerformanceMode}`,
     visualClass('wear', visual?.wear),
     visualClass('hat', visual?.hat),
     visualClass('window', visual?.window),

@@ -8,6 +8,7 @@ import {
 } from '../../data/bosses'
 import type { BossAdvancedCategory, BossDefinition } from '../../data/bosses'
 import type { KeyTypeId } from '../../data/keys'
+import { galaxySwirlEffectId } from '../../data/shopItems'
 import { specialUfoId } from '../../data/ufos'
 import { addCollectionRecords } from '../collection/collectionRecords'
 import { titleRecordId } from '../rewards/titles'
@@ -186,6 +187,7 @@ export function applyBossClearReward(
   firstClear: boolean
   rewardItemIds: string[]
   rewardUfoIds: string[]
+  rewardEffectIds: string[]
   rewardTitles: string[]
   grandReward: boolean
 } {
@@ -196,6 +198,7 @@ export function applyBossClearReward(
       firstClear: false,
       rewardItemIds: [],
       rewardUfoIds: [],
+      rewardEffectIds: [],
       rewardTitles: [],
       grandReward: false,
     }
@@ -273,6 +276,7 @@ export function applyBossClearReward(
       firstClear,
       rewardItemIds,
       rewardUfoIds,
+      rewardEffectIds: [],
       rewardTitles,
       grandReward: false,
     }
@@ -304,16 +308,20 @@ export function applyBossClearReward(
   const legendaryTitles = shouldGrantLegendary ? [legendaryBossTitle] : []
 
   const currentOwnedUfos = withLegendary.progress.ownedUfos
+  const currentOwnedItems = withLegendary.progress.ownedItems
   const shouldGrantGrandReward =
     difficulty === 'gekimuzu' &&
     hasAllGekimuzuClears(withLegendary) &&
-    !currentOwnedUfos.includes(specialUfoId)
+    (!currentOwnedUfos.includes(specialUfoId) ||
+      !currentOwnedItems.includes(galaxySwirlEffectId) ||
+      !withLegendary.player?.titles.includes(allGekimuzuTitle))
   if (!shouldGrantGrandReward) {
     return {
       save: withLegendary,
       firstClear,
       rewardItemIds,
       rewardUfoIds,
+      rewardEffectIds: [],
       rewardTitles: Array.from(new Set([...rewardTitles, ...legendaryTitles])),
       grandReward: false,
     }
@@ -326,6 +334,7 @@ export function applyBossClearReward(
       firstClear,
       rewardItemIds,
       rewardUfoIds,
+      rewardEffectIds: [],
       rewardTitles: Array.from(new Set([...rewardTitles, ...legendaryTitles])),
       grandReward: false,
     }
@@ -345,6 +354,7 @@ export function applyBossClearReward(
       progress: {
         ...withLegendary.progress,
         ownedUfos: Array.from(new Set([...withLegendary.progress.ownedUfos, specialUfoId])),
+        ownedItems: Array.from(new Set([...withLegendary.progress.ownedItems, galaxySwirlEffectId])),
         equippedUfoId: withLegendary.progress.equippedUfoId ?? specialUfoId,
         collectionRecords: addCollectionRecords(withLegendary.progress.collectionRecords, [
           {
@@ -359,12 +369,19 @@ export function applyBossClearReward(
             acquiredAt: clearedAt,
             method: '全ボスげきムズ',
           },
+          {
+            kind: 'effect',
+            id: galaxySwirlEffectId,
+            acquiredAt: clearedAt,
+            method: '全ボスげきムズ',
+          },
         ]),
       },
     },
     firstClear,
     rewardItemIds,
     rewardUfoIds: allRewardUfos,
+    rewardEffectIds: [galaxySwirlEffectId],
     rewardTitles: allRewardTitles,
     grandReward: true,
   }

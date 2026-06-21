@@ -35,6 +35,7 @@ export type ShopItem = {
   visual: ShopItemVisual
   tier?: 1 | 2
   countsTowardTierUnlock?: boolean
+  availableInShop?: boolean
 }
 
 export type HomeShipVisuals = Partial<Record<ShopItemVisualLayer, string>>
@@ -125,12 +126,12 @@ const coreShopItems: ShopItem[] = [
   {
     id: 'comet-ship',
     no: 3,
-    name: 'すいせいひかり',
-    description: 'うしろにあおいひかりがのびる',
-    price: 120,
-    emoji: '☄️',
+    name: 'ほしのこな',
+    description: 'きらきらした ほしのつぶが まどに まうよ',
+    price: 300,
+    emoji: '✨',
     kind: 'effect',
-    visual: { layer: 'effect', variant: 'comet-ship' },
+    visual: { layer: 'effect', variant: 'star-dust' },
   },
   {
     id: 'mini-orbit-pet',
@@ -185,12 +186,12 @@ const coreShopItems: ShopItem[] = [
   {
     id: 'sparkle-trail',
     no: 9,
-    name: 'きらきらおび',
-    description: 'せいかいのあとにひかりがながれる',
-    price: 880,
-    emoji: '✨',
+    name: 'ながれぼし',
+    description: 'あおじろい ながれぼしが すっと よこぎるよ',
+    price: 350,
+    emoji: '☄️',
     kind: 'effect',
-    visual: { layer: 'effect', variant: 'sparkle-trail' },
+    visual: { layer: 'effect', variant: 'shooting-star' },
   },
   {
     id: 'pico-pet',
@@ -255,12 +256,12 @@ const coreShopItems: ShopItem[] = [
   {
     id: 'comet-burst',
     no: 16,
-    name: 'すいせいぱちぱち',
-    description: 'れんぞくせいかいでひかりがはじける',
-    price: 5000,
-    emoji: '💥',
+    name: 'オーラリング',
+    description: 'きたいの まわりを ひかりの わが まわるよ',
+    price: 400,
+    emoji: '⭕',
     kind: 'effect',
-    visual: { layer: 'effect', variant: 'comet-burst' },
+    visual: { layer: 'effect', variant: 'aura-ring' },
   },
   {
     id: 'luna-pet',
@@ -380,9 +381,70 @@ export const buddyShopItems: ShopItem[] = shopBuddyDefinitions.map((buddy, index
   countsTowardTierUnlock: false,
 }))
 
-export const shopItems: ShopItem[] = [...coreShopItems, ...suitShopItems, ...buddyShopItems]
+export const rainbowAuraEffectId = 'rainbow-aura'
+export const galaxySwirlEffectId = 'galaxy-swirl'
+
+export const additionalEffectItems: ShopItem[] = [
+  {
+    id: 'soft-light',
+    no: 37,
+    name: 'ふわふわひかり',
+    description: 'やさしい ひかりのたまが ゆっくり うかぶよ',
+    price: 350,
+    emoji: '🫧',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'soft-light' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: rainbowAuraEffectId,
+    no: 38,
+    name: 'にじオーラ',
+    description: 'なないろの ひかりが くくっちごうを つつむよ',
+    price: 0,
+    emoji: '🌈',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'rainbow-aura' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+    availableInShop: false,
+  },
+  {
+    id: galaxySwirlEffectId,
+    no: 39,
+    name: 'ぎんがのうず',
+    description: 'まどの おくに ぎんがが ぐるりと ひろがるよ',
+    price: 0,
+    emoji: '🌀',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'galaxy-swirl' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+    availableInShop: false,
+  },
+]
+
+export const shopEffectItemIds = ['comet-ship', 'sparkle-trail', 'comet-burst', 'soft-light']
+export const treasureEffectItemIds = [rainbowAuraEffectId]
+export const bossRewardEffectItemIds = [galaxySwirlEffectId]
+export const phase15EffectItemIds = [
+  ...shopEffectItemIds,
+  ...treasureEffectItemIds,
+  ...bossRewardEffectItemIds,
+]
+
+export const shopItems: ShopItem[] = [
+  ...coreShopItems,
+  ...suitShopItems,
+  ...buddyShopItems,
+  ...additionalEffectItems,
+]
 
 export function countsTowardShopTier(item: ShopItem): boolean {
+  if (item.availableInShop === false) {
+    return false
+  }
   return item.countsTowardTierUnlock ?? item.no <= 20
 }
 
@@ -391,6 +453,9 @@ export function getShopItemTier(item: ShopItem): 1 | 2 {
 }
 
 export function isShopItemVisible(item: ShopItem, tier2Unlocked: boolean): boolean {
+  if (item.availableInShop === false) {
+    return false
+  }
   return getShopItemTier(item) === 1 || tier2Unlocked
 }
 

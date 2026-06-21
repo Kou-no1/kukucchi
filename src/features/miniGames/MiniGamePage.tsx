@@ -12,6 +12,7 @@ import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { miniGameMinDifficulty } from '../../data/factDifficulty'
 import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../data/keys'
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
+import { phase15EffectItemIds } from '../../data/shopItems'
 import { rarityStars } from '../../data/treasureItems'
 import { getUfoById } from '../../data/ufos'
 import { addCollectionRecords } from '../../game-engine/collection/collectionRecords'
@@ -198,6 +199,8 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         treasureItemName?: string
         treasureBuddyId?: string
         treasureBuddyName?: string | null
+        treasureEffectId?: string
+        treasureEffectName?: string | null
         treasureKeyIds?: string[]
         treasureKeys?: number
         treasureMethod?: string
@@ -230,9 +233,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         details.treasureBonusCoins = options.treasureBonusCoins ?? 0
         details.treasureDuplicate = options.treasureDuplicate ?? false
         details.treasurePoolExhausted = options.treasurePoolExhausted ?? false
-        details.treasureItemName = options.treasureItemName ?? options.treasureBuddyName ?? null
+        details.treasureItemName =
+          options.treasureItemName ?? options.treasureBuddyName ?? options.treasureEffectName ?? null
         details.treasureItemId = options.treasureItemId ?? null
         details.treasureBuddyId = options.treasureBuddyId ?? null
+        details.treasureEffectId = options.treasureEffectId ?? null
         details.treasureKeyIds = options.treasureKeyIds ?? earnedKeyIds
         details.treasureKeyNames = (options.treasureKeyIds ?? earnedKeyIds)
           .map((keyId) => getKeyTypeById(keyId)?.name)
@@ -316,12 +321,30 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
               },
             ])
           : nextSave.progress.collectionRecords
+        const effectAlreadyOwned = options.treasureEffectId
+          ? nextSave.progress.ownedItems.includes(options.treasureEffectId)
+          : true
+        const effectRecords =
+          options.treasureEffectId && !effectAlreadyOwned
+            ? addCollectionRecords(buddyRecords, [
+                {
+                  kind: 'effect',
+                  id: options.treasureEffectId,
+                  acquiredAt: openedAt,
+                  method: options.treasureMethod ?? 'たからばこから入手',
+                },
+              ])
+            : buddyRecords
         nextSave = {
           ...nextSave,
           progress: {
             ...nextSave.progress,
             treasureKeys: nextTreasureKeys,
-            collectionRecords: buddyRecords,
+            collectionRecords: effectRecords,
+            ownedItems:
+              options.treasureEffectId && !effectAlreadyOwned
+                ? [...nextSave.progress.ownedItems, options.treasureEffectId]
+                : nextSave.progress.ownedItems,
             ownedTreasureItems:
               options.treasureItemId && !alreadyOwned
                 ? [
@@ -478,11 +501,16 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
     const ownedBuddyIds = saveData.progress.collectionRecords
       .filter((record) => record.id.startsWith('buddy:'))
       .map((record) => record.id.replace(/^buddy:/, ''))
+    const ownedEffectIds = saveData.progress.ownedItems.filter((itemId) =>
+      phase15EffectItemIds.includes(itemId),
+    )
     const reward = openTreasureChest({
       chestId: chest.id,
       ownedItemIds: saveData.progress.ownedTreasureItems.map((item) => item.id),
       ownedBuddyIds,
+      ownedEffectIds,
       includeBuddyRewards: true,
+      includeEffectRewards: true,
       openedAt,
     })
     finish(results, scoreState, {
@@ -494,6 +522,8 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       treasureItemName: reward.item?.name,
       treasureBuddyId: reward.buddyId ?? undefined,
       treasureBuddyName: reward.buddyName,
+      treasureEffectId: reward.effectId ?? undefined,
+      treasureEffectName: reward.effectName,
       treasureKeyIds: earnedKeyIds,
       treasureKeys: keys,
       treasureMethod: reward.method,

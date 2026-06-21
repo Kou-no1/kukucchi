@@ -1,5 +1,6 @@
 import { getTreasureChestById, treasureChestTypes } from '../../data/keys'
 import { isTreasureBuddyChest, treasureBuddyDefinitions } from '../../data/buddies'
+import { getShopItemById, treasureEffectItemIds } from '../../data/shopItems'
 import { getTreasureItemById, treasureItems } from '../../data/treasureItems'
 import type { TreasureItem } from '../../data/treasureItems'
 
@@ -10,6 +11,8 @@ export type TreasureOpenResult = {
   item: TreasureItem | null
   buddyId: string | null
   buddyName: string | null
+  effectId: string | null
+  effectName: string | null
   duplicate: boolean
   poolExhausted: boolean
   convertedCoins: number
@@ -48,6 +51,14 @@ export function getUnownedBuddyPoolForChest(chestId: string, ownedBuddyIds: stri
   return treasureBuddyDefinitions.map((buddy) => buddy.id).filter((buddyId) => !owned.has(buddyId))
 }
 
+export function getUnownedEffectPoolForChest(chestId: string, ownedEffectIds: string[]): string[] {
+  if (!isTreasureBuddyChest(chestId)) {
+    return []
+  }
+  const owned = new Set(ownedEffectIds)
+  return treasureEffectItemIds.filter((effectId) => !owned.has(effectId))
+}
+
 export function chooseTreasureItem(
   chestId: string,
   rng: RandomSource = Math.random,
@@ -66,29 +77,59 @@ export function chooseTreasureReward({
   rng = Math.random,
   ownedItemIds = [],
   ownedBuddyIds = [],
+  ownedEffectIds = [],
   includeBuddyRewards = false,
+  includeEffectRewards = false,
 }: {
   chestId: string
   rng?: RandomSource
   ownedItemIds?: string[]
   ownedBuddyIds?: string[]
+  ownedEffectIds?: string[]
   includeBuddyRewards?: boolean
-}): { item: TreasureItem | null; buddyId: string | null; buddyName: string | null } {
+  includeEffectRewards?: boolean
+}): {
+  item: TreasureItem | null
+  buddyId: string | null
+  buddyName: string | null
+  effectId: string | null
+  effectName: string | null
+} {
   const itemPool = getUnownedTreasurePoolForChest(chestId, ownedItemIds)
   const buddyPool = includeBuddyRewards ? getUnownedBuddyPoolForChest(chestId, ownedBuddyIds) : []
+  const effectPool = includeEffectRewards
+    ? getUnownedEffectPoolForChest(chestId, ownedEffectIds)
+    : []
   const pool = [
     ...itemPool.map((item) => ({ type: 'item' as const, item })),
     ...buddyPool.map((buddyId) => ({ type: 'buddy' as const, buddyId })),
+    ...effectPool.map((effectId) => ({ type: 'effect' as const, effectId })),
   ]
   if (pool.length === 0) {
-    return { item: null, buddyId: null, buddyName: null }
+    return { item: null, buddyId: null, buddyName: null, effectId: null, effectName: null }
   }
   const selected = pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]
   if (selected.type === 'item') {
-    return { item: selected.item, buddyId: null, buddyName: null }
+    return { item: selected.item, buddyId: null, buddyName: null, effectId: null, effectName: null }
+  }
+  if (selected.type === 'effect') {
+    const effect = getShopItemById(selected.effectId)
+    return {
+      item: null,
+      buddyId: null,
+      buddyName: null,
+      effectId: selected.effectId,
+      effectName: effect?.name ?? selected.effectId,
+    }
   }
   const buddy = treasureBuddyDefinitions.find((candidate) => candidate.id === selected.buddyId)
-  return { item: null, buddyId: selected.buddyId, buddyName: buddy?.name ?? selected.buddyId }
+  return {
+    item: null,
+    buddyId: selected.buddyId,
+    buddyName: buddy?.name ?? selected.buddyId,
+    effectId: null,
+    effectName: null,
+  }
 }
 
 export function exhaustedCoinsForChest(chestId: string): number {
@@ -101,14 +142,18 @@ export function openTreasureChest({
   rng = Math.random,
   openedAt = new Date().toISOString(),
   ownedBuddyIds = [],
+  ownedEffectIds = [],
   includeBuddyRewards = false,
+  includeEffectRewards = false,
 }: {
   chestId: string
   ownedItemIds: string[]
   rng?: RandomSource
   openedAt?: string
   ownedBuddyIds?: string[]
+  ownedEffectIds?: string[]
   includeBuddyRewards?: boolean
+  includeEffectRewards?: boolean
 }): TreasureOpenResult {
   const chest = getTreasureChestById(chestId) ?? treasureChestTypes[0]
   const reward = chooseTreasureReward({
@@ -116,14 +161,18 @@ export function openTreasureChest({
     rng,
     ownedItemIds,
     ownedBuddyIds,
+    ownedEffectIds,
     includeBuddyRewards,
+    includeEffectRewards,
   })
-  const poolExhausted = reward.item === null && reward.buddyId === null
+  const poolExhausted = reward.item === null && reward.buddyId === null && reward.effectId === null
   return {
     chestId,
     item: reward.item,
     buddyId: reward.buddyId,
     buddyName: reward.buddyName,
+    effectId: reward.effectId,
+    effectName: reward.effectName,
     duplicate: false,
     poolExhausted,
     convertedCoins: poolExhausted ? chest.exhaustedCoins : 0,

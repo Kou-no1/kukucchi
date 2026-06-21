@@ -110,7 +110,12 @@ function shopEntries(save: SaveData): CustomInventoryEntry[] {
         description: item.description,
         owned,
         selected: owned && isItemSelected(save, item),
-        method: item.kind === 'buddy' ? 'ショップ' : `${item.price}コイン`,
+        method:
+          item.availableInShop === false
+            ? 'とくべつほうしゅう'
+            : item.kind === 'buddy'
+              ? 'ショップ'
+              : `${item.price}コイン`,
         acquiredAt: null,
         item,
       } satisfies CustomInventoryEntry,

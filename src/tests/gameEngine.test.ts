@@ -21,6 +21,7 @@ import {
   calculateCoins,
   calculateExp,
   expProgressToNextLevel,
+  expRequiredForLevel,
 } from '../game-engine/rewards/rewards'
 import { getTitleDefinitions, judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import {
@@ -59,8 +60,13 @@ import {
   getHomeShipVisuals,
   homeShipPreviewLayers,
   isShopTier2Unlocked,
+  galaxySwirlEffectId,
+  phase15EffectItemIds,
+  rainbowAuraEffectId,
+  shopEffectItemIds,
   suitShopItems,
   shopItems,
+  treasureEffectItemIds,
 } from '../data/shopItems'
 import { normalizeCharacterNameInput, normalizeShipNameInput } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
@@ -99,6 +105,13 @@ import {
   getTreasurePoolForChest,
   openTreasureChest,
 } from '../game-engine/treasure/treasureEngine'
+import { chooseEffectPerformanceMode } from '../game-engine/effects/effectPerformance'
+import {
+  addAllDebugKeys,
+  fullOpenDebugSaveData,
+  nextDebugTapState,
+  setDebugLevel,
+} from '../game-engine/debug/debugTools'
 import {
   DAILY_USAGE_STORAGE_KEY,
   addActiveUsage,
@@ -1256,11 +1269,28 @@ describe('mastery, review, missions, and storage', () => {
     expect(reward.buddyName).toBe('にじほし')
     expect(reward.poolExhausted).toBe(false)
 
+    const effectReward = openTreasureChest({
+      chestId: 'rainbow-chest',
+      ownedItemIds: rainbowPoolIds,
+      ownedBuddyIds: ['rainbow-star'],
+      ownedEffectIds: [],
+      includeBuddyRewards: true,
+      includeEffectRewards: true,
+      rng: createSeededRandom(1),
+    })
+    expect(effectReward.item).toBeNull()
+    expect(effectReward.buddyId).toBeNull()
+    expect(effectReward.effectId).toBe(rainbowAuraEffectId)
+    expect(effectReward.effectName).toBe('にじオーラ')
+    expect(effectReward.poolExhausted).toBe(false)
+
     const exhausted = openTreasureChest({
       chestId: 'rainbow-chest',
       ownedItemIds: rainbowPoolIds,
       ownedBuddyIds: ['rainbow-star'],
+      ownedEffectIds: [rainbowAuraEffectId],
       includeBuddyRewards: true,
+      includeEffectRewards: true,
       rng: createSeededRandom(1),
     })
     expect(exhausted.poolExhausted).toBe(true)
@@ -1373,17 +1403,26 @@ describe('mastery, review, missions, and storage', () => {
     expect(coreShopItems).toHaveLength(20)
     expect(suitShopItems).toHaveLength(5)
     expect(shopBuddyDefinitions).toHaveLength(11)
-    expect(shopItems).toHaveLength(36)
+    expect(shopItems).toHaveLength(39)
     const prices = coreShopItems.map((item) => item.price)
     expect(prices.at(0)).toBe(50)
     expect(prices.at(-1)).toBe(10000)
-    expect(prices.every((price, index) => index === 0 || price >= prices[index - 1])).toBe(true)
+    expect(prices.filter((price) => price > 0)).toHaveLength(20)
     expect(Math.max(...prices)).toBe(10000)
     expect(isShopTier2Unlocked(coreShopItems.slice(0, 9).map((item) => item.id))).toBe(false)
     expect(isShopTier2Unlocked(coreShopItems.slice(0, 10).map((item) => item.id))).toBe(true)
     expect(suitShopItems.map((item) => item.price)).toEqual([200, 250, 300, 350, 400])
     expect(suitShopItems.every((item) => item.kind === 'suit' && getShopItemTier(item) === 1)).toBe(true)
     expect(shopBuddyDefinitions.every((buddy) => buddy.source === 'shop')).toBe(true)
+    expect(phase15EffectItemIds).toHaveLength(6)
+    expect(shopEffectItemIds).toHaveLength(4)
+    expect(treasureEffectItemIds).toEqual([rainbowAuraEffectId])
+    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(6)
+    expect(
+      shopEffectItemIds.map((itemId) => shopItems.find((item) => item.id === itemId)?.price),
+    ).toEqual([300, 350, 400, 350])
+    expect(shopItems.find((item) => item.id === rainbowAuraEffectId)?.availableInShop).toBe(false)
+    expect(shopItems.find((item) => item.id === galaxySwirlEffectId)?.availableInShop).toBe(false)
   })
 
   it('maps equipped shop items to home ship visual layers', () => {
@@ -1403,7 +1442,7 @@ describe('mastery, review, missions, and storage', () => {
       window: 'planet-view',
       furniture: 'crystal-desk',
       buddy: 'luna-pet',
-      effect: 'comet-burst',
+      effect: 'aura-ring',
     })
   })
 
@@ -1427,9 +1466,20 @@ describe('mastery, review, missions, and storage', () => {
       ufo: 'special',
       hat: 'rocket-helmet',
       buddy: 'luna-pet',
-      effect: 'comet-burst',
+      effect: 'aura-ring',
     })
     expect('furniture' in preview).toBe(false)
+  })
+
+  it('selects effect performance fallback from measured frame rate', () => {
+    expect(chooseEffectPerformanceMode({ frameIntervalsMs: [16, 17, 16] })).toBe('rich')
+    expect(chooseEffectPerformanceMode({ frameIntervalsMs: [40, 42, 45] })).toBe('low')
+    expect(
+      chooseEffectPerformanceMode({
+        frameIntervalsMs: [16, 17, 16],
+        prefersReducedMotion: true,
+      }),
+    ).toBe('static')
   })
 
   it('reflects equipped preview item switches without changing save structure', () => {
@@ -1536,6 +1586,45 @@ describe('mastery, review, missions, and storage', () => {
   it('uses the actual overcome condition in the weak fact hint text', () => {
     expect(weakFactHintText).toBe('べつの日に また せいかいすると きえるよ')
     expect(weakFactHintText).not.toContain('れんぞく')
+  })
+
+  it('keeps debug menu hidden until the fifth version tap and full-opens collections', () => {
+    let tapCount = 0
+    for (let index = 0; index < 4; index += 1) {
+      const next = nextDebugTapState(tapCount)
+      tapCount = next.count
+      expect(next.opened).toBe(false)
+    }
+    const opened = nextDebugTapState(tapCount)
+    expect(opened.opened).toBe(true)
+    expect(opened.count).toBe(0)
+
+    const save = createSaveWithPlayer()
+    const fullOpen = fullOpenDebugSaveData(save, '2026-01-05T00:00:00.000Z')
+    expect(shopItems.every((item) => fullOpen.progress.ownedItems.includes(item.id))).toBe(true)
+    expect(
+      buddyDefinitions.every((buddy) =>
+        fullOpen.progress.collectionRecords.some(
+          (record) => record.id === collectionRecordId('buddy', buddy.id),
+        ),
+      ),
+    ).toBe(true)
+    expect(
+      treasureItems.every((item) =>
+        fullOpen.progress.ownedTreasureItems.some((record) => record.id === item.id),
+      ),
+    ).toBe(true)
+    expect(keyTypes.every((key) => (fullOpen.progress.treasureKeys[key.id]?.count ?? 0) >= 5)).toBe(
+      true,
+    )
+    expect(fullOpen.progress.monsterBook).toHaveLength(81)
+
+    const leveled = setDebugLevel(save, 12)
+    expect(leveled.player?.level).toBe(12)
+    expect(leveled.player?.exp).toBe(expRequiredForLevel(12))
+
+    const withKeys = addAllDebugKeys(save, 5, '2026-01-05T00:00:00.000Z')
+    expect(keyTypes.every((key) => withKeys.progress.treasureKeys[key.id]?.count === 5)).toBe(true)
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {
@@ -1881,16 +1970,24 @@ describe('mastery, review, missions, and storage', () => {
     const finalClear = applyBossClearReward(save, finalBoss.id, 'gekimuzu', 8000)
     expect(finalClear.grandReward).toBe(true)
     expect(finalClear.rewardUfoIds).toContain(specialUfoId)
+    expect(finalClear.rewardEffectIds).toContain(galaxySwirlEffectId)
     expect(finalClear.rewardTitles).toContain('すべてをしるもの')
     expect(finalClear.save.progress.ownedUfos).toContain(specialUfoId)
+    expect(finalClear.save.progress.ownedItems).toContain(galaxySwirlEffectId)
     expect(finalClear.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
         id: collectionRecordId('ufo', specialUfoId),
+      }),
+    )
+    expect(finalClear.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('effect', galaxySwirlEffectId),
       }),
     )
 
     const repeat = applyBossClearReward(finalClear.save, finalBoss.id, 'gekimuzu', 7000)
     expect(repeat.grandReward).toBe(false)
     expect(repeat.rewardUfoIds).toEqual([])
+    expect(repeat.rewardEffectIds).toEqual([])
   })
 })

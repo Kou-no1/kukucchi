@@ -12,7 +12,13 @@ import {
   normalizeCharacterNameInput,
   normalizeShipNameInput,
 } from '../../data/shipName'
-import { createFactProgress } from '../../game-engine/mastery/mastery'
+import {
+  addAllDebugKeys,
+  addDebugCoins,
+  fullOpenDebugSaveData,
+  nextDebugTapState,
+  setDebugLevel,
+} from '../../game-engine/debug/debugTools'
 import { DAILY_BUDGET_OPTIONS, type DailyBudgetMinutes } from '../../game-engine/school/dailyUsage'
 import {
   canChangeName,
@@ -23,7 +29,7 @@ import {
   type NameChangeTarget,
 } from '../../game-engine/settings/nameCooldown'
 import { useSaveData } from '../../hooks/useSaveData'
-import { parseSaveData } from '../../storage/saveData'
+import { SAVE_DATA_VERSION, parseSaveData } from '../../storage/saveData'
 import { validateShipName } from '../../utils/bannedWords'
 
 const teacherSettingsCode = '9631'
@@ -46,6 +52,10 @@ export function SettingsPage() {
   const [teacherUnlocked, setTeacherUnlocked] = useState(false)
   const [teacherCodeInput, setTeacherCodeInput] = useState('')
   const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
+  const [debugTapCount, setDebugTapCount] = useState(0)
+  const [debugOpen, setDebugOpen] = useState(false)
+  const [debugMessage, setDebugMessage] = useState('バージョンを 5かい タップで ひらきます')
+  const [debugLevelInput, setDebugLevelInput] = useState(String(saveData.player?.level ?? 1))
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
   const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
   const unlockedLevelIcons = getUnlockedLevelIcons(saveData.player?.level ?? 1)
@@ -204,27 +214,34 @@ export function SettingsPage() {
     event.target.value = ''
   }
 
-  function unlockAllStages() {
-    updateSaveData((current) => {
-      const facts = { ...current.progress.facts }
-      for (let left = 2; left <= 9; left += 1) {
-        for (let right = 1; right <= 9; right += 1) {
-          const fact = createFactProgress(left, right)
-          facts[fact.id] = {
-            ...fact,
-            correctCount: 5,
-            consecutiveCorrect: 5,
-            masteryLevel: 4,
-            averageResponseTimeMs: 2500,
-            bestResponseTimeMs: 1800,
-          }
-        }
-      }
-      return {
-        ...current,
-        progress: { ...current.progress, facts },
-      }
-    })
+  function handleVersionTap() {
+    const next = nextDebugTapState(debugTapCount)
+    setDebugTapCount(next.count)
+    if (next.opened) {
+      setDebugOpen(true)
+      setDebugMessage('かいはつしゃメニューを ひらきました')
+    }
+  }
+
+  function resetFromDebugMenu() {
+    if (!window.confirm('けしますか？')) {
+      return
+    }
+    if (!window.confirm('ほんとうに けしますか？')) {
+      return
+    }
+    resetSaveData()
+    setDebugMessage('SaveDataを リセットしました')
+  }
+
+  function setLevelFromDebugInput() {
+    const nextLevel = Number(debugLevelInput)
+    if (!Number.isFinite(nextLevel) || nextLevel < 1) {
+      setDebugMessage('レベルは 1いじょうで いれてね')
+      return
+    }
+    updateSaveData((current) => setDebugLevel(current, nextLevel))
+    setDebugMessage(`レベルを ${Math.floor(nextLevel)} にしました`)
   }
 
   return (
@@ -446,37 +463,70 @@ export function SettingsPage() {
         </button>
       </section>
 
-      <details className="settings-section">
-        <summary>せんせいメニュー</summary>
-        <div className="dev-actions">
-          <button
-            type="button"
-            onClick={() =>
-              updateSaveData((current) => ({
-                ...current,
-                player: current.player
-                  ? { ...current.player, coins: current.player.coins + 100 }
-                  : current.player,
-              }))
-            }
-          >
-            テスト用コイン追加
-          </button>
-          <button type="button" onClick={unlockAllStages}>
-            全ステージ解放
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm('セーブデータを初期化します。')) {
-                resetSaveData()
-              }
-            }}
-          >
-            セーブ初期化
-          </button>
-        </div>
-      </details>
+      <section className="settings-section version-section" aria-label="バージョン">
+        <button className="version-tap-target" type="button" onClick={handleVersionTap}>
+          バージョン 15-3 / SaveData v{SAVE_DATA_VERSION}
+        </button>
+        <p className="quiet-text">{debugOpen ? 'かいはつしゃメニュー' : debugMessage}</p>
+      </section>
+
+      {debugOpen ? (
+        <section className="settings-section debug-menu-panel" aria-labelledby="debug-menu-title">
+          <h2 id="debug-menu-title">かいはつしゃメニュー</h2>
+          <p className="form-help">{debugMessage}</p>
+          <div className="dev-actions debug-actions">
+            <button
+              type="button"
+              onClick={() => {
+                updateSaveData((current) => fullOpenDebugSaveData(current))
+                setDebugMessage('フルオープンしました')
+              }}
+            >
+              フルオープン
+            </button>
+            {[100, 500, 1000].map((amount) => (
+              <button
+                type="button"
+                key={amount}
+                onClick={() => {
+                  updateSaveData((current) => addDebugCoins(current, amount))
+                  setDebugMessage(`${amount}コインを たしました`)
+                }}
+              >
+                {amount}コイン追加
+              </button>
+            ))}
+            <label className="debug-level-control">
+              レベル設定
+              <input
+                value={debugLevelInput}
+                type="number"
+                min={1}
+                onChange={(event) => setDebugLevelInput(event.target.value)}
+              />
+            </label>
+            <button type="button" onClick={setLevelFromDebugInput}>
+              レベルをかえる
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                updateSaveData((current) => addAllDebugKeys(current))
+                setDebugMessage('カギを ぜんぶ 5こずつ たしました')
+              }}
+            >
+              カギ全種追加
+            </button>
+            <button className="danger-action" type="button" onClick={resetFromDebugMenu}>
+              SaveDataリセット
+            </button>
+          </div>
+          <details className="debug-save-json">
+            <summary>現在のSaveData表示</summary>
+            <textarea value={backupText} readOnly aria-label="現在のSaveData JSON" />
+          </details>
+        </section>
+      ) : null}
 
       <Link className="primary-action wide" to="/home">
         ホームへ

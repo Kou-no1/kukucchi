@@ -9,6 +9,7 @@ import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNotic
 import { StatPill } from '../../components/common/StatPill'
 import { getLevelIconUnlocksBetween } from '../../data/levelIcons'
 import { getKeyTypeById } from '../../data/keys'
+import { getShopItemById } from '../../data/shopItems'
 import { getTreasureItemById } from '../../data/treasureItems'
 import {
   buildExpProgressAnimationSteps,
@@ -124,7 +125,9 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
     const keyIds = detailStrings(summary, 'treasureKeyIds')
     const treasureItemId = detailString(summary, 'treasureItemId')
     const treasureBuddyId = detailString(summary, 'treasureBuddyId')
+    const treasureEffectId = detailString(summary, 'treasureEffectId')
     const treasureItem = treasureItemId ? getTreasureItemById(treasureItemId) : undefined
+    const treasureEffect = treasureEffectId ? getShopItemById(treasureEffectId) : undefined
     const itemName = detailString(summary, 'treasureItemName')
     const duplicate = summary.details?.treasureDuplicate === true
     const poolExhausted = summary.details?.treasurePoolExhausted === true
@@ -137,7 +140,7 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
           <StatPill label="あけた" value={detailNumber(summary, 'openedChests') ?? 0} />
           <StatPill label="コイン" value={`+${summary.earnedCoins}`} />
         </div>
-        {keyIds.length > 0 || treasureItem || treasureBuddyId ? (
+        {keyIds.length > 0 || treasureItem || treasureBuddyId || treasureEffect ? (
           <div className="treasure-result-visuals" aria-label="たからばこのけっか">
             {keyIds.map((keyId) => {
               const keyType = getKeyTypeById(keyId)
@@ -158,6 +161,14 @@ function ModeResultDetails({ summary }: { summary: GameSessionSummary }) {
               <figure className="treasure-result-figure">
                 <BuddySprite buddyId={treasureBuddyId} className="treasure-result-icon" />
                 <figcaption>{itemName}</figcaption>
+              </figure>
+            ) : null}
+            {treasureEffect ? (
+              <figure className="treasure-result-figure">
+                <span className="treasure-result-icon effect-result-icon" aria-hidden="true">
+                  {treasureEffect.emoji}
+                </span>
+                <figcaption>{treasureEffect.name}</figcaption>
               </figure>
             ) : null}
           </div>
