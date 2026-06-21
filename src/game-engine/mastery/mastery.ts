@@ -1,15 +1,24 @@
 import type {
+  ArithmeticOperation,
   AnswerResult,
   MultiplicationFactProgress,
 } from '../../types/game'
 import { addDays, isDifferentLocalDay } from '../../utils/date'
+import { makeMultiplicationFactId } from '../questions/factIds'
 
 export function createFactProgress(
   left: number,
   right: number,
+  options: {
+    id?: string
+    operation?: ArithmeticOperation
+    areaId?: string
+  } = {},
 ): MultiplicationFactProgress {
   return {
-    id: `${left}x${right}`,
+    id: options.id ?? makeMultiplicationFactId(left, right),
+    operation: options.operation ?? 'multiplication',
+    areaId: options.areaId,
     left,
     right,
     correctCount: 0,

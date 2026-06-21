@@ -10,6 +10,7 @@ import type { KeyTypeId } from '../../data/keys'
 import { galaxySwirlEffectId } from '../../data/shopItems'
 import { specialUfoId } from '../../data/ufos'
 import { addCollectionRecords } from '../collection/collectionRecords'
+import { isMultiplicationFactProgress } from '../questions/factIds'
 import { grantFinalTitleIfEarned } from '../rewards/finalTitle'
 import { titleRecordId } from '../rewards/titles'
 import type {
@@ -53,7 +54,7 @@ export function getDifficultyProgress(
 export function countCorrectForStages(save: SaveData, stages: number[]): number {
   const stageSet = new Set(stages)
   return Object.values(save.progress.facts)
-    .filter((fact) => stageSet.has(fact.left))
+    .filter((fact) => isMultiplicationFactProgress(fact) && stageSet.has(fact.left))
     .reduce((sum, fact) => sum + fact.correctCount, 0)
 }
 

@@ -9,6 +9,7 @@ import {
   generateAdaptiveMultiplicationQuestion,
   generateMultiplicationFactQuestion,
 } from '../../game-engine/questions/questionGenerator'
+import { formatFactLabel } from '../../game-engine/questions/factIds'
 import {
   getMonsterFacts,
   getMonsterOvercomeProgress,
@@ -31,7 +32,7 @@ export function ReviewPage() {
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
   const reviewQueue = useMemo(
-    () => getReviewQueue(saveData.progress.facts, new Date(), reviewGoal),
+    () => getReviewQueue(saveData.progress.facts, new Date(), reviewGoal, { operation: 'multiplication' }),
     [saveData.progress.facts],
   )
   const monsters = useMemo(
@@ -151,7 +152,7 @@ export function ReviewPage() {
                 <span className="monster-chip" key={fact.id}>
                   <MonsterSprite left={fact.left} right={fact.right} className="monster-chip-sprite" />
                   <span>
-                    {fact.left} × {fact.right}
+                    {formatFactLabel(fact)}
                     <small>Lv {fact.masteryLevel}</small>
                     {isTokuiFact(fact) ? <small className="tokui-mark">★ とくい</small> : null}
                     {overcomeProgress?.message ? (

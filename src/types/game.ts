@@ -4,10 +4,17 @@ export type LearningLevel =
   | 'challenge'
   | 'advanced'
 
+export type ArithmeticOperation = 'multiplication' | 'addition'
+
 export type QuestionCategory =
   | 'multiplication-basic'
   | 'multiplication-square'
   | 'pi-multiplication'
+  | 'addition-within-10'
+  | 'addition-carry-basic'
+  | 'addition-two-digit-no-carry'
+  | 'addition-two-digit-carry'
+  | 'addition-three-digit'
   | 'two-digit-times-one-digit'
   | 'two-digit-times-two-digit'
   | 'divisors'
@@ -51,6 +58,8 @@ export type AnswerResult = {
 
 export type MultiplicationFactProgress = {
   id: string
+  operation?: ArithmeticOperation
+  areaId?: string
   left: number
   right: number
   correctCount: number

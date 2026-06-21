@@ -12,6 +12,7 @@ import {
 } from '../data/shipName'
 import { specialUfoId } from '../data/ufos'
 import { collectionRecordId } from '../game-engine/collection/collectionRecords'
+import { isMultiplicationFactProgress } from '../game-engine/questions/factIds'
 import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
 import { DEFAULT_SCHOOL_MODE_2_ENABLED } from '../game-engine/school/schoolMode2'
 import { titleRecordId } from '../game-engine/rewards/titles'
@@ -49,6 +50,7 @@ const legacyAdvancedCollectionRecordIds = new Set<string>([
 function shouldRemoveTimeOnlyMonsterFact(fact: MultiplicationFactProgress): boolean {
   const attempts = fact.correctCount + fact.incorrectCount
   return (
+    isMultiplicationFactProgress(fact) &&
     attempts >= 2 &&
     fact.incorrectCount === 0 &&
     fact.masteryLevel < 4 &&

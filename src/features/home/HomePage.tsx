@@ -22,6 +22,7 @@ import {
   parseDedicatedBuddySelectionId,
   parseMonsterBuddySelectionId,
 } from '../../game-engine/collection/buddies'
+import { formatFactLabel } from '../../game-engine/questions/factIds'
 import { getWeakFacts, weakFactHintText } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
 
@@ -214,9 +215,7 @@ export function HomePage() {
         ) : (
           <div className="fact-list">
             {weakFacts.map((fact) => (
-              <span key={fact.id}>
-                {fact.left} × {fact.right}
-              </span>
+              <span key={fact.id}>{formatFactLabel(fact)}</span>
             ))}
           </div>
         )}

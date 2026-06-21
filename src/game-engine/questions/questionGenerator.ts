@@ -4,8 +4,17 @@ import type {
   Question,
   QuestionCategory,
 } from '../../types/game'
+import type { AdditionAreaId } from '../../data/planets'
 import { getReviewQueue } from '../review/weakFacts'
-import { selectAdaptiveMultiplicationFact } from '../school/schoolMode2'
+import {
+  selectAdaptiveAdditionFact,
+  selectAdaptiveMultiplicationFact,
+} from '../school/schoolMode2'
+import {
+  generateAdditionFactQuestion,
+  generateAdditionQuestion as generateRandomAdditionQuestion,
+} from './addition'
+import { makeMultiplicationFactId } from './factIds'
 import { createMultiplicationFactPool, factDifficulty } from './factDifficulty'
 
 export type RandomSource = () => number
@@ -41,7 +50,7 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 export function makeFactId(left: number, right: number): string {
-  return `${left}x${right}`
+  return makeMultiplicationFactId(left, right)
 }
 
 export function generateChoices(
@@ -215,12 +224,42 @@ export function generateAdaptiveMultiplicationQuestion(
     })
     return generateMultiplicationFactQuestion(fact.left, fact.right, options)
   }
-  const queue = getReviewQueue(facts, new Date(), 8)
+  const queue = getReviewQueue(facts, new Date(), 8, { operation: 'multiplication' })
   if (queue.length > 0 && rng() < 0.7) {
     const fact = pick(queue, rng)
     return generateMultiplicationFactQuestion(fact.left, fact.right, options)
   }
   return generateMultiplicationQuestion(options)
+}
+
+export function generateAdditionQuestion(
+  areaId: AdditionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  return generateRandomAdditionQuestion(areaId, options.rng ?? Math.random)
+}
+
+export function generateAdaptiveAdditionQuestion(
+  facts: Record<string, MultiplicationFactProgress>,
+  areaId: AdditionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  const rng = options.rng ?? Math.random
+  if (options.schoolMode2Enabled) {
+    const fact = selectAdaptiveAdditionFact({
+      facts,
+      areaId,
+      rng,
+      recentIncorrectCount: options.recentIncorrectCount ?? 0,
+    })
+    return generateAdditionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  const queue = getReviewQueue(facts, new Date(), 8, { operation: 'addition', areaId })
+  if (queue.length > 0 && rng() < 0.7) {
+    const fact = pick(queue, rng)
+    return generateAdditionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  return generateAdditionQuestion(areaId, options)
 }
 
 export function generateSquareQuestion(rng: RandomSource = Math.random): Question {

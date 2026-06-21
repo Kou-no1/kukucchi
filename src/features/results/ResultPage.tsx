@@ -17,6 +17,7 @@ import {
   expProgressToNextLevel,
   expToLevel,
 } from '../../game-engine/rewards/rewards'
+import { formatFactLabel } from '../../game-engine/questions/factIds'
 import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import type { GameSessionSummary } from '../../types/game'
@@ -402,9 +403,7 @@ export function ResultPage() {
         ) : (
           <div className="fact-list">
             {summary.weakFacts.map((fact) => (
-              <span key={fact.id}>
-                {fact.left} × {fact.right}
-              </span>
+              <span key={fact.id}>{formatFactLabel(fact)}</span>
             ))}
           </div>
         )}
@@ -417,9 +416,7 @@ export function ResultPage() {
         ) : (
           <div className="fact-list">
             {summary.masteredFacts.slice(0, 6).map((fact) => (
-              <span key={fact.id}>
-                {fact.left} × {fact.right}
-              </span>
+              <span key={fact.id}>{formatFactLabel(fact)}</span>
             ))}
           </div>
         )}

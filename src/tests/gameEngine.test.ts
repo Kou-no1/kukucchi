@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { isCorrectAnswer } from '../game-engine/questions/answer'
 import {
+  generateAdditionQuestion,
   generateAdaptiveMultiplicationQuestion,
   generateAdvancedQuestion,
   generateChoices,
@@ -12,6 +13,11 @@ import {
   createMultiplicationFactPool,
   factDifficulty,
 } from '../game-engine/questions/factDifficulty'
+import {
+  generateAdditionChoices,
+  generateAdditionFactQuestion,
+} from '../game-engine/questions/addition'
+import { makeAdditionFactId } from '../game-engine/questions/factIds'
 import {
   applyAnswerToScore,
   calculateSpeedBonus,
@@ -46,6 +52,7 @@ import {
 } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
+import { additionAreas, planets } from '../data/planets'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
 import {
   getLevelIconUnlocksBetween,
@@ -83,6 +90,7 @@ import { getUfoForBoss, specialUfoId, ufoDefinitions } from '../data/ufos'
 import { containsBannedWord, validateShipName } from '../utils/bannedWords'
 import {
   applyBossClearReward,
+  countCorrectForStages,
   getDifficultyProgress,
   isBossUnlocked,
   isDifficultyUnlocked,
@@ -142,6 +150,7 @@ import {
 import {
   classifySchoolMastery,
   rewardScaleForFact,
+  selectAdaptiveAdditionFact,
   selectAdaptiveMultiplicationFact,
 } from '../game-engine/school/schoolMode2'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
@@ -370,11 +379,90 @@ describe('question generation', () => {
     expect(samples.every((question) => !/×\s*[1-9][0-9]/.test(question.prompt))).toBe(true)
   })
 
+  it('defines a live addition planet with five ordered generator areas', () => {
+    const multiplyPlanet = planets.find((planet) => planet.id === 'multiply')
+    const additionPlanet = planets.find((planet) => planet.id === 'add')
+    expect(additionPlanet?.status).toBe('live')
+    expect(additionPlanet?.areas.map((area) => area.name)).toEqual([
+      '10までのたしざん',
+      'くりあがりのたしざん',
+      '2けたのたしざん',
+      '2けたのたしざん（くりあがり）',
+      '大きいかずのたしざん',
+    ])
+    expect(additionPlanet?.theme.primary).not.toBe(multiplyPlanet?.theme.primary)
+    expect(additionAreas.map((area) => area.generator.operation)).toEqual([
+      'addition',
+      'addition',
+      'addition',
+      'addition',
+      'addition',
+    ])
+  })
+
+  it('generates addition questions that match all five area rules', () => {
+    const samples = Object.fromEntries(
+      additionAreas.map((area, areaIndex) => [
+        area.id,
+        Array.from({ length: 35 }, (_, sampleIndex) =>
+          generateAdditionQuestion(area.id, {
+            rng: createSeededRandom(1000 + areaIndex * 100 + sampleIndex),
+          }),
+        ),
+      ]),
+    )
+
+    expect(samples['add-within-10'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 1 && left <= 9 && right >= 1 && right <= 9 && left + right <= 10
+    })).toBe(true)
+    expect(samples['add-carry-basic'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 1 && left <= 9 && right >= 1 && right <= 9 && left + right >= 11
+    })).toBe(true)
+    expect(samples['add-two-digit-no-carry'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return (
+        left >= 10 &&
+        left <= 99 &&
+        right >= 10 &&
+        right <= 99 &&
+        (left % 10) + (right % 10) <= 9 &&
+        Math.floor(left / 10) + Math.floor(right / 10) <= 9
+      )
+    })).toBe(true)
+    expect(samples['add-two-digit-carry'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 10 && left <= 99 && right >= 10 && right <= 99 && (left % 10) + (right % 10) >= 10
+    })).toBe(true)
+    expect(samples['add-three-digit'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 100 && left <= 999 && right >= 100 && right <= 999
+    })).toBe(true)
+  })
+
   it('keeps generated choices unique and includes close mistakes', () => {
     const choices = generateChoices(56, 7, 8, () => 0.2)
     expect(new Set(choices).size).toBe(4)
     expect(choices).toContain(56)
     expect(choices.some((choice) => [49, 54, 63, 64].includes(choice))).toBe(true)
+  })
+
+  it('generates addition choices with common mistakes and unique answers', () => {
+    const choices = generateAdditionChoices(85, 27, 58, createSeededRandom(27))
+    expect(new Set(choices).size).toBe(4)
+    expect(choices).toContain(85)
+    expect(choices).toContain(75)
+    expect(choices.some((choice) => [95, 84, 86, 58].includes(choice))).toBe(true)
+
+    const question = generateAdditionFactQuestion('add-two-digit-carry', 27, 58, createSeededRandom(58))
+    expect(question.id).toBe(makeAdditionFactId('add-two-digit-carry', 27, 58))
+    expect(question.choices).toContain(85)
   })
 
   it('generates missing-factor questions with consistent answers', () => {
@@ -1011,6 +1099,112 @@ describe('mastery, review, missions, and storage', () => {
     expect(beginner.summary.earnedExp).toBe(30)
   })
 
+  it('records addition progress and grants coins and exp through the existing result flow', () => {
+    const save = createSaveWithPlayer()
+    const question = generateAdditionFactQuestion('add-within-10', 4, 5, createSeededRandom(405))
+    const summary: GameSessionSummary = {
+      id: 'addition-learn',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 12,
+      earnedExp: 24,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: question.id,
+          prompt: question.prompt,
+          expectedAnswer: 9,
+          givenAnswer: 9,
+          difficulty: question.difficulty,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const applied = applySessionResult(save, summary)
+    const progress = applied.save.progress.facts[question.id]
+    expect(applied.save.player?.coins).toBe(12)
+    expect(applied.save.player?.exp).toBe(24)
+    expect(progress).toMatchObject({
+      id: question.id,
+      operation: 'addition',
+      areaId: 'add-within-10',
+      left: 4,
+      right: 5,
+      correctCount: 1,
+    })
+    expect(applied.save.progress.facts['4x5']).toBeUndefined()
+    expect(applied.save.progress.categoryCorrect['addition:add-within-10']).toBe(1)
+    expect(countCorrectForStages(applied.save, [4])).toBe(0)
+  })
+
+  it('applies school reward tapering to mastered addition facts', () => {
+    const save = createSaveWithPlayer()
+    const addFactId = makeAdditionFactId('add-within-10', 4, 5)
+    const masteredAddition = {
+      ...createFactProgress(4, 5, {
+        id: addFactId,
+        operation: 'addition',
+        areaId: 'add-within-10',
+      }),
+      correctCount: 7,
+      consecutiveCorrect: 4,
+      averageResponseTimeMs: 1800,
+      masteryLevel: 5 as const,
+    }
+    const summary: GameSessionSummary = {
+      id: 'addition-tapered',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 10,
+      earnedExp: 30,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: addFactId,
+          prompt: '4 + 5',
+          expectedAnswer: 9,
+          givenAnswer: 9,
+          difficulty: 1,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const tapered = applySessionResult(
+      {
+        ...save,
+        progress: {
+          ...save.progress,
+          facts: {
+            [addFactId]: masteredAddition,
+          },
+        },
+      },
+      summary,
+    )
+    expect(tapered.summary.earnedCoins).toBe(2)
+    expect(tapered.summary.earnedExp).toBe(6)
+    expect(tapered.summary.details?.schoolRewardScalePercent).toBe(20)
+    expect(tapered.save.progress.monsterBook).not.toContain(addFactId)
+  })
+
   it('keeps full practice rewards when school mode 2 is off', () => {
     const mastered = {
       ...createFactProgress(2, 2),
@@ -1095,6 +1289,69 @@ describe('mastery, review, missions, and storage', () => {
       rng: () => 0,
     })
     expect(easier.difficulty).toBeLessThanOrEqual(2)
+  })
+
+  it('keeps addition weak facts distinct from multiplication facts and adapts within addition areas', () => {
+    const save = createSaveWithPlayer()
+    const addFactId = makeAdditionFactId('add-carry-basic', 8, 7)
+    const summary: GameSessionSummary = {
+      id: 'addition-weak',
+      mode: 'learn',
+      totalQuestions: 2,
+      correctCount: 0,
+      accuracy: 0,
+      averageResponseTimeMs: 2500,
+      maxCombo: 0,
+      score: 0,
+      earnedCoins: 0,
+      earnedExp: 4,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: addFactId,
+          prompt: '8 + 7',
+          expectedAnswer: 15,
+          givenAnswer: 14,
+          correct: false,
+          difficulty: 3,
+        }),
+        result({
+          questionId: '8x7',
+          prompt: '8 × 7',
+          expectedAnswer: 56,
+          givenAnswer: 54,
+          correct: false,
+          difficulty: 5,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const applied = applySessionResult(save, summary)
+    expect(applied.save.progress.facts[addFactId]).toMatchObject({
+      operation: 'addition',
+      areaId: 'add-carry-basic',
+      incorrectCount: 1,
+    })
+    expect(applied.save.progress.facts['8x7']).toMatchObject({
+      operation: 'multiplication',
+      incorrectCount: 1,
+    })
+    expect(getWeakFacts(applied.save.progress.facts, 5).map((fact) => fact.id)).toEqual(
+      expect.arrayContaining([addFactId, '8x7']),
+    )
+
+    const selected = selectAdaptiveAdditionFact({
+      facts: applied.save.progress.facts,
+      areaId: 'add-carry-basic',
+      recentIncorrectCount: 2,
+      rng: () => 0,
+    })
+    expect(selected.areaId).toBe('add-carry-basic')
+    expect(selected.difficulty).toBeLessThanOrEqual(2)
   })
 
   it('validates ship and character names and migrates legacy saves with defaults', () => {

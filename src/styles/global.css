@@ -1523,6 +1523,97 @@ legend {
   margin-top: 20px;
 }
 
+.star-map {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading-row h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.5rem, 4vw, 2.3rem);
+}
+
+.planet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.planet-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-height: 128px;
+  gap: 12px;
+  padding: 16px;
+  border: 2px solid color-mix(in srgb, var(--planet-primary), white 18%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--planet-surface), #061525 18%), rgba(8, 30, 49, 0.9));
+  box-shadow: var(--shadow);
+  color: var(--planet-text);
+}
+
+.planet-card.live {
+  color: var(--planet-text);
+}
+
+.planet-card.planned {
+  opacity: 0.64;
+  box-shadow: none;
+}
+
+.planet-orb {
+  display: grid;
+  width: 68px;
+  height: 68px;
+  place-items: center;
+  border: 3px solid color-mix(in srgb, var(--planet-accent), white 24%);
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 28%, #ffffff 0 9%, var(--planet-accent) 10% 28%, var(--planet-primary) 29% 100%);
+  color: #071525;
+  font-size: 2.3rem;
+  font-weight: 950;
+  box-shadow: inset -10px -12px 0 rgba(0, 0, 0, 0.14), 0 0 18px color-mix(in srgb, var(--planet-accent), transparent 36%);
+}
+
+.planet-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.planet-copy strong {
+  color: var(--planet-text);
+  font-size: clamp(1.15rem, 3vw, 1.45rem);
+  line-height: 1.15;
+}
+
+.planet-copy small,
+.planet-status {
+  color: color-mix(in srgb, var(--planet-text), #071525 24%);
+  font-weight: 900;
+}
+
+.planet-status {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 2px solid color-mix(in srgb, var(--planet-primary), white 20%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.54);
+}
+
 .mode-card {
   display: grid;
   min-height: 142px;
@@ -5222,6 +5313,24 @@ legend {
 
 .mode-ready-shell .stage-chip small {
   display: none;
+}
+
+.mode-ready-shell .addition-area-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mode-ready-shell .addition-area-chip {
+  min-height: 58px;
+}
+
+.mode-ready-shell .addition-area-chip strong {
+  font-size: clamp(0.68rem, 2.4vw, 0.9rem);
+  line-height: 1.08;
+}
+
+.mode-ready-shell .addition-area-chip span {
+  display: block;
+  line-height: 1.05;
 }
 
 .mode-ready-shell .learn-start-segmented,

@@ -1,4 +1,5 @@
-import type { MultiplicationFactProgress } from '../../types/game'
+import type { ArithmeticOperation, MultiplicationFactProgress } from '../../types/game'
+import { factOperationOf, parseFactId } from '../questions/factIds'
 
 export type MonsterOvercomeProgress = {
   remainingCorrect: number
@@ -7,6 +8,11 @@ export type MonsterOvercomeProgress = {
 }
 
 export const weakFactHintText = 'べつの日に また せいかいすると きえるよ'
+
+export type FactReviewFilter = {
+  operation?: ArithmeticOperation
+  areaId?: string
+}
 
 function attemptsOf(fact: MultiplicationFactProgress): number {
   return fact.correctCount + fact.incorrectCount
@@ -91,9 +97,10 @@ export function getMonsterOvercomeProgress(
 export function getWeakFacts(
   facts: Record<string, MultiplicationFactProgress>,
   limit = 5,
+  filter: FactReviewFilter = {},
 ): MultiplicationFactProgress[] {
   return Object.values(facts)
-    .filter((fact) => attemptsOf(fact) > 0)
+    .filter((fact) => attemptsOf(fact) > 0 && matchesFactFilter(fact, filter))
     .sort((left, right) => {
       const leftAccuracy = accuracyOf(left)
       const rightAccuracy = accuracyOf(right)
@@ -115,10 +122,16 @@ export function getDueReviewFacts(
   facts: Record<string, MultiplicationFactProgress>,
   now = new Date(),
   limit = 8,
+  filter: FactReviewFilter = {},
 ): MultiplicationFactProgress[] {
   const time = now.getTime()
   return Object.values(facts)
-    .filter((fact) => fact.nextReviewAt && new Date(fact.nextReviewAt).getTime() <= time)
+    .filter(
+      (fact) =>
+        fact.nextReviewAt &&
+        new Date(fact.nextReviewAt).getTime() <= time &&
+        matchesFactFilter(fact, filter),
+    )
     .sort((left, right) => {
       const leftTime = new Date(left.nextReviewAt ?? 0).getTime()
       const rightTime = new Date(right.nextReviewAt ?? 0).getTime()
@@ -128,7 +141,7 @@ export function getDueReviewFacts(
 }
 
 export function isMonsterFact(fact: MultiplicationFactProgress): boolean {
-  return fact.incorrectCount > 0 && !isMonsterOvercome(fact)
+  return factOperationOf(fact) === 'multiplication' && fact.incorrectCount > 0 && !isMonsterOvercome(fact)
 }
 
 export function getMonsterFacts(
@@ -151,16 +164,33 @@ export function getReviewQueue(
   facts: Record<string, MultiplicationFactProgress>,
   now = new Date(),
   limit = 8,
+  filter: FactReviewFilter = {},
 ): MultiplicationFactProgress[] {
   const seen = new Set<string>()
-  const queue = [...getWeakFacts(facts, limit), ...getDueReviewFacts(facts, now, limit)].filter(
-    (fact) => {
+  const queue = [
+    ...getWeakFacts(facts, limit, filter),
+    ...getDueReviewFacts(facts, now, limit, filter),
+  ].filter((fact) => {
       if (seen.has(fact.id)) {
         return false
       }
       seen.add(fact.id)
       return true
-    },
-  )
+    })
   return queue.slice(0, limit)
+}
+
+function matchesFactFilter(
+  fact: MultiplicationFactProgress,
+  filter: FactReviewFilter,
+): boolean {
+  const parsed = parseFactId(fact.id)
+  const operation = fact.operation ?? parsed?.operation
+  if (filter.operation && operation !== filter.operation) {
+    return false
+  }
+  if (filter.areaId && parsed?.areaId !== filter.areaId && fact.areaId !== filter.areaId) {
+    return false
+  }
+  return true
 }

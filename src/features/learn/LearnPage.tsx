@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { AnswerControls } from '../../components/game/AnswerControls'
@@ -7,14 +7,23 @@ import { GameFeedback } from '../../components/game/GameFeedback'
 import { KukuReadingRuby } from '../../components/game/KukuReadingRuby'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { QuestionVisual } from '../../components/game/QuestionVisual'
+import {
+  additionAreas,
+  getAdditionAreaById,
+  isAdditionAreaId,
+  type AdditionAreaId,
+} from '../../data/planets'
 import { getKukuReading } from '../../data/kukuReadings'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import {
+  generateAdditionQuestion,
+  generateAdaptiveAdditionQuestion,
   generateAdvancedQuestion,
   generateMultiplicationFactQuestion,
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
+import { resultIncorrectStreak } from '../../game-engine/school/schoolMode2'
 import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound, speakJapanese } from '../../services/audioService'
@@ -26,12 +35,13 @@ const stages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const goalQuestions = 9
 
 type LearnPhase = 'ready' | 'running'
-type LearnKind = 'kuku' | 'square' | 'pi'
+type LearnKind = 'kuku' | 'addition' | 'square' | 'pi'
 type LearnOrder = 'random' | 'ascending' | 'descending'
 type VisualMode = 'groups' | 'line' | 'addition' | 'reading'
 
 const learnKindLabels: Record<LearnKind, string> = {
   kuku: '九九',
+  addition: 'たしざん',
   square: '平方数',
   pi: '円周率',
 }
@@ -69,11 +79,32 @@ function createKukuQuestion(stage: number, answerMode: AnswerMode, right: number
 }
 
 function createLearnQuestion(
-  kind: LearnKind,
-  stage: number,
-  answerMode: AnswerMode,
-  right: number,
+  {
+    kind,
+    stage,
+    answerMode,
+    right,
+    additionAreaId,
+    facts,
+    schoolMode2Enabled,
+    recentIncorrectCount,
+  }: {
+    kind: LearnKind
+    stage: number
+    answerMode: AnswerMode
+    right: number
+    additionAreaId: AdditionAreaId
+    facts: Parameters<typeof generateAdaptiveAdditionQuestion>[0]
+    schoolMode2Enabled: boolean
+    recentIncorrectCount: number
+  },
 ): Question {
+  if (kind === 'addition') {
+    return generateAdaptiveAdditionQuestion(facts, additionAreaId, {
+      schoolMode2Enabled,
+      recentIncorrectCount,
+    })
+  }
   if (kind === 'square') {
     return generateAdvancedQuestion('square')
   }
@@ -85,10 +116,17 @@ function createLearnQuestion(
 
 export function LearnPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
+  const initialLearnKind: LearnKind = searchParams.get('planet') === 'add' ? 'addition' : 'kuku'
+  const requestedAreaId = searchParams.get('area')
+  const initialAdditionAreaId: AdditionAreaId = isAdditionAreaId(requestedAreaId)
+    ? requestedAreaId
+    : 'add-within-10'
   const [phase, setPhase] = useState<LearnPhase>('ready')
-  const [learnKind, setLearnKind] = useState<LearnKind>('kuku')
+  const [learnKind, setLearnKind] = useState<LearnKind>(initialLearnKind)
+  const [additionAreaId, setAdditionAreaId] = useState<AdditionAreaId>(initialAdditionAreaId)
   const [stage, setStage] = useState(2)
   const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
   const [learnOrder, setLearnOrder] = useState<LearnOrder>('random')
@@ -96,7 +134,11 @@ export function LearnPage() {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [visualMode, setVisualMode] = useState<VisualMode>('groups')
   const [showReading, setShowReading] = useState(true)
-  const [question, setQuestion] = useState(() => createKukuQuestion(2, 'choice', 1))
+  const [question, setQuestion] = useState(() =>
+    initialLearnKind === 'addition'
+      ? generateAdditionQuestion(initialAdditionAreaId)
+      : createKukuQuestion(2, 'choice', 1),
+  )
   const [inputValue, setInputValue] = useState('')
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
@@ -123,10 +165,25 @@ export function LearnPage() {
     }
   }
 
-  function resetQuestion(nextIndex = questionIndex) {
+  const selectedAdditionArea = getAdditionAreaById(additionAreaId)
+
+  function createCurrentQuestion(nextIndex: number, completedResults: AnswerResult[]): Question {
+    const activeAnswerMode = learnKind === 'pi' || learnKind === 'addition' ? 'choice' : answerMode
+    return createLearnQuestion({
+      kind: learnKind,
+      stage,
+      answerMode: activeAnswerMode,
+      right: questionOrder[nextIndex] ?? 1,
+      additionAreaId,
+      facts: saveData.progress.facts,
+      schoolMode2Enabled: saveData.settings.schoolMode2Enabled,
+      recentIncorrectCount: resultIncorrectStreak(completedResults),
+    })
+  }
+
+  function resetQuestion(nextIndex = questionIndex, completedResults = results) {
     clearAutoAdvanceTimeout()
-    const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
-    setQuestion(createLearnQuestion(learnKind, stage, activeAnswerMode, questionOrder[nextIndex] ?? 1))
+    setQuestion(createCurrentQuestion(nextIndex, completedResults))
     setQuestionIndex(nextIndex)
     setInputValue('')
     setFeedback('idle')
@@ -135,11 +192,21 @@ export function LearnPage() {
 
   function startLearn() {
     const nextOrder = createLearnOrder(learnOrder)
-    const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
     clearAutoAdvanceTimeout()
     setQuestionOrder(nextOrder)
     setQuestionIndex(0)
-    setQuestion(createLearnQuestion(learnKind, stage, activeAnswerMode, nextOrder[0] ?? 1))
+    setQuestion(
+      createLearnQuestion({
+        kind: learnKind,
+        stage,
+        answerMode: learnKind === 'pi' || learnKind === 'addition' ? 'choice' : answerMode,
+        right: nextOrder[0] ?? 1,
+        additionAreaId,
+        facts: saveData.progress.facts,
+        schoolMode2Enabled: saveData.settings.schoolMode2Enabled,
+        recentIncorrectCount: 0,
+      }),
+    )
     setInputValue('')
     setFeedback('idle')
     setResults([])
@@ -156,12 +223,12 @@ export function LearnPage() {
     }
   }
 
-  function advanceQuestion() {
+  function advanceQuestion(completedResults = results) {
     const nextIndex = questionIndex + 1
     if (nextIndex >= goalQuestions) {
       return
     }
-    resetQuestion(nextIndex)
+    resetQuestion(nextIndex, completedResults)
   }
 
   function handleAnswer(answer: number | string) {
@@ -181,7 +248,8 @@ export function LearnPage() {
       responseTimeMs,
       answeredAt,
     }
-    setResults((current) => [...current, result])
+    const nextResults = [...results, result]
+    setResults(nextResults)
     setScoreState((current) => applyAnswerToScore(current, correct, responseTimeMs))
     setFeedback(correct ? 'correct' : 'incorrect')
     if (correct) {
@@ -191,10 +259,10 @@ export function LearnPage() {
         const right = Number(question.metadata?.right ?? 1)
         speakJapanese(getKukuReading(left, right), saveData.settings.speechEnabled)
       }
-      if (results.length + 1 < goalQuestions) {
+      if (nextResults.length < goalQuestions) {
         clearAutoAdvanceTimeout()
         autoAdvanceTimeoutRef.current = window.setTimeout(() => {
-          advanceQuestion()
+          advanceQuestion(nextResults)
         }, 700)
       }
     }
@@ -214,7 +282,7 @@ export function LearnPage() {
   const left = Number(question.metadata?.left ?? 2)
   const right = Number(question.metadata?.right ?? 1)
   const revealReading = learnKind === 'kuku' && (feedback === 'correct' || visualMode === 'reading')
-  const activeAnswerMode = learnKind === 'pi' ? 'choice' : answerMode
+  const activeAnswerMode = learnKind === 'pi' || learnKind === 'addition' ? 'choice' : answerMode
 
   function finish() {
     const rawSummary = buildSessionSummary({
@@ -223,6 +291,12 @@ export function LearnPage() {
       maxCombo: scoreState.maxCombo,
       score: scoreState.score,
       results,
+      details: {
+        learnKind,
+        planet: learnKind === 'addition' ? 'add' : 'multiply',
+        areaId: learnKind === 'addition' ? additionAreaId : null,
+        areaName: learnKind === 'addition' ? selectedAdditionArea.name : null,
+      },
       finishedAt: new Date().toISOString(),
     })
     const applied = applySessionResult(saveData, rawSummary, {
@@ -240,7 +314,13 @@ export function LearnPage() {
     >
       {phase === 'ready' ? (
         <ModeStartScreen
-          title={learnKind === 'kuku' ? `${stage}のだん れんしゅう` : `${learnKindLabels[learnKind]} れんしゅう`}
+          title={
+            learnKind === 'kuku'
+              ? `${stage}のだん れんしゅう`
+              : learnKind === 'addition'
+                ? `${selectedAdditionArea.name} れんしゅう`
+                : `${learnKindLabels[learnKind]} れんしゅう`
+          }
           eyebrow="9もんぜんぶチャレンジ"
           description="けいさんとこたえかたをえらんで、スタートしよう！"
           level={saveData.player?.level ?? 1}
@@ -250,7 +330,7 @@ export function LearnPage() {
           <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
             <strong>けいさん</strong>
             <div className="segmented learn-start-segmented">
-              {(['kuku', 'square', 'pi'] as const).map((kind) => (
+              {(['kuku', 'addition', 'square', 'pi'] as const).map((kind) => (
                 <button
                   className={learnKind === kind ? 'selected' : ''}
                   key={kind}
@@ -281,6 +361,29 @@ export function LearnPage() {
                   >
                     <strong>{value}のだん</strong>
                     <span>9もん</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {learnKind === 'addition' ? (
+            <div className="stage-select-panel addition-area-panel" aria-label="れんしゅうするエリア">
+              <div className="start-option-header">
+                <strong>れんしゅうするエリア</strong>
+                <span>{selectedAdditionArea.shortName}</span>
+              </div>
+              <div className="stage-chip-grid addition-area-grid">
+                {additionAreas.map((area) => (
+                  <button
+                    className={additionAreaId === area.id ? 'stage-chip selected addition-area-chip' : 'stage-chip addition-area-chip'}
+                    key={area.id}
+                    type="button"
+                    onClick={() => setAdditionAreaId(area.id)}
+                    aria-pressed={additionAreaId === area.id}
+                  >
+                    <strong>{area.name}</strong>
+                    <span>{area.description}</span>
                   </button>
                 ))}
               </div>
@@ -322,7 +425,8 @@ export function LearnPage() {
                 type="button"
                 onClick={() => setAnswerMode('input')}
                 aria-pressed={activeAnswerMode === 'input'}
-                disabled={learnKind === 'pi'}
+                disabled={learnKind === 'pi' || learnKind === 'addition'}
+                aria-disabled={learnKind === 'pi' || learnKind === 'addition'}
               >
                 入力
               </button>
@@ -333,8 +437,20 @@ export function LearnPage() {
         <>
           <section className="learn-console learn-run-console" aria-label="練習設定">
             <div className="learn-run-status">
-              <span>{learnKind === 'kuku' ? `${stage}のだん` : learnKindLabels[learnKind]}</span>
-              <strong>{learnKind === 'kuku' ? learnOrderLabels[learnOrder] : '9もんチャレンジ'}</strong>
+              <span>
+                {learnKind === 'kuku'
+                  ? `${stage}のだん`
+                  : learnKind === 'addition'
+                    ? 'たしざんのほし'
+                    : learnKindLabels[learnKind]}
+              </span>
+              <strong>
+                {learnKind === 'kuku'
+                  ? learnOrderLabels[learnOrder]
+                  : learnKind === 'addition'
+                    ? selectedAdditionArea.name
+                    : '9もんチャレンジ'}
+              </strong>
               <small>9もんぜんぶ</small>
             </div>
 
@@ -416,7 +532,7 @@ export function LearnPage() {
             />
             <div className="game-actions">
               {feedback === 'incorrect' && results.length < goalQuestions ? (
-                <button className="primary-action" type="button" onClick={advanceQuestion}>
+                <button className="primary-action" type="button" onClick={() => advanceQuestion(results)}>
                   つぎへ
                 </button>
               ) : null}

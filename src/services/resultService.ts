@@ -4,6 +4,10 @@ import {
 } from '../game-engine/mastery/mastery'
 import { newlyOwnedAdvancedMonsters } from '../data/advancedMonsters'
 import { addCollectionRecords } from '../game-engine/collection/collectionRecords'
+import {
+  factFromResult,
+  isMultiplicationFactProgress,
+} from '../game-engine/questions/factIds'
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
 import { grantFinalTitleIfEarned } from '../game-engine/rewards/finalTitle'
 import { judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
@@ -13,15 +17,11 @@ import { applySchoolRewardTaperingToSummary } from '../game-engine/school/school
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
 
-function extractFact(result: AnswerResult): { left: number; right: number } | null {
-  const match = result.questionId.match(/^(\d+)x(\d+)$/)
-  if (!match) {
-    return null
-  }
-  return { left: Number(match[1]), right: Number(match[2]) }
-}
-
 function extractCategoryKey(result: AnswerResult): string | null {
+  const fact = factFromResult(result)
+  if (fact?.operation === 'addition' && fact.areaId) {
+    return `addition:${fact.areaId}`
+  }
   if (result.questionId.startsWith('square-')) {
     return 'multiplication-square'
   }
@@ -58,13 +58,24 @@ export function applySessionResult(
   )
   const facts = { ...save.progress.facts }
   const previousMasteredIds = new Set(getMasteredFacts(save.progress.facts).map((fact) => fact.id))
+  const previousMasteredMultiplicationIds = new Set(
+    getMasteredFacts(save.progress.facts)
+      .filter(isMultiplicationFactProgress)
+      .map((fact) => fact.id),
+  )
 
   for (const result of effectiveSummary.results) {
-    const fact = extractFact(result)
+    const fact = factFromResult(result)
     if (!fact) {
       continue
     }
-    const current = facts[result.questionId] ?? createFactProgress(fact.left, fact.right)
+    const current =
+      facts[result.questionId] ??
+      createFactProgress(fact.left, fact.right, {
+        id: fact.id,
+        operation: fact.operation,
+        areaId: fact.areaId,
+      })
     facts[result.questionId] = updateFactProgress(current, result)
   }
   const categoryCorrect = { ...save.progress.categoryCorrect }
@@ -98,16 +109,21 @@ export function applySessionResult(
   const monsterBook = Array.from(
     new Set([
       ...save.progress.monsterBook,
-      ...getMasteredFacts(facts).map((fact) => fact.id),
+      ...getMasteredFacts(facts)
+        .filter(isMultiplicationFactProgress)
+        .map((fact) => fact.id),
     ]),
   )
   const newlyMasteredFacts = getMasteredFacts(facts).filter(
     (fact) => !previousMasteredIds.has(fact.id),
   )
+  const newlyMasteredMultiplicationFacts = getMasteredFacts(facts).filter(
+    (fact) => isMultiplicationFactProgress(fact) && !previousMasteredMultiplicationIds.has(fact.id),
+  )
   const collectionRecords = addCollectionRecords(
     save.progress.collectionRecords,
     [
-      ...newlyMasteredFacts.map((fact) => ({
+      ...newlyMasteredMultiplicationFacts.map((fact) => ({
         kind: 'monster',
         id: fact.id,
         acquiredAt: effectiveSummary.finishedAt,

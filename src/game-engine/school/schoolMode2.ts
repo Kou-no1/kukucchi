@@ -1,6 +1,16 @@
 import type { AnswerResult, GameMode, GameSessionSummary, MultiplicationFactProgress } from '../../types/game'
+import type { AdditionAreaId } from '../../data/planets'
+import type { AdditionFactPair } from '../questions/addition'
+import { createAdditionFactPool } from '../questions/addition'
 import type { MultiplicationFactPair } from '../questions/factDifficulty'
 import { createMultiplicationFactPool } from '../questions/factDifficulty'
+import {
+  factFromResult,
+  factIdFromResult,
+  makeAdditionFactId,
+  makeMultiplicationFactId,
+  parseFactId,
+} from '../questions/factIds'
 import type { RandomSource } from '../questions/questionGenerator'
 import { isMonsterOvercome } from '../review/weakFacts'
 
@@ -15,22 +25,6 @@ export const schoolRewardScales: Record<SchoolMasteryBand, number> = {
 }
 
 const rewardTaperModes = new Set<GameMode>(['learn', 'review'])
-
-function multiplicationFactId(left: number, right: number): string {
-  return `${left}x${right}`
-}
-
-function factIdFromResult(result: AnswerResult): string | null {
-  return /^\d+x\d+$/.test(result.questionId) ? result.questionId : null
-}
-
-function factFromResult(result: AnswerResult): { left: number; right: number } | null {
-  const match = result.questionId.match(/^(\d+)x(\d+)$/)
-  if (!match) {
-    return null
-  }
-  return { left: Number(match[1]), right: Number(match[2]) }
-}
 
 function attemptsOf(fact: MultiplicationFactProgress): number {
   return fact.correctCount + fact.incorrectCount
@@ -127,7 +121,7 @@ function recentIncorrectStreakOf(fact: MultiplicationFactProgress | undefined): 
 }
 
 function adaptiveWeight(
-  pair: MultiplicationFactPair,
+  pair: MultiplicationFactPair | AdditionFactPair,
   fact: MultiplicationFactProgress | undefined,
   recentIncorrectCount: number,
 ): number {
@@ -165,7 +159,57 @@ export function selectAdaptiveMultiplicationFact({
   const pool = createMultiplicationFactPool({ stages, minDifficulty })
   const weighted = pool.map((pair) => ({
     pair,
-    weight: adaptiveWeight(pair, facts[multiplicationFactId(pair.left, pair.right)], recentIncorrectCount),
+    weight: adaptiveWeight(
+      pair,
+      facts[makeMultiplicationFactId(pair.left, pair.right)],
+      recentIncorrectCount,
+    ),
+  }))
+  const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
+  if (totalWeight <= 0) {
+    return pool[0]
+  }
+  let cursor = rng() * totalWeight
+  for (const item of weighted) {
+    cursor -= item.weight
+    if (cursor <= 0) {
+      return item.pair
+    }
+  }
+  return weighted.at(-1)?.pair ?? pool[0]
+}
+
+export function selectAdaptiveAdditionFact({
+  facts,
+  areaId,
+  rng = Math.random,
+  recentIncorrectCount = 0,
+}: {
+  facts: Record<string, MultiplicationFactProgress>
+  areaId: AdditionAreaId
+  rng?: RandomSource
+  recentIncorrectCount?: number
+}): AdditionFactPair {
+  const poolById = new Map<string, AdditionFactPair>()
+  for (const pair of createAdditionFactPool({ areaId })) {
+    poolById.set(makeAdditionFactId(areaId, pair.left, pair.right), pair)
+  }
+  for (const fact of Object.values(facts)) {
+    const parsed = parseFactId(fact.id)
+    if (parsed?.operation === 'addition' && parsed.areaId === areaId) {
+      poolById.set(parsed.id, {
+        areaId,
+        left: parsed.left,
+        right: parsed.right,
+        difficulty: Math.max(1, Math.min(5, Math.round(fact.masteryLevel || 1))),
+      })
+    }
+  }
+
+  const pool = [...poolById.values()]
+  const weighted = pool.map((pair) => ({
+    pair,
+    weight: adaptiveWeight(pair, facts[makeAdditionFactId(areaId, pair.left, pair.right)], recentIncorrectCount),
   }))
   const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
   if (totalWeight <= 0) {
