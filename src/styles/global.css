@@ -5010,6 +5010,7 @@ legend {
 }
 
 .mode-ready-shell {
+  isolation: isolate;
   height: 100vh;
   height: 100dvh;
   min-height: 100vh;
@@ -5019,6 +5020,21 @@ legend {
   flex-direction: column;
   gap: 8px;
   padding: 8px clamp(8px, 2.4vw, 18px) calc(8px + env(safe-area-inset-bottom));
+  background:
+    radial-gradient(circle at 14% 20%, rgba(139, 101, 255, 0.24), transparent 30rem),
+    radial-gradient(circle at 82% 82%, rgba(32, 180, 190, 0.22), transparent 28rem),
+    linear-gradient(135deg, #0b1024 0%, #081725 46%, #10263a 100%);
+}
+
+.mode-ready-shell::after {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(circle at 14% 20%, rgba(139, 101, 255, 0.24), transparent 30rem),
+    radial-gradient(circle at 82% 82%, rgba(32, 180, 190, 0.22), transparent 28rem),
+    linear-gradient(135deg, #0b1024 0%, #081725 46%, #10263a 100%);
+  content: '';
 }
 
 .mode-ready-shell .top-bar {
@@ -5045,12 +5061,15 @@ legend {
 
 .mode-ready-shell .mode-start-screen {
   height: 100%;
-  grid-template-columns: minmax(72px, 0.18fr) minmax(0, 1fr);
-  grid-template-rows: minmax(76px, auto) minmax(0, 1fr) auto;
+  grid-template-columns: minmax(108px, 0.24fr) minmax(0, 1fr);
+  grid-template-rows: minmax(112px, auto) minmax(0, 1fr) auto;
   gap: clamp(6px, 1.1dvh, 10px) 12px;
   align-content: start;
   padding: clamp(8px, 1.8dvh, 12px);
   overflow: hidden;
+  background:
+    linear-gradient(145deg, rgba(8, 34, 68, 0.98), rgba(3, 16, 39, 0.99)),
+    radial-gradient(circle at 15% 0%, rgba(91, 233, 244, 0.24), transparent 12rem);
 }
 
 .mode-ready-shell .mode-start-screen > .kukucchi {
@@ -5059,50 +5078,66 @@ legend {
 }
 
 .mode-ready-shell .mode-start-screen .kukucchi {
-  width: 82px;
-  max-width: 82px;
-  max-height: 76px;
+  width: 118px;
+  max-width: 118px;
+  min-height: 112px;
+  overflow: visible;
 }
 
 .mode-ready-shell .mode-start-screen .ufo-ring {
-  width: 82px;
-  border-width: 5px;
+  width: 112px;
+  border-width: 6px;
 }
 
 .mode-ready-shell .mode-start-screen .ufo-cockpit {
-  width: 48px;
-  height: 35px;
+  width: 62px;
+  height: 46px;
   border-width: 3px;
 }
 
 .mode-ready-shell .mode-start-screen .kukucchi-body {
-  width: 31px;
+  width: 40px;
 }
 
 .mode-ready-shell .mode-start-screen .antenna {
-  top: -18px;
-  height: 20px;
+  top: -17px;
+  width: 3px;
+  height: 22px;
+}
+
+.mode-ready-shell .mode-start-screen .antenna::before {
+  top: -6px;
+  width: 12px;
+  height: 12px;
+}
+
+.mode-ready-shell .mode-start-screen .antenna-left {
+  left: 22%;
+}
+
+.mode-ready-shell .mode-start-screen .antenna-right {
+  right: 22%;
 }
 
 .mode-ready-shell .mode-start-screen .eye {
-  top: 9px;
-  width: 9px;
-  height: 9px;
+  top: 34%;
+  width: 24%;
   border-width: 2px;
 }
 
 .mode-ready-shell .mode-start-screen .left-eye {
-  left: 7px;
+  left: 22%;
 }
 
 .mode-ready-shell .mode-start-screen .right-eye {
-  right: 7px;
+  right: 22%;
 }
 
 .mode-ready-shell .mode-start-screen .mouth {
-  bottom: 7px;
-  width: 14px;
-  height: 7px;
+  bottom: 24%;
+  width: 22%;
+  height: 10%;
+  border-bottom-width: 2px;
 }
 
 .mode-ready-shell .mode-start-screen .belly,
@@ -5111,9 +5146,9 @@ legend {
 }
 
 .mode-ready-shell .mode-start-screen .ufo-ship {
-  top: 45px;
-  width: 70px;
-  height: 21px;
+  top: 60px;
+  width: 90px;
+  height: 27px;
   border-width: 3px;
 }
 
@@ -5204,7 +5239,10 @@ legend {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: stretch;
   gap: 6px;
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
+  overflow: hidden;
 }
 
 .mode-ready-shell .mode-start-actions .primary-action,
@@ -5214,8 +5252,11 @@ legend {
   justify-content: center;
   box-sizing: border-box;
   min-height: 44px;
+  min-width: 0;
+  max-width: 100%;
   padding: 7px 10px;
   width: 100%;
+  overflow: hidden;
   white-space: nowrap;
 }
 
@@ -5339,9 +5380,22 @@ legend {
 
 .mode-start-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  width: 100%;
+  max-width: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   align-items: center;
+  overflow: hidden;
+}
+
+.mode-start-actions .primary-action,
+.mode-start-actions .secondary-action {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .stage-select-panel,
@@ -5754,6 +5808,7 @@ legend {
   padding: 8px clamp(8px, 2.4vw, 18px) calc(8px + env(safe-area-inset-bottom));
 }
 
+.mode-ready-shell .site-footer,
 .game-shell .site-footer {
   flex: 0 0 auto;
   margin-top: 0;
@@ -5761,10 +5816,12 @@ legend {
   border-top-color: rgba(224, 224, 224, 0.22);
 }
 
+.mode-ready-shell .site-footer p:first-child,
 .game-shell .site-footer p:first-child {
   display: none;
 }
 
+.mode-ready-shell .site-footer p:last-child,
 .game-shell .site-footer p:last-child {
   color: rgba(232, 251, 255, 0.44);
   font-size: 9px;
@@ -6240,6 +6297,38 @@ legend {
   padding: clamp(5px, 1dvh, 8px);
 }
 
+.game-shell .mini-game-command-battle {
+  grid-template-columns: minmax(70px, 0.24fr) minmax(0, 1fr);
+  grid-template-areas:
+    "monster copy"
+    "meter meter";
+  max-height: clamp(116px, 21dvh, 156px);
+  align-items: center;
+  gap: clamp(4px, 0.8dvh, 8px) 10px;
+}
+
+.game-shell .mini-game-command-battle .mini-battle-monster {
+  grid-area: monster;
+  width: clamp(58px, 10dvh, 86px);
+  max-height: clamp(58px, 10dvh, 86px);
+  align-self: center;
+}
+
+.game-shell .mini-game-command-battle > div:not(.mini-game-meter) {
+  grid-area: copy;
+  min-width: 0;
+}
+
+.game-shell .mini-game-command-battle .mini-game-meter {
+  grid-area: meter;
+  display: grid;
+  grid-template-columns: auto minmax(0, auto) auto;
+  width: 100%;
+  min-height: clamp(38px, 6.2dvh, 54px);
+  max-height: clamp(38px, 6.2dvh, 54px);
+  padding: 4px 8px;
+}
+
 .game-shell .mini-game-command h2 {
   font-size: clamp(0.95rem, 3vw, 1.32rem);
   line-height: 1.08;
@@ -6320,6 +6409,10 @@ legend {
 @media (max-height: 700px) {
   .game-shell .mini-game-command {
     max-height: 78px;
+  }
+
+  .game-shell .mini-game-command-battle {
+    max-height: clamp(112px, 22dvh, 140px);
   }
 
   .game-shell .mini-game-command .kukucchi {
@@ -6723,6 +6816,10 @@ legend {
   .game-shell .mini-game-command,
   .game-shell .advanced-command {
     max-height: 104px;
+  }
+
+  .game-shell .mini-game-command-battle {
+    max-height: clamp(112px, 22dvh, 140px);
   }
 
   .game-shell .learn-console {

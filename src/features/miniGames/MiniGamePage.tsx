@@ -533,7 +533,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'ready') {
     return (
-      <AppShell title={config.title} backTo="/games">
+      <AppShell title={config.title} backTo="/games" className="mode-ready-shell mini-game-ready-shell">
         <ModeStartScreen
           title={config.title}
           eyebrow={config.eyebrow}
@@ -621,7 +621,10 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   return (
     <AppShell title={config.title} backTo="/games" className="game-shell">
-      <section className="mission-companion mini-game-command" aria-label={config.title}>
+      <section
+        className={`mission-companion mini-game-command mini-game-command-${variant}`}
+        aria-label={config.title}
+      >
         {variant === 'battle' ? (
           <MonsterSprite
             left={battleMonsterFact.left}
