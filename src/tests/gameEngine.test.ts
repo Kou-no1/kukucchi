@@ -23,7 +23,16 @@ import {
   expProgressToNextLevel,
   expRequiredForLevel,
 } from '../game-engine/rewards/rewards'
-import { getTitleDefinitions, judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
+import {
+  getTitleDefinitions,
+  getTitleEmblemDefinition,
+  judgeNewTitles,
+  titleRecordId,
+} from '../game-engine/rewards/titles'
+import {
+  canGrantFinalTitle,
+  grantFinalTitleIfEarned,
+} from '../game-engine/rewards/finalTitle'
 import {
   createFactProgress,
   updateFactProgress,
@@ -48,7 +57,7 @@ import {
   isAdvancedMonsterOwned,
   newlyOwnedAdvancedMonsters,
 } from '../data/advancedMonsters'
-import { bossDifficulties, bosses } from '../data/bosses'
+import { allGekimuzuTitle, bossDifficulties, bosses, bossLimitedItems } from '../data/bosses'
 import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
@@ -70,7 +79,7 @@ import {
 } from '../data/shopItems'
 import { normalizeCharacterNameInput, normalizeShipNameInput } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
-import { getUfoForBoss, specialUfoId } from '../data/ufos'
+import { getUfoForBoss, specialUfoId, ufoDefinitions } from '../data/ufos'
 import { containsBannedWord, validateShipName } from '../utils/bannedWords'
 import {
   applyBossClearReward,
@@ -108,7 +117,9 @@ import {
 import { chooseEffectPerformanceMode } from '../game-engine/effects/effectPerformance'
 import {
   addAllDebugKeys,
+  debugMenuPassword,
   fullOpenDebugSaveData,
+  isDebugPasswordValid,
   nextDebugTapState,
   setDebugLevel,
 } from '../game-engine/debug/debugTools'
@@ -1598,6 +1609,8 @@ describe('mastery, review, missions, and storage', () => {
     const opened = nextDebugTapState(tapCount)
     expect(opened.opened).toBe(true)
     expect(opened.count).toBe(0)
+    expect(isDebugPasswordValid('wrong-password')).toBe(false)
+    expect(isDebugPasswordValid(debugMenuPassword)).toBe(true)
 
     const save = createSaveWithPlayer()
     const fullOpen = fullOpenDebugSaveData(save, '2026-01-05T00:00:00.000Z')
@@ -1614,6 +1627,14 @@ describe('mastery, review, missions, and storage', () => {
         fullOpen.progress.ownedTreasureItems.some((record) => record.id === item.id),
       ),
     ).toBe(true)
+    expect(bossLimitedItems.every((item) => fullOpen.progress.bossItems.includes(item.id))).toBe(true)
+    expect(
+      advancedMonsterDefinitions.every((monster) =>
+        fullOpen.progress.collectionRecords.some(
+          (record) => record.id === collectionRecordId('advanced-monster', monster.id),
+        ) && isAdvancedMonsterOwned(fullOpen.progress.categoryCorrect, monster),
+      ),
+    ).toBe(true)
     expect(keyTypes.every((key) => (fullOpen.progress.treasureKeys[key.id]?.count ?? 0) >= 5)).toBe(
       true,
     )
@@ -1625,6 +1646,19 @@ describe('mastery, review, missions, and storage', () => {
 
     const withKeys = addAllDebugKeys(save, 5, '2026-01-05T00:00:00.000Z')
     expect(keyTypes.every((key) => withKeys.progress.treasureKeys[key.id]?.count === 5)).toBe(true)
+  })
+
+  it('builds distinct title emblems by rarity', () => {
+    const common = getTitleEmblemDefinition('はじめのいっぽ')
+    const bossNormal = getTitleEmblemDefinition(bosses[0].rewards.normal.title)
+    const bossFast = getTitleEmblemDefinition(bosses[0].rewards.fast.title)
+    const final = getTitleEmblemDefinition(allGekimuzuTitle)
+
+    expect(common.rarity).toBe('common')
+    expect(bossNormal.rarity).toBe('common')
+    expect(bossFast.rarity).toBe('epic')
+    expect(final.rarity).toBe('legendary')
+    expect(new Set([common.family, bossNormal.family, bossFast.family, final.family]).size).toBeGreaterThan(1)
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {
@@ -1971,7 +2005,8 @@ describe('mastery, review, missions, and storage', () => {
     expect(finalClear.grandReward).toBe(true)
     expect(finalClear.rewardUfoIds).toContain(specialUfoId)
     expect(finalClear.rewardEffectIds).toContain(galaxySwirlEffectId)
-    expect(finalClear.rewardTitles).toContain('すべてをしるもの')
+    expect(finalClear.rewardTitles).not.toContain(allGekimuzuTitle)
+    expect(finalClear.save.player?.titles).not.toContain(allGekimuzuTitle)
     expect(finalClear.save.progress.ownedUfos).toContain(specialUfoId)
     expect(finalClear.save.progress.ownedItems).toContain(galaxySwirlEffectId)
     expect(finalClear.save.progress.collectionRecords).toContainEqual(
@@ -1989,5 +2024,81 @@ describe('mastery, review, missions, and storage', () => {
     expect(repeat.grandReward).toBe(false)
     expect(repeat.rewardUfoIds).toEqual([])
     expect(repeat.rewardEffectIds).toEqual([])
+  })
+
+  it('grants the final title only after all completion conditions are met', () => {
+    const acquiredAt = '2026-01-05T00:00:00.000Z'
+    const monsterBook = createMultiplicationFactPool({ stages: [1, 2, 3, 4, 5, 6, 7, 8, 9] })
+      .map((fact) => `${fact.left}x${fact.right}`)
+    const bossProgress = Object.fromEntries(
+      bosses.map((boss) => [
+        boss.id,
+        {
+          bossId: boss.id,
+          difficulties: {
+            normal: { cleared: true, clearCount: 1, firstClearedAt: acquiredAt, bestTimeMs: 1000 },
+            hard: { cleared: true, clearCount: 1, firstClearedAt: acquiredAt, bestTimeMs: 1000 },
+            fast: { cleared: true, clearCount: 1, firstClearedAt: acquiredAt, bestTimeMs: 1000 },
+            gekimuzu: { cleared: true, clearCount: 1, firstClearedAt: acquiredAt, bestTimeMs: 1000 },
+          },
+        },
+      ]),
+    )
+    const otherTitles = getTitleDefinitions()
+      .map((title) => title.label)
+      .filter((title) => title !== allGekimuzuTitle)
+    const save: SaveData = {
+      ...createSaveWithPlayer(),
+      player: {
+        ...createSaveWithPlayer().player!,
+        titles: otherTitles,
+      },
+      progress: {
+        ...createSaveWithPlayer().progress,
+        monsterBook,
+        categoryCorrect: {
+          'multiplication-square': 40,
+          'pi-multiplication': 40,
+          development: 40,
+        },
+        bossProgress,
+        ownedItems: shopItems
+          .filter((item) => ['window', 'hat', 'wear', 'effect'].includes(item.visual.layer))
+          .map((item) => item.id),
+        ownedUfos: ufoDefinitions.map((ufo) => ufo.id),
+        collectionRecords: [
+          ...buddyDefinitions.map((buddy) => ({
+            id: collectionRecordId('buddy', buddy.id),
+            acquiredAt,
+            method: 'test',
+          })),
+          ...advancedMonsterDefinitions.map((monster) => ({
+            id: collectionRecordId('advanced-monster', monster.id),
+            acquiredAt,
+            method: 'test',
+          })),
+        ],
+      },
+    }
+
+    expect(canGrantFinalTitle(save)).toBe(true)
+    const granted = grantFinalTitleIfEarned(save, acquiredAt)
+    expect(granted.granted).toBe(true)
+    expect(granted.save.player?.titles).toContain(allGekimuzuTitle)
+    expect(granted.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({
+        id: collectionRecordId('title', allGekimuzuTitle),
+      }),
+    )
+    expect(grantFinalTitleIfEarned(granted.save, acquiredAt).granted).toBe(false)
+
+    const missingItem: SaveData = {
+      ...save,
+      progress: {
+        ...save.progress,
+        ownedItems: [],
+      },
+    }
+    expect(canGrantFinalTitle(missingItem)).toBe(false)
   })
 })

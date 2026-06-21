@@ -10,6 +10,7 @@ import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import {
   advancedBossCategoryLabels,
+  allGekimuzuTitle,
   bossDifficultyIds,
   bosses,
   getBossDifficulty,
@@ -360,8 +361,15 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
       battleResult.rewardItemIds.length > 0 ||
       battleResult.rewardUfoIds.length > 0 ||
       battleResult.rewardTitles.length > 0
+    const finalTitleUnlocked = battleResult.rewardTitles.includes(allGekimuzuTitle)
     return (
       <AppShell title={battleResult.boss.label} backTo={battleResult.boss.group === 'advanced' ? '/advanced' : '/battle'}>
+        {finalTitleUnlocked ? (
+          <div className="final-title-celebration" role="status" aria-live="polite">
+            <strong>すべてをしるもの！</strong>
+            <span>ぜんぶ あつめた さいごのしょうごうだよ</span>
+          </div>
+        ) : null}
         {battleResult.grandReward ? (
           <div className="ufo-celebration" role="status" aria-live="polite">
             <span aria-hidden="true">🎉</span>

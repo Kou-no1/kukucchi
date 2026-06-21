@@ -5,6 +5,7 @@ import {
 import { newlyOwnedAdvancedMonsters } from '../data/advancedMonsters'
 import { addCollectionRecords } from '../game-engine/collection/collectionRecords'
 import { getMasteredFacts, getMonsterFacts } from '../game-engine/review/weakFacts'
+import { grantFinalTitleIfEarned } from '../game-engine/rewards/finalTitle'
 import { judgeNewTitles, titleRecordId } from '../game-engine/rewards/titles'
 import { expToLevel } from '../game-engine/rewards/rewards'
 import { applyRewardBudgetToSummary } from '../game-engine/school/dailyUsage'
@@ -154,7 +155,7 @@ export function applySessionResult(
     }
   })
 
-  const nextSave: SaveData = {
+  const nextSaveBeforeFinalTitle: SaveData = {
     ...save,
     player: save.player
       ? {
@@ -199,12 +200,20 @@ export function applySessionResult(
       collectionRecords,
     },
   }
+  const finalTitleResult = grantFinalTitleIfEarned(
+    nextSaveBeforeFinalTitle,
+    effectiveSummary.finishedAt,
+  )
+  const nextSave = finalTitleResult.save
+  const summaryNewTitles = finalTitleResult.granted && nextSave.player?.currentTitle
+    ? Array.from(new Set([...newTitles, nextSave.player.currentTitle]))
+    : newTitles
 
   return {
     save: nextSave,
     summary: {
       ...effectiveSummary,
-      newTitles,
+      newTitles: summaryNewTitles,
       bestUpdated,
       weakFacts: getMonsterFacts(facts),
       masteredFacts: newlyMasteredFacts,

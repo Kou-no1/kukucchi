@@ -6,6 +6,7 @@ import { TutorialModal } from '../../components/common/TutorialModal'
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getLevelIconById } from '../../data/levelIcons'
 import { getPlayerIcon } from '../../data/playerIcons'
@@ -86,7 +87,10 @@ export function HomePage() {
               </span>
               <h2>{player?.nickname ?? 'くくとも'}</h2>
             </div>
-            <p className="title-line">{player?.currentTitle ?? 'はじめのいっぽ'}</p>
+            <div className="home-current-title">
+              <TitleEmblem title={player?.currentTitle ?? 'はじめのいっぽ'} className="home-title-emblem" />
+              <p className="title-line">{player?.currentTitle ?? 'はじめのいっぽ'}</p>
+            </div>
           </div>
 
           <section className="home-mission-compact" aria-labelledby="mission-title">
@@ -131,7 +135,7 @@ export function HomePage() {
             buddyContent={buddyContent}
             label={characterName}
           />
-          <span className="ship-title-badge" aria-label={`しょうごう ${crewTitle}`}>称</span>
+          <TitleEmblem title={crewTitle} className="ship-title-badge" />
           <div className="character-window-copy ship-name-only">
             <strong className="character-name-line">{characterName}</strong>
             <h2>{shipName}号</h2>

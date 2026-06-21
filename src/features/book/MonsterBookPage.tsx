@@ -5,6 +5,7 @@ import { AdvancedMonsterSprite } from '../../components/collection/AdvancedMonst
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { TrophySprite } from '../../components/collection/TrophySprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
@@ -630,9 +631,7 @@ export function MonsterBookPage() {
               })}
             >
               <span className="boss-no">S-{String(index + 1).padStart(2, '0')}</span>
-              <span className="title-book-icon" aria-hidden="true">
-                {title.owned ? '称' : '◆'}
-              </span>
+              <TitleEmblem title={title.label} locked={!title.owned} className="title-book-icon" />
               <h2>{title.owned ? title.label : '？？？'}</h2>
               {title.owned ? <p>{title.description}</p> : <p>まだです</p>}
             </article>

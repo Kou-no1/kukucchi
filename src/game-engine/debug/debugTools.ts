@@ -1,4 +1,5 @@
-import { bossDifficulties, bosses } from '../../data/bosses'
+import { advancedMonsterDefinitions } from '../../data/advancedMonsters'
+import { bossDifficulties, bosses, bossLimitedItems } from '../../data/bosses'
 import { buddyDefinitions } from '../../data/buddies'
 import { keyTypes } from '../../data/keys'
 import { shopItems } from '../../data/shopItems'
@@ -12,6 +13,11 @@ import { getTitleDefinitions, titleRecordId } from '../rewards/titles'
 import type { SaveData, BossDifficultyProgress } from '../../types/save'
 
 export const debugMenuTapThreshold = 5
+export const debugMenuPassword = 'kukucchi-dev'
+
+export function isDebugPasswordValid(input: string, password = debugMenuPassword): boolean {
+  return input.trim() === password
+}
 
 export function nextDebugTapState(
   currentCount: number,
@@ -96,6 +102,12 @@ export function fullOpenDebugSaveData(
   }
 
   const titleDefinitions = getTitleDefinitions()
+  const categoryCorrect = {
+    ...save.progress.categoryCorrect,
+    'multiplication-square': Math.max(save.progress.categoryCorrect['multiplication-square'] ?? 0, 40),
+    'pi-multiplication': Math.max(save.progress.categoryCorrect['pi-multiplication'] ?? 0, 40),
+    development: Math.max(save.progress.categoryCorrect.development ?? 0, 40),
+  }
   const titles = Array.from(
     new Set([...(save.player?.titles ?? []), ...titleDefinitions.map((title) => title.label)]),
   )
@@ -127,7 +139,9 @@ export function fullOpenDebugSaveData(
         ...save.progress,
         facts,
         monsterBook: Array.from(monsterBook),
+        categoryCorrect,
         bossProgress,
+        bossItems: Array.from(new Set([...save.progress.bossItems, ...bossLimitedItems.map((item) => item.id)])),
         ownedItems: Array.from(new Set([...save.progress.ownedItems, ...shopItems.map((item) => item.id)])),
         ownedTreasureItems: Array.from(
           new Map(
@@ -170,6 +184,18 @@ export function fullOpenDebugSaveData(
           ...treasureItems.map((item) => ({
             kind: 'treasure',
             id: item.id,
+            acquiredAt,
+            method: 'かいはつしゃメニュー',
+          })),
+          ...bossLimitedItems.map((item) => ({
+            kind: 'boss-item',
+            id: item.id,
+            acquiredAt,
+            method: 'かいはつしゃメニュー',
+          })),
+          ...advancedMonsterDefinitions.map((monster) => ({
+            kind: 'advanced-monster',
+            id: monster.id,
             acquiredAt,
             method: 'かいはつしゃメニュー',
           })),

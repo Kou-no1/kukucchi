@@ -1,5 +1,4 @@
 import {
-  allGekimuzuTitle,
   bossDifficulties,
   bosses,
   getBossById,
@@ -11,6 +10,7 @@ import type { KeyTypeId } from '../../data/keys'
 import { galaxySwirlEffectId } from '../../data/shopItems'
 import { specialUfoId } from '../../data/ufos'
 import { addCollectionRecords } from '../collection/collectionRecords'
+import { grantFinalTitleIfEarned } from '../rewards/finalTitle'
 import { titleRecordId } from '../rewards/titles'
 import type {
   BossDifficultyId,
@@ -313,17 +313,20 @@ export function applyBossClearReward(
     difficulty === 'gekimuzu' &&
     hasAllGekimuzuClears(withLegendary) &&
     (!currentOwnedUfos.includes(specialUfoId) ||
-      !currentOwnedItems.includes(galaxySwirlEffectId) ||
-      !withLegendary.player?.titles.includes(allGekimuzuTitle))
+      !currentOwnedItems.includes(galaxySwirlEffectId))
   if (!shouldGrantGrandReward) {
+    const finalTitleResult = grantFinalTitleIfEarned(withLegendary, clearedAt)
+    const finalTitle = finalTitleResult.granted ? finalTitleResult.save.player?.currentTitle : null
     return {
-      save: withLegendary,
+      save: finalTitleResult.save,
       firstClear,
       rewardItemIds,
       rewardUfoIds,
       rewardEffectIds: [],
-      rewardTitles: Array.from(new Set([...rewardTitles, ...legendaryTitles])),
-      grandReward: false,
+      rewardTitles: Array.from(
+        new Set([...rewardTitles, ...legendaryTitles, ...(finalTitle ? [finalTitle] : [])]),
+      ),
+      grandReward: finalTitleResult.granted,
     }
   }
 
@@ -339,50 +342,41 @@ export function applyBossClearReward(
       grandReward: false,
     }
   }
-  const allRewardTitles = Array.from(
-    new Set([...rewardTitles, ...legendaryTitles, allGekimuzuTitle]),
-  )
   const allRewardUfos = Array.from(new Set([...rewardUfoIds, specialUfoId]))
-  return {
-    save: {
-      ...withLegendary,
-      player: {
-        ...grandPlayer,
-        titles: Array.from(new Set([...grandPlayer.titles, allGekimuzuTitle])),
-        currentTitle: allGekimuzuTitle,
-      },
-      progress: {
-        ...withLegendary.progress,
-        ownedUfos: Array.from(new Set([...withLegendary.progress.ownedUfos, specialUfoId])),
-        ownedItems: Array.from(new Set([...withLegendary.progress.ownedItems, galaxySwirlEffectId])),
-        equippedUfoId: withLegendary.progress.equippedUfoId ?? specialUfoId,
-        collectionRecords: addCollectionRecords(withLegendary.progress.collectionRecords, [
-          {
-            kind: 'ufo',
-            id: specialUfoId,
-            acquiredAt: clearedAt,
-            method: '全ボスげきムズ',
-          },
-          {
-            kind: 'title',
-            id: titleRecordId(allGekimuzuTitle),
-            acquiredAt: clearedAt,
-            method: '全ボスげきムズ',
-          },
-          {
-            kind: 'effect',
-            id: galaxySwirlEffectId,
-            acquiredAt: clearedAt,
-            method: '全ボスげきムズ',
-          },
-        ]),
-      },
+  const withGrandReward: SaveData = {
+    ...withLegendary,
+    progress: {
+      ...withLegendary.progress,
+      ownedUfos: Array.from(new Set([...withLegendary.progress.ownedUfos, specialUfoId])),
+      ownedItems: Array.from(new Set([...withLegendary.progress.ownedItems, galaxySwirlEffectId])),
+      equippedUfoId: withLegendary.progress.equippedUfoId ?? specialUfoId,
+      collectionRecords: addCollectionRecords(withLegendary.progress.collectionRecords, [
+        {
+          kind: 'ufo',
+          id: specialUfoId,
+          acquiredAt: clearedAt,
+          method: '全ボスげきムズ',
+        },
+        {
+          kind: 'effect',
+          id: galaxySwirlEffectId,
+          acquiredAt: clearedAt,
+          method: '全ボスげきムズ',
+        },
+      ]),
     },
+  }
+  const finalTitleResult = grantFinalTitleIfEarned(withGrandReward, clearedAt)
+  const finalTitle = finalTitleResult.granted ? finalTitleResult.save.player?.currentTitle : null
+  return {
+    save: finalTitleResult.save,
     firstClear,
     rewardItemIds,
     rewardUfoIds: allRewardUfos,
     rewardEffectIds: [galaxySwirlEffectId],
-    rewardTitles: allRewardTitles,
+    rewardTitles: Array.from(
+      new Set([...rewardTitles, ...legendaryTitles, ...(finalTitle ? [finalTitle] : [])]),
+    ),
     grandReward: true,
   }
 }

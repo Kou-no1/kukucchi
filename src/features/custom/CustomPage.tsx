@@ -3,6 +3,7 @@ import { AppShell } from '../../components/common/AppShell'
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getLevelIconById, getUnlockedLevelIcons } from '../../data/levelIcons'
@@ -49,11 +50,7 @@ function EntryIcon({ entry }: { entry: CustomInventoryEntry }) {
     return <BuddySprite buddyId={entry.buddy.id} locked={locked} className="custom-item-sprite" />
   }
   if (entry.kind === 'title') {
-    return (
-      <span className={locked ? 'custom-title-badge locked' : 'custom-title-badge'} aria-hidden="true">
-        {locked ? '?' : '称'}
-      </span>
-    )
+    return <TitleEmblem title={entry.label} locked={locked} className="custom-title-emblem" />
   }
   return (
     <span className={locked ? 'custom-item-emoji locked' : 'custom-item-emoji'} aria-hidden="true">
@@ -175,9 +172,7 @@ export function CustomPage() {
               buddyContent={buddyContent}
               label={characterName}
             />
-            <span className="ship-title-badge" aria-label="しょうごうバッジ">
-              称
-            </span>
+            <TitleEmblem title={saveData.player?.currentTitle} className="ship-title-badge" />
           </aside>
           <section className="level-icon-picker" aria-labelledby="level-icon-title">
             <h3 id="level-icon-title">なまえアイコン</h3>

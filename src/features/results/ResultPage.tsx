@@ -7,6 +7,7 @@ import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
+import { allGekimuzuTitle } from '../../data/bosses'
 import { getLevelIconUnlocksBetween } from '../../data/levelIcons'
 import { getKeyTypeById } from '../../data/keys'
 import { getShopItemById } from '../../data/shopItems'
@@ -375,6 +376,13 @@ export function ResultPage() {
       ) : null}
 
       <ModeResultDetails summary={summary} />
+
+      {summary.newTitles.includes(allGekimuzuTitle) ? (
+        <section className="final-title-celebration" role="status" aria-live="polite">
+          <strong>すべてをしるもの！</strong>
+          <span>ぜんぶ あつめた さいごのしょうごうだよ</span>
+        </section>
+      ) : null}
 
       {summary.newTitles.length > 0 ? (
         <section className="mission-section" aria-labelledby="title-earned">

@@ -16,6 +16,7 @@ import {
   addAllDebugKeys,
   addDebugCoins,
   fullOpenDebugSaveData,
+  isDebugPasswordValid,
   nextDebugTapState,
   setDebugLevel,
 } from '../../game-engine/debug/debugTools'
@@ -54,7 +55,9 @@ export function SettingsPage() {
   const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
   const [debugTapCount, setDebugTapCount] = useState(0)
   const [debugOpen, setDebugOpen] = useState(false)
-  const [debugMessage, setDebugMessage] = useState('バージョンを 5かい タップで ひらきます')
+  const [debugPasswordOpen, setDebugPasswordOpen] = useState(false)
+  const [debugPasswordInput, setDebugPasswordInput] = useState('')
+  const [debugMessage, setDebugMessage] = useState('')
   const [debugLevelInput, setDebugLevelInput] = useState(String(saveData.player?.level ?? 1))
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
   const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
@@ -218,9 +221,21 @@ export function SettingsPage() {
     const next = nextDebugTapState(debugTapCount)
     setDebugTapCount(next.count)
     if (next.opened) {
-      setDebugOpen(true)
-      setDebugMessage('かいはつしゃメニューを ひらきました')
+      setDebugPasswordOpen(true)
+      setDebugMessage('')
     }
+  }
+
+  function submitDebugPassword() {
+    if (!isDebugPasswordValid(debugPasswordInput)) {
+      setDebugPasswordInput('')
+      setDebugMessage('パスワードが ちがいます')
+      return
+    }
+    setDebugPasswordInput('')
+    setDebugPasswordOpen(false)
+    setDebugOpen(true)
+    setDebugMessage('かいはつしゃメニューを ひらきました')
   }
 
   function resetFromDebugMenu() {
@@ -465,9 +480,31 @@ export function SettingsPage() {
 
       <section className="settings-section version-section" aria-label="バージョン">
         <button className="version-tap-target" type="button" onClick={handleVersionTap}>
-          バージョン 15-3 / SaveData v{SAVE_DATA_VERSION}
+          バージョン 15.5 / SaveData v{SAVE_DATA_VERSION}
         </button>
-        <p className="quiet-text">{debugOpen ? 'かいはつしゃメニュー' : debugMessage}</p>
+        {debugPasswordOpen && !debugOpen ? (
+          <form
+            className="debug-password-form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              submitDebugPassword()
+            }}
+          >
+            <label>
+              パスワード
+              <input
+                type="password"
+                value={debugPasswordInput}
+                onChange={(event) => setDebugPasswordInput(event.target.value)}
+                autoComplete="off"
+              />
+            </label>
+            <button type="submit">ひらく</button>
+          </form>
+        ) : null}
+        {debugOpen || debugMessage ? (
+          <p className="quiet-text">{debugOpen ? 'かいはつしゃメニュー' : debugMessage}</p>
+        ) : null}
       </section>
 
       {debugOpen ? (
