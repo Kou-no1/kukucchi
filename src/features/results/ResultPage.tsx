@@ -3,9 +3,11 @@ import { Link, useLocation } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
+import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
+import { getLevelIconUnlocksBetween } from '../../data/levelIcons'
 import { getKeyTypeById } from '../../data/keys'
 import { getTreasureItemById } from '../../data/treasureItems'
 import {
@@ -198,6 +200,7 @@ export function ResultPage() {
   const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
   const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null
   const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
+  const [iconNoticeDismissed, setIconNoticeDismissed] = useState(false)
   const budgetNoticeOpen = rewardBudgetPaused && shouldShowNotice && !budgetNoticeDismissed
   const playerExp = saveData.player?.exp ?? summary?.earnedExp ?? 0
   const earnedExp = summary?.earnedExp ?? 0
@@ -268,6 +271,7 @@ export function ResultPage() {
 
   const previousLevel = expToLevel(previousExp)
   const currentProgress = expProgressToNextLevel(playerExp)
+  const unlockedLevelIcons = getLevelIconUnlocksBetween(previousLevel, currentProgress.level)
   const levelSpan = currentProgress.nextLevelExp - currentProgress.currentLevelExp
   const levelUp = currentProgress.level > previousLevel
   const displayedLevel = expAnimationDone ? currentProgress.level : currentExpStep?.level ?? currentProgress.level
@@ -337,6 +341,27 @@ export function ResultPage() {
           </button>
         ) : null}
       </section>
+
+      {unlockedLevelIcons.length > 0 && !iconNoticeDismissed ? (
+        <section className="level-icon-unlock-card" aria-live="polite">
+          <div>
+            <strong>あたらしい アイコンが ふえたよ！</strong>
+            <p>{unlockedLevelIcons.map((icon) => icon.label).join('、')}</p>
+          </div>
+          <div className="level-icon-unlock-row">
+            {unlockedLevelIcons.map((icon) => (
+              <LevelIconBadge icon={icon} key={icon.id} className="level-icon-unlock-svg" />
+            ))}
+          </div>
+          <button
+            className="secondary-action compact-action"
+            type="button"
+            onClick={() => setIconNoticeDismissed(true)}
+          >
+            とじる
+          </button>
+        </section>
+      ) : null}
 
       <ModeResultDetails summary={summary} />
 

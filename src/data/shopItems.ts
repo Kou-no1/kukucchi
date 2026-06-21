@@ -50,7 +50,10 @@ export const homeShipPreviewLayers = [
 
 export type HomeShipPreviewLayer = (typeof homeShipPreviewLayers)[number]
 
-export type HomeShipPreviewVisuals = Pick<HomeShipVisuals, 'window' | 'wear' | 'hat'> & {
+export type HomeShipPreviewVisuals = Pick<
+  HomeShipVisuals,
+  'window' | 'wear' | 'hat' | 'buddy' | 'effect'
+> & {
   ufo?: string
 }
 
@@ -441,6 +444,8 @@ export function getHomeShipPreviewVisuals(
     window: visuals.window,
     wear: visuals.wear,
     hat: visuals.hat,
+    buddy: visuals.buddy,
+    effect: visuals.effect,
     ufo: ufoVariant ?? undefined,
   }
 }

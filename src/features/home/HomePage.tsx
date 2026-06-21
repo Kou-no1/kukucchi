@@ -4,69 +4,25 @@ import { AppShell } from '../../components/common/AppShell'
 import { StatPill } from '../../components/common/StatPill'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { BuddySprite } from '../../components/collection/BuddySprite'
+import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
+import { getLevelIconById } from '../../data/levelIcons'
 import { getPlayerIcon } from '../../data/playerIcons'
 import {
-  equipShopItem,
   equipmentSlots,
   getEquippedItemForSlot,
   getHomeShipPreviewVisuals,
-  shopItems,
 } from '../../data/shopItems'
 import { defaultCharacterName, defaultShipName } from '../../data/shipName'
-import { getUfoById, ufoDefinitions } from '../../data/ufos'
+import { getUfoById } from '../../data/ufos'
 import {
   coerceEquippedBuddyId,
-  getOwnedBuddySelections,
   parseDedicatedBuddySelectionId,
   parseMonsterBuddySelectionId,
 } from '../../game-engine/collection/buddies'
-import { getWeakFacts } from '../../game-engine/review/weakFacts'
+import { getWeakFacts, weakFactHintText } from '../../game-engine/review/weakFacts'
 import { useSaveData } from '../../hooks/useSaveData'
-
-type PreviewChoice = {
-  id: string
-  label: string
-  detail?: string
-  selected: boolean
-}
-
-function PreviewOptionGroup({
-  label,
-  emptyLabel,
-  choices,
-  onChoose,
-}: {
-  label: string
-  emptyLabel: string
-  choices: PreviewChoice[]
-  onChoose: (id: string) => void
-}) {
-  return (
-    <section className="preview-option-group" aria-label={label}>
-      <h3>{label}</h3>
-      {choices.length ? (
-        <div className="preview-option-row">
-          {choices.map((choice) => (
-            <button
-              className={choice.selected ? 'preview-equip-chip selected' : 'preview-equip-chip'}
-              type="button"
-              key={choice.id}
-              onClick={() => onChoose(choice.id)}
-              aria-pressed={choice.selected}
-            >
-              <strong>{choice.label}</strong>
-              {choice.detail ? <span>{choice.detail}</span> : null}
-            </button>
-          ))}
-        </div>
-      ) : (
-        <p>{emptyLabel}</p>
-      )}
-    </section>
-  )
-}
 
 function renderSelectedBuddy(selectionId: string | null) {
   const monster = parseMonsterBuddySelectionId(selectionId)
@@ -94,74 +50,9 @@ export function HomePage() {
   )
   const equippedBuddyId = coerceEquippedBuddyId(saveData)
   const buddyContent = renderSelectedBuddy(equippedBuddyId)
-  const ownedItemIds = new Set(saveData.progress.ownedItems)
-  const equippedItemIds = new Set(saveData.progress.equippedItems)
-  const ownedBackgroundChoices = shopItems
-    .filter(
-      (item) =>
-        item.visual.layer === 'window' &&
-        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
-    )
-    .map((item) => ({
-      id: item.id,
-      label: item.name,
-      detail: item.kind === 'wallpaper' ? 'かべがみ' : 'はいけい',
-      selected: saveData.progress.equippedItems.includes(item.id),
-    }))
-  const ownedHatChoices = shopItems
-    .filter(
-      (item) =>
-        item.visual.layer === 'hat' &&
-        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
-    )
-    .map((item) => ({
-      id: item.id,
-      label: item.name,
-      detail: 'ぼうし',
-      selected: saveData.progress.equippedItems.includes(item.id),
-    }))
-  const ownedSuitChoices = shopItems
-    .filter(
-      (item) =>
-        item.visual.layer === 'wear' &&
-        (ownedItemIds.has(item.id) || equippedItemIds.has(item.id)),
-    )
-    .map((item) => ({
-      id: item.id,
-      label: item.name,
-      detail: item.kind === 'suit' ? 'スーツ' : 'ふく',
-      selected: saveData.progress.equippedItems.includes(item.id),
-    }))
-  const ownedUfoChoices = ufoDefinitions
-    .filter(
-      (ufo) =>
-        saveData.progress.ownedUfos.includes(ufo.id) ||
-        saveData.progress.equippedUfoId === ufo.id,
-    )
-    .map((ufo) => ({
-      id: ufo.id,
-      label: ufo.name,
-      detail: 'UFO',
-      selected: saveData.progress.equippedUfoId === ufo.id,
-    }))
-  const ownedBuddySelections = getOwnedBuddySelections(saveData)
-  const ownedBuddyChoices = [
-    {
-      id: 'none',
-      label: 'なし',
-      detail: 'なかまをしまう',
-      selected: equippedBuddyId === null,
-    },
-    ...ownedBuddySelections.map((buddy) => ({
-      id: buddy.id,
-      label: buddy.label,
-      detail: buddy.type === 'monster' ? 'こくふくなかま' : 'なかま',
-      selected: equippedBuddyId === buddy.id,
-    })),
-  ]
   const [tutorialOpen, setTutorialOpen] = useState(!saveData.tutorial.homeSeen)
-  const titles = player?.titles.length ? player.titles : ['はじめのいっぽ']
   const playerIcon = getPlayerIcon(player?.icon)
+  const levelIcon = getLevelIconById(player?.icon)
   const crewTitle = player?.currentTitle ?? 'はじめのいっぽ'
   const shipName = player?.shipName ?? defaultShipName
   const characterName = player?.characterName ?? defaultCharacterName
@@ -175,65 +66,6 @@ export function HomePage() {
         homeSeen: true,
       },
     }))
-  }
-
-  function chooseTitle(title: string) {
-    updateSaveData((current) => ({
-      ...current,
-      player: current.player
-        ? {
-            ...current.player,
-            currentTitle: title,
-          }
-        : current.player,
-    }))
-  }
-
-  function choosePreviewItem(itemId: string) {
-    updateSaveData((current) => {
-      if (!current.progress.ownedItems.includes(itemId)) {
-        return current
-      }
-      return {
-        ...current,
-        progress: {
-          ...current.progress,
-          equippedItems: equipShopItem(current.progress.equippedItems, itemId),
-        },
-      }
-    })
-  }
-
-  function choosePreviewUfo(ufoId: string) {
-    updateSaveData((current) => {
-      if (!current.progress.ownedUfos.includes(ufoId)) {
-        return current
-      }
-      return {
-        ...current,
-        progress: {
-          ...current.progress,
-          equippedUfoId: ufoId,
-        },
-      }
-    })
-  }
-
-  function choosePreviewBuddy(selectionId: string) {
-    updateSaveData((current) => {
-      const nextBuddyId = selectionId === 'none' ? null : selectionId
-      const owned = nextBuddyId === null || getOwnedBuddySelections(current).some((buddy) => buddy.id === nextBuddyId)
-      if (!owned) {
-        return current
-      }
-      return {
-        ...current,
-        progress: {
-          ...current.progress,
-          equippedBuddyId: nextBuddyId,
-        },
-      }
-    })
   }
 
   return (
@@ -250,7 +82,7 @@ export function HomePage() {
           <div className="home-title-block">
             <div className="home-name-row">
               <span className="player-icon-badge" aria-label={`${playerIcon.label}アイコン`}>
-                {playerIcon.emoji}
+                {levelIcon ? <LevelIconBadge icon={levelIcon} className="home-level-icon" /> : playerIcon.emoji}
               </span>
               <h2>{player?.nickname ?? 'くくとも'}</h2>
             </div>
@@ -299,49 +131,12 @@ export function HomePage() {
             buddyContent={buddyContent}
             label={characterName}
           />
-          <div className="character-window-copy">
-            <p className="welcome">{crewTitle}</p>
+          <span className="ship-title-badge" aria-label={`しょうごう ${crewTitle}`}>称</span>
+          <div className="character-window-copy ship-name-only">
             <strong className="character-name-line">{characterName}</strong>
             <h2>{shipName}号</h2>
           </div>
         </aside>
-      </section>
-
-      <section className="home-preview-customizer" aria-labelledby="preview-customizer-heading">
-        <div className="preview-customizer-heading">
-          <p className="welcome">くくっち号</p>
-          <h2 id="preview-customizer-heading">カスタム</h2>
-        </div>
-        <PreviewOptionGroup
-          label="スーツ"
-          emptyLabel="もっている スーツが まだありません"
-          choices={ownedSuitChoices}
-          onChoose={choosePreviewItem}
-        />
-        <PreviewOptionGroup
-          label="はいけい"
-          emptyLabel="もっている はいけい が まだありません"
-          choices={ownedBackgroundChoices}
-          onChoose={choosePreviewItem}
-        />
-        <PreviewOptionGroup
-          label="UFO"
-          emptyLabel="ボスを たおすと UFO が ふえます"
-          choices={ownedUfoChoices}
-          onChoose={choosePreviewUfo}
-        />
-        <PreviewOptionGroup
-          label="ぼうし"
-          emptyLabel="もっている ぼうし が まだありません"
-          choices={ownedHatChoices}
-          onChoose={choosePreviewItem}
-        />
-        <PreviewOptionGroup
-          label="なかま"
-          emptyLabel="こくふくやショップで なかまに あえます"
-          choices={ownedBuddyChoices}
-          onChoose={choosePreviewBuddy}
-        />
       </section>
 
       <section className="home-card-grid home-main-actions" aria-label="メインメニュー">
@@ -363,15 +158,15 @@ export function HomePage() {
             れんしゅう
           </small>
         </Link>
-        <Link className="home-menu-card home-menu-card-large" to="/speed" aria-label="スピード">
+        <Link className="home-menu-card home-menu-card-large" to="/custom" aria-label="カスタム">
           <span className="home-card-emoji" aria-hidden="true">
-            ⚡
+            ✨
           </span>
-          <strong>スピード</strong>
+          <strong>カスタム</strong>
           <small>
-            30秒
+            もちもの
             <br />
-            チャレンジ
+            きせかえ
           </small>
         </Link>
       </section>
@@ -396,7 +191,7 @@ export function HomePage() {
             🛸
           </span>
           <strong>ショップ</strong>
-          <small>船内カスタム</small>
+          <small>コインでかう</small>
         </Link>
         <Link className="home-menu-card" to="/settings" aria-label="せってい">
           <span className="home-card-emoji" aria-hidden="true">
@@ -407,29 +202,9 @@ export function HomePage() {
         </Link>
       </section>
 
-      <section className="title-card-section" aria-labelledby="title-card-heading">
-        <h2 id="title-card-heading">しょうごうカード</h2>
-        <div className="title-card-strip">
-          {titles.slice(0, 6).map((title) => {
-            const selected = player?.currentTitle === title
-            return (
-              <button
-                className={selected ? 'title-card selected' : 'title-card'}
-                type="button"
-                key={title}
-                onClick={() => chooseTitle(title)}
-                aria-pressed={selected}
-              >
-                <span aria-hidden="true">🏷️</span>
-                <strong>{title}</strong>
-              </button>
-            )
-          })}
-        </div>
-      </section>
-
       <section className="weak-section" aria-labelledby="weak-title">
         <h2 id="weak-title">にがて</h2>
+        <p className="weak-hint">{weakFactHintText}</p>
         {weakFacts.length === 0 ? (
           <p className="quiet-text">まだありません</p>
         ) : (

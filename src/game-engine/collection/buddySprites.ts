@@ -127,6 +127,92 @@ const themeColors: Record<
   ],
 }
 
+const buddyFeatureCells: Record<string, BuddyPixelCell[]> = {
+  'star-jelly': [
+    { x: 4, y: 11 },
+    { x: 6, y: 11 },
+    { x: 8, y: 11 },
+  ],
+  'space-cat': [
+    { x: 4, y: 2 },
+    { x: 8, y: 2 },
+    { x: 3, y: 3 },
+    { x: 9, y: 3 },
+  ],
+  'space-rabbit': [
+    { x: 5, y: 0 },
+    { x: 7, y: 0 },
+    { x: 5, y: 1 },
+    { x: 7, y: 1 },
+    { x: 5, y: 2 },
+    { x: 7, y: 2 },
+  ],
+  'cosmo-penguin': [
+    { x: 2, y: 6 },
+    { x: 10, y: 6 },
+    { x: 3, y: 10 },
+    { x: 9, y: 10 },
+  ],
+  'tiny-star': [
+    { x: 6, y: 0 },
+    { x: 2, y: 4 },
+    { x: 10, y: 4 },
+    { x: 4, y: 10 },
+    { x: 8, y: 10 },
+  ],
+  'crescent-friend': [
+    { x: 3, y: 3 },
+    { x: 3, y: 4 },
+    { x: 4, y: 8 },
+    { x: 5, y: 9 },
+    { x: 6, y: 10 },
+  ],
+  'planet-kun': [
+    { x: 1, y: 6 },
+    { x: 2, y: 6 },
+    { x: 10, y: 6 },
+    { x: 11, y: 6 },
+    { x: 0, y: 7 },
+    { x: 12, y: 7 },
+  ],
+  'rainbow-star': [
+    { x: 6, y: 0 },
+    { x: 3, y: 2 },
+    { x: 9, y: 2 },
+    { x: 1, y: 6 },
+    { x: 11, y: 6 },
+    { x: 6, y: 12 },
+  ],
+  'navi-robo': [
+    { x: 6, y: 0 },
+    { x: 6, y: 1 },
+    { x: 5, y: 2 },
+    { x: 7, y: 2 },
+  ],
+  'mini-droid': [
+    { x: 3, y: 1 },
+    { x: 9, y: 1 },
+    { x: 3, y: 2 },
+    { x: 9, y: 2 },
+    { x: 2, y: 9 },
+    { x: 10, y: 9 },
+  ],
+  'star-bot': [
+    { x: 6, y: 4 },
+    { x: 5, y: 5 },
+    { x: 7, y: 5 },
+    { x: 6, y: 6 },
+  ],
+  'cosmo-navi': [
+    { x: 4, y: 0 },
+    { x: 8, y: 0 },
+    { x: 5, y: 1 },
+    { x: 7, y: 1 },
+    { x: 2, y: 8 },
+    { x: 10, y: 8 },
+  ],
+}
+
 function cellKey(cell: BuddyPixelCell): string {
   return `${cell.x},${cell.y}`
 }
@@ -187,7 +273,7 @@ export function buildBuddySprite(buddyId: string): BuddySpriteDefinition {
     throw new Error(`Unknown buddy: ${buddyId}`)
   }
   const seed = seedForId(buddy.id)
-  const body = maskCells(themeMasks[buddy.theme])
+  const body = uniqueCells([...maskCells(themeMasks[buddy.theme]), ...(buddyFeatureCells[buddy.id] ?? [])])
   const colors = themeColors[buddy.theme][seed % themeColors[buddy.theme].length]
   const eyeY = buddy.theme === 'robot' ? 5 : 6
   const eyes =

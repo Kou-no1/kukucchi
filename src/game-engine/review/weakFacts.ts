@@ -6,6 +6,8 @@ export type MonsterOvercomeProgress = {
   message: string | null
 }
 
+export const weakFactHintText = 'べつの日に また せいかいすると きえるよ'
+
 function attemptsOf(fact: MultiplicationFactProgress): number {
   return fact.correctCount + fact.incorrectCount
 }

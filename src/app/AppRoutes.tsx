@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { AdvancedPage } from '../features/advanced/AdvancedPage'
 import { BossBattlePage } from '../features/bosses/BossBattlePage'
 import { MonsterBookPage } from '../features/book/MonsterBookPage'
+import { CustomPage } from '../features/custom/CustomPage'
 import { GameSelectPage } from '../features/games/GameSelectPage'
 import { HomePage } from '../features/home/HomePage'
 import { LearnPage } from '../features/learn/LearnPage'
@@ -126,6 +127,14 @@ export function AppRoutes() {
         element={
           <RequireProfile>
             <ShopPage />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/custom"
+        element={
+          <RequireProfile>
+            <CustomPage />
           </RequireProfile>
         }
       />

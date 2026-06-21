@@ -123,9 +123,9 @@ export function ShopPage() {
   return (
     <AppShell title="しょっぷ" backTo="/home">
       <section className="shop-command" aria-label="しょっぷじょうほう">
-        <p className="welcome">くくっちごうカスタム</p>
+        <p className="welcome">コインショップ</p>
         <h2>{coins} コイン</h2>
-        <p className="title-line">ゲームであつめたコインで、そうびをふやせます。</p>
+        <p className="title-line">ゲームであつめたコインで、もちものをふやせます。</p>
         {tier2Unlocked ? (
           <p className="shop-unlock-message">あたらしい おみせが ひらいたよ！</p>
         ) : (

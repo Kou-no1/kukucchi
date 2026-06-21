@@ -32,10 +32,16 @@ import {
   getWeakFacts,
   isMonsterFact,
   isMonsterOvercome,
+  weakFactHintText,
 } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
+import {
+  getLevelIconUnlocksBetween,
+  getUnlockedLevelIcons,
+  levelIconDefinitions,
+} from '../data/levelIcons'
 import {
   advancedMonsterDefinitions,
   isAdvancedMonsterOwned,
@@ -81,6 +87,7 @@ import {
   getTrophyKindForDifficulty,
 } from '../game-engine/collection/pixelSprites'
 import { buildBuddySprite } from '../game-engine/collection/buddySprites'
+import { buildCustomInventory } from '../game-engine/custom/customInventory'
 import {
   advancedBossDisplayNames,
   advancedBossVariantForBossId,
@@ -218,6 +225,8 @@ describe('question generation', () => {
     expect(sprite.signature).not.toBe(other.signature)
     expect(sprite.body.length).toBeGreaterThan(20)
     expect(sprite.outline.length).toBeGreaterThan(0)
+    expect(new Set(buddyDefinitions.map((buddy) => buildBuddySprite(buddy.id).signature))).toHaveLength(12)
+    expect(new Set(buddyDefinitions.map((buddy) => buildBuddySprite(buddy.id).body.map((cell) => `${cell.x},${cell.y}`).join('|')))).toHaveLength(12)
   })
 
   it('builds deterministic pixel trophies with dan colors and difficulty metals', () => {
@@ -1398,7 +1407,7 @@ describe('mastery, review, missions, and storage', () => {
     })
   })
 
-  it('builds the Phase 15-2 home preview from background, UFO, suit, and hat', () => {
+  it('builds the Phase 15-3 home preview from six ordered layers', () => {
     expect(homeShipPreviewLayers).toEqual(['window', 'ufo', 'body', 'hat', 'buddy', 'effect'])
     const preview = getHomeShipPreviewVisuals(
       [
@@ -1417,10 +1426,10 @@ describe('mastery, review, missions, and storage', () => {
       wear: 'rainbow-suit',
       ufo: 'special',
       hat: 'rocket-helmet',
+      buddy: 'luna-pet',
+      effect: 'comet-burst',
     })
     expect('furniture' in preview).toBe(false)
-    expect('buddy' in preview).toBe(false)
-    expect('effect' in preview).toBe(false)
   })
 
   it('reflects equipped preview item switches without changing save structure', () => {
@@ -1448,6 +1457,85 @@ describe('mastery, review, missions, and storage', () => {
     expect(getEquippedItemForSlot(equipped, 'hat')?.id).toBe('star-cap')
     expect(getEquippedItemForSlot(equipped, 'room')?.id).toBe('starry-seat')
     expect(getEquippedItemForSlot(equipped, 'buddy')?.id).toBe('pico-pet')
+  })
+
+  it('aggregates custom inventory across shop, bosses, buddies, and titles', () => {
+    const save = createSaveWithPlayer()
+    save.player = {
+      ...save.player!,
+      level: 12,
+      titles: ['はじめのいっぽ', 'れんぞくせいかい'],
+      currentTitle: 'れんぞくせいかい',
+    }
+    const ufo = getUfoForBoss('boss-stage-2')
+    expect(ufo).toBeDefined()
+    save.progress.ownedItems = ['basic-room', 'planet-view', 'rocket-helmet', 'rainbow-suit', 'pico-pet']
+    save.progress.equippedItems = ['planet-view', 'rocket-helmet', 'rainbow-suit', 'pico-pet']
+    save.progress.ownedUfos = [ufo!.id]
+    save.progress.equippedUfoId = ufo!.id
+    save.progress.monsterBook = ['2x3']
+    save.progress.equippedBuddyId = monsterBuddySelectionId(2, 3)
+    save.progress.collectionRecords = [
+      {
+        id: collectionRecordId('monster', '2x3'),
+        acquiredAt: '2026-01-02T00:00:00.000Z',
+        method: 'にがてをこくふく',
+      },
+      {
+        id: collectionRecordId('buddy', 'star-jelly'),
+        acquiredAt: '2026-01-03T00:00:00.000Z',
+        method: 'ショップ',
+      },
+      {
+        id: collectionRecordId('title', titleRecordId('れんぞくせいかい')),
+        acquiredAt: '2026-01-04T00:00:00.000Z',
+        method: 'がくしゅうリザルト',
+      },
+    ]
+
+    const tabs = buildCustomInventory(save)
+    expect(tabs.map((tab) => tab.id)).toEqual([
+      'window',
+      'ufo',
+      'hat',
+      'suit',
+      'buddy',
+      'effect',
+      'title',
+    ])
+    expect(tabs.find((tab) => tab.id === 'window')?.entries.find((entry) => entry.id === 'planet-view')?.selected).toBe(true)
+    expect(tabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === ufo!.id)?.selected).toBe(true)
+    expect(tabs.find((tab) => tab.id === 'suit')?.entries.find((entry) => entry.id === 'rainbow-suit')?.selected).toBe(true)
+    const buddyTab = tabs.find((tab) => tab.id === 'buddy')
+    expect(buddyTab?.entries.find((entry) => entry.id === monsterBuddySelectionId(2, 3))?.selected).toBe(true)
+    expect(buddyTab?.entries.find((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))?.owned).toBe(true)
+    expect(buddyTab?.entries.some((entry) => entry.label === '？？？')).toBe(true)
+    expect(tabs.find((tab) => tab.id === 'title')?.entries.find((entry) => entry.selected)?.label).toBe('れんぞくせいかい')
+  })
+
+  it('unlocks level icons every five levels without changing save data', () => {
+    expect(levelIconDefinitions.map((icon) => icon.unlockLevel)).toEqual([
+      5,
+      10,
+      15,
+      20,
+      25,
+      30,
+      35,
+      40,
+    ])
+    expect(getUnlockedLevelIcons(4)).toHaveLength(0)
+    expect(getUnlockedLevelIcons(5).map((icon) => icon.id)).toEqual(['level-star'])
+    expect(getUnlockedLevelIcons(12).map((icon) => icon.id)).toEqual(['level-star', 'level-moon'])
+    expect(getLevelIconUnlocksBetween(4, 10).map((icon) => icon.id)).toEqual([
+      'level-star',
+      'level-moon',
+    ])
+  })
+
+  it('uses the actual overcome condition in the weak fact hint text', () => {
+    expect(weakFactHintText).toBe('べつの日に また せいかいすると きえるよ')
+    expect(weakFactHintText).not.toContain('れんぞく')
   })
 
   it('defines all kuku readings as split hiragana parts and hides answers', () => {

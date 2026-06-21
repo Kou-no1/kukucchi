@@ -3,6 +3,8 @@ import type { ChangeEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
+import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
+import { getUnlockedLevelIcons } from '../../data/levelIcons'
 import { playerIcons } from '../../data/playerIcons'
 import {
   defaultCharacterName,
@@ -46,6 +48,7 @@ export function SettingsPage() {
   const [teacherMessage, setTeacherMessage] = useState('せんせいコードがひつようです')
   const backupText = useMemo(() => JSON.stringify(saveData, null, 2), [saveData])
   const ownedTitles = saveData.player?.titles.length ? saveData.player.titles : ['はじめのいっぽ']
+  const unlockedLevelIcons = getUnlockedLevelIcons(saveData.player?.level ?? 1)
 
   function updateSetting(
     key: 'soundEnabled' | 'speechEnabled' | 'reduceMotion' | 'schoolMode2Enabled',
@@ -238,6 +241,18 @@ export function SettingsPage() {
               aria-pressed={saveData.player?.icon === icon.id}
             >
               <span aria-hidden="true">{icon.emoji}</span>
+              {icon.label}
+            </button>
+          ))}
+          {unlockedLevelIcons.map((icon) => (
+            <button
+              className={saveData.player?.icon === icon.id ? 'selected' : ''}
+              type="button"
+              key={icon.id}
+              onClick={() => updateIcon(icon.id)}
+              aria-pressed={saveData.player?.icon === icon.id}
+            >
+              <LevelIconBadge icon={icon} className="settings-level-icon" />
               {icon.label}
             </button>
           ))}
