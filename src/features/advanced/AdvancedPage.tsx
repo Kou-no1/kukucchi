@@ -185,7 +185,7 @@ export function AdvancedPage() {
           eyebrow="けいさんをえらぼう"
           description={advancedCategoryDescriptions[category]}
           level={saveData.player?.level ?? 1}
-          backTo="/games"
+          backTo="/planet/multiply"
           onStart={startAdvanced}
         >
           <div className="duration-select-panel advanced-start-panel" aria-label="けいさんをえらぶ">

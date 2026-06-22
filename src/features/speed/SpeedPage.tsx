@@ -191,14 +191,14 @@ export function SpeedPage() {
   }
 
   return (
-    <AppShell title="すぴーど" backTo="/games" className={phase === 'running' ? 'game-shell' : 'mode-ready-shell speed-ready-shell'}>
+    <AppShell title="すぴーど" backTo="/planet/multiply" className={phase === 'running' ? 'game-shell' : 'mode-ready-shell speed-ready-shell'}>
       {phase === 'ready' ? (
         <ModeStartScreen
           title={`${durationSeconds}びょうちゃれんじ`}
           eyebrow="わーぷじゅんびOK"
           description="だんをえらんで、じぶんのきろくにちょうせん！"
           level={saveData.player?.level ?? 1}
-          backTo="/games"
+          backTo="/planet/multiply"
           onStart={startGame}
         >
           <div className="stage-select-panel" aria-label="だんをえらぶ">

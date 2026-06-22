@@ -433,7 +433,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   }
 
   return (
-    <AppShell title={group === 'advanced' ? '高学年ボス' : 'ボスバトル'} backTo={group === 'advanced' ? '/advanced' : '/games'}>
+    <AppShell title={group === 'advanced' ? '高学年ボス' : 'ボスバトル'} backTo={group === 'advanced' ? '/advanced' : '/planet/multiply'}>
       <section className="boss-list" aria-label="ボス一覧">
         {visibleBosses.map((boss) => {
           const unlocked = isBossUnlocked(boss, saveData)

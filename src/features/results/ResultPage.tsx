@@ -210,6 +210,7 @@ export function ResultPage() {
   const { saveData } = useSaveData()
   const { budgetMinutes, shouldShowNotice } = useDailyUsage()
   const summary = (location.state as { summary?: GameSessionSummary } | null)?.summary
+  const planetMenuPath = summary?.details?.planet === 'add' ? '/planet/add' : '/planet/multiply'
   const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
   const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null
   const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
@@ -426,7 +427,7 @@ export function ResultPage() {
         <Link className="primary-action" to={replayPath(summary.mode)}>
           もう一回
         </Link>
-        <Link className="secondary-action" to="/games">
+        <Link className="secondary-action" to={planetMenuPath}>
           あそぶへ
         </Link>
         <Link className="secondary-action" to="/home">

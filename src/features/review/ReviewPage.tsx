@@ -133,7 +133,7 @@ export function ReviewPage() {
   }
 
   return (
-    <AppShell title="にがてモンスター" backTo="/games" className={started ? 'game-shell' : ''}>
+    <AppShell title="にがてモンスター" backTo="/planet/multiply" className={started ? 'game-shell' : ''}>
       {!started ? (
         <section className="review-start" aria-labelledby="review-title">
           <p className="welcome">苦手はたからもの</p>

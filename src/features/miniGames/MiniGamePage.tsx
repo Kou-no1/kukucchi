@@ -533,13 +533,13 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'ready') {
     return (
-      <AppShell title={config.title} backTo="/games" className="mode-ready-shell mini-game-ready-shell">
+      <AppShell title={config.title} backTo="/planet/multiply" className="mode-ready-shell mini-game-ready-shell">
         <ModeStartScreen
           title={config.title}
           eyebrow={config.eyebrow}
           description={config.startDescription}
           level={saveData.player?.level ?? 1}
-          backTo="/games"
+          backTo="/planet/multiply"
           onStart={startGame}
         >
           {variant === 'battle' ? (
@@ -577,7 +577,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'chests') {
     return (
-      <AppShell title="たからばこ" backTo="/games">
+      <AppShell title="たからばこ" backTo="/planet/multiply">
         <section className="treasure-chest-stage" aria-labelledby="treasure-open-title">
           <p className="welcome">かぎ {keys}ほん</p>
           <h2 id="treasure-open-title">ひらくたからばこをえらぼう</h2>
@@ -620,7 +620,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const limitPercent = Math.max(0, Math.round((timeLeftMs / battleTimeLimitMs) * 100))
 
   return (
-    <AppShell title={config.title} backTo="/games" className="game-shell">
+    <AppShell title={config.title} backTo="/planet/multiply" className="game-shell">
       <section
         className={`mission-companion mini-game-command mini-game-command-${variant}`}
         aria-label={config.title}

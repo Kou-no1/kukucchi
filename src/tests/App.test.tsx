@@ -59,6 +59,34 @@ describe('app flow', () => {
     expect(screen.getByRole('button', { name: '20分' })).toBeInTheDocument()
   })
 
+  it('uses star-first navigation from home', async () => {
+    const user = await completeOnboarding()
+    expect(screen.getByRole('heading', { name: 'ほしをえらぶ' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /かけざんのほし/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /たしざんのほし/ })).toBeInTheDocument()
+    expect(screen.getByText('ひきざんのほし')).toBeInTheDocument()
+    expect(screen.getByText('じゅんびちゅう')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'カスタム' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '図かん' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'ショップ' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'せってい' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: /かけざんのほし/ }))
+    expect(await screen.findByRole('heading', { name: 'かけざんのほし' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /あそぶ/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /おぼえる/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /スピード/ })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /高学年/ })).toBeInTheDocument()
+    expect(screen.getByText('今日のミッション')).toBeInTheDocument()
+    expect(screen.getByRole('complementary', { name: 'くくっち' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'もどる' }))
+    await user.click(await screen.findByRole('link', { name: /たしざんのほし/ }))
+    expect(await screen.findByRole('heading', { name: 'たしざんのほし' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /おぼえる/ })).toBeInTheDocument()
+    expect(screen.getAllByText('じゅんびちゅう').length).toBeGreaterThan(0)
+  })
+
   it('hides learning level setup and reflects player icon changes on home', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -78,7 +106,7 @@ describe('app flow', () => {
 
   it('starts learn mode, answers, shows result, and persists progress', async () => {
     const user = await completeOnboarding()
-    await user.click(screen.getByRole('link', { name: 'あそぶ' }))
+    await user.click(screen.getByRole('link', { name: /かけざんのほし/ }))
     await user.click(screen.getByRole('link', { name: /おぼえる/ }))
     expect(await screen.findByRole('heading', { name: 'おぼえる' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: '2のだん れんしゅう' })).toBeInTheDocument()
@@ -116,7 +144,8 @@ describe('app flow', () => {
 
   it('shows a start screen before high grade calculation questions', async () => {
     const user = await completeOnboarding()
-    await user.click(screen.getByRole('link', { name: '高学年' }))
+    await user.click(screen.getByRole('link', { name: /かけざんのほし/ }))
+    await user.click(screen.getByRole('link', { name: /高学年/ }))
     expect(await screen.findByRole('heading', { name: 'スーパー計算' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'ミックス チャレンジ' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '平方数' })).toBeInTheDocument()

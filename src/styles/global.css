@@ -3890,6 +3890,185 @@ legend {
   white-space: nowrap;
 }
 
+.home-player-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.72fr);
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 2px solid rgba(91, 233, 244, 0.42);
+  border-radius: 8px;
+  background: rgba(8, 23, 45, 0.78);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.home-player-strip h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(1.45rem, 4vw, 2.2rem);
+}
+
+.home-player-strip .welcome {
+  margin: 0;
+}
+
+.home-strip-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.home-strip-stats .stat-pill {
+  min-height: 48px;
+  padding: 7px 8px;
+}
+
+.home-strip-stats .stat-icon {
+  width: 32px;
+  height: 32px;
+  font-size: 0.74rem !important;
+}
+
+.home-strip-stats .stat-pill strong {
+  font-size: clamp(1.18rem, 3.5vw, 1.46rem);
+}
+
+.home-star-select {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+  padding: clamp(16px, 4vw, 24px);
+  border: 2px solid rgba(255, 209, 102, 0.36);
+  border-radius: 8px;
+  background:
+    linear-gradient(145deg, rgba(9, 35, 54, 0.96), rgba(18, 42, 50, 0.9)),
+    radial-gradient(circle at 100% 0%, rgba(118, 240, 168, 0.12), transparent 24rem);
+  box-shadow: var(--shadow);
+}
+
+.home-star-heading {
+  display: grid;
+  gap: 4px;
+}
+
+.home-star-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(2rem, 8vw, 4rem);
+  line-height: 1.05;
+}
+
+.home-star-heading .title-line {
+  max-width: 34rem;
+  margin: 0;
+}
+
+.home-planet-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(12px, 2.4vw, 20px);
+}
+
+.home-planet-card {
+  grid-template-columns: 1fr;
+  min-height: clamp(184px, 28vw, 250px);
+  align-content: space-between;
+  padding: clamp(16px, 3vw, 22px);
+}
+
+.home-planet-orb {
+  width: clamp(78px, 14vw, 112px);
+  height: clamp(78px, 14vw, 112px);
+  font-size: clamp(2.4rem, 7vw, 4.1rem);
+}
+
+.home-planet-card .planet-copy strong {
+  font-size: clamp(1.25rem, 3.2vw, 1.82rem);
+}
+
+.home-common-actions {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 14px;
+}
+
+.home-common-actions .home-menu-card {
+  min-height: 92px;
+  background:
+    linear-gradient(145deg, rgba(14, 70, 74, 0.96), rgba(31, 50, 95, 0.94)),
+    radial-gradient(circle at 18% 12%, rgba(255, 209, 102, 0.18), transparent 7rem);
+}
+
+.planet-menu-shell main {
+  display: grid;
+  gap: 14px;
+}
+
+.planet-menu-hero {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+  padding: clamp(16px, 3vw, 22px);
+  border: 2px solid color-mix(in srgb, var(--planet-primary), white 24%);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--planet-surface), #061525 12%), rgba(8, 30, 49, 0.92));
+  box-shadow: var(--shadow);
+  color: var(--planet-text);
+}
+
+.planet-menu-orb {
+  width: clamp(76px, 12vw, 104px);
+  height: clamp(76px, 12vw, 104px);
+  font-size: clamp(2.4rem, 6vw, 3.8rem);
+}
+
+.planet-menu-copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.planet-menu-copy h2 {
+  margin: 0;
+  color: var(--planet-text);
+  font-size: clamp(1.8rem, 5.4vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.planet-menu-copy .welcome,
+.planet-menu-copy .title-line {
+  color: color-mix(in srgb, var(--planet-text), #071525 18%);
+}
+
+.planet-menu-status {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.planet-command-panel {
+  margin-top: 0;
+}
+
+.planet-mode-grid {
+  margin-top: 0;
+}
+
+.planet-mode-card {
+  min-height: 132px;
+}
+
+.planet-area-list {
+  display: grid;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.planet-area-list .stage-chip {
+  text-decoration: none;
+}
+
 .title-card-section {
   display: grid;
   gap: 8px;
@@ -7021,6 +7200,63 @@ legend {
 
   .game-shell .stage-grid {
     grid-template-columns: repeat(9, minmax(28px, 1fr));
+  }
+}
+
+@media (max-width: 860px) {
+  .home-player-strip,
+  .planet-menu-hero {
+    grid-template-columns: 1fr;
+  }
+
+  .home-planet-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-planet-card {
+    grid-template-columns: auto minmax(0, 1fr);
+    min-height: 136px;
+  }
+
+  .home-planet-card .planet-status {
+    grid-column: 1 / -1;
+  }
+
+  .home-common-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .planet-menu-status {
+    justify-self: start;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-player-strip,
+  .home-star-select,
+  .planet-menu-hero {
+    padding: 12px;
+  }
+
+  .home-strip-stats,
+  .home-common-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .home-planet-card {
+    grid-template-columns: 1fr;
+    min-height: 154px;
+  }
+
+  .home-planet-orb,
+  .planet-menu-orb {
+    width: 76px;
+    height: 76px;
+    font-size: 2.45rem;
+  }
+
+  .planet-mode-grid {
+    grid-template-columns: 1fr;
   }
 }
 

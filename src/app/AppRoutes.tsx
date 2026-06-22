@@ -4,11 +4,11 @@ import { AdvancedPage } from '../features/advanced/AdvancedPage'
 import { BossBattlePage } from '../features/bosses/BossBattlePage'
 import { MonsterBookPage } from '../features/book/MonsterBookPage'
 import { CustomPage } from '../features/custom/CustomPage'
-import { GameSelectPage } from '../features/games/GameSelectPage'
 import { HomePage } from '../features/home/HomePage'
 import { LearnPage } from '../features/learn/LearnPage'
 import { MiniGamePage } from '../features/miniGames/MiniGamePage'
 import { OnboardingPage } from '../features/onboarding/OnboardingPage'
+import { PlanetMenuPage } from '../features/planets/PlanetMenuPage'
 import { ReviewPage } from '../features/review/ReviewPage'
 import { ResultPage } from '../features/results/ResultPage'
 import { SettingsPage } from '../features/settings/SettingsPage'
@@ -46,7 +46,15 @@ export function AppRoutes() {
         path="/games"
         element={
           <RequireProfile>
-            <GameSelectPage />
+            <Navigate to="/planet/multiply" replace />
+          </RequireProfile>
+        }
+      />
+      <Route
+        path="/planet/:planetId"
+        element={
+          <RequireProfile>
+            <PlanetMenuPage />
           </RequireProfile>
         }
       />

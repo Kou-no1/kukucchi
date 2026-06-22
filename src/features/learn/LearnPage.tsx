@@ -283,6 +283,7 @@ export function LearnPage() {
   const right = Number(question.metadata?.right ?? 1)
   const revealReading = learnKind === 'kuku' && (feedback === 'correct' || visualMode === 'reading')
   const activeAnswerMode = learnKind === 'pi' || learnKind === 'addition' ? 'choice' : answerMode
+  const backToPlanet = learnKind === 'addition' ? '/planet/add' : '/planet/multiply'
 
   function finish() {
     const rawSummary = buildSessionSummary({
@@ -309,7 +310,7 @@ export function LearnPage() {
   return (
     <AppShell
       title="おぼえる"
-      backTo="/games"
+      backTo={backToPlanet}
       className={phase === 'running' ? 'game-shell learn-game-shell' : 'mode-ready-shell learn-ready-shell'}
     >
       {phase === 'ready' ? (
@@ -324,7 +325,7 @@ export function LearnPage() {
           eyebrow="9もんぜんぶチャレンジ"
           description="けいさんとこたえかたをえらんで、スタートしよう！"
           level={saveData.player?.level ?? 1}
-          backTo="/games"
+          backTo={backToPlanet}
           onStart={startLearn}
         >
           <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
