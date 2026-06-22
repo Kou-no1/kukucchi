@@ -110,7 +110,12 @@ import {
   getTrophyKindForDifficulty,
 } from '../game-engine/collection/pixelSprites'
 import { buildBuddySprite } from '../game-engine/collection/buddySprites'
-import { buildCustomInventory } from '../game-engine/custom/customInventory'
+import {
+  buildCustomInventory,
+  customRewardOrigins,
+  customStarFilterOrder,
+  matchesCustomStarFilter,
+} from '../game-engine/custom/customInventory'
 import {
   advancedBossDisplayNames,
   advancedBossVariantForBossId,
@@ -1840,14 +1845,42 @@ describe('mastery, review, missions, and storage', () => {
 
     const multiplyTabs = buildCustomInventory(save, 'multiply')
     const addTabs = buildCustomInventory(save, 'add')
+    const multiplyUfoTab = multiplyTabs.find((tab) => tab.id === 'ufo')
     const multiplyBuddyTab = multiplyTabs.find((tab) => tab.id === 'buddy')
+    const multiplyEffectTab = multiplyTabs.find((tab) => tab.id === 'effect')
+    const multiplyTitleTab = multiplyTabs.find((tab) => tab.id === 'title')
     expect(tabs.find((tab) => tab.id === 'window')?.entries.find((entry) => entry.id === 'planet-view')?.origin).toBe('all')
     expect(tabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === ufo!.id)?.origin).toBe('multiply')
+    expect(tabs.find((tab) => tab.id === 'buddy')?.entries.find((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))?.origin).toBe('all')
+    expect(tabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === 'comet-ship')?.origin).toBe('all')
+    expect(tabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === galaxySwirlEffectId)?.origin).toBe('multiply')
     expect(multiplyTabs.find((tab) => tab.id === 'window')?.entries.some((entry) => entry.id === 'planet-view')).toBe(false)
+    expect(multiplyUfoTab?.entries).toHaveLength(ufoDefinitions.length)
+    expect(multiplyUfoTab?.entries.find((entry) => entry.id === ufo!.id)?.origin).toBe('multiply')
     expect(multiplyBuddyTab?.entries.find((entry) => entry.id === monsterBuddySelectionId(2, 3))?.origin).toBe('multiply')
     expect(multiplyBuddyTab?.entries.some((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))).toBe(false)
+    expect(multiplyEffectTab?.entries.find((entry) => entry.id === galaxySwirlEffectId)?.origin).toBe('multiply')
+    expect(multiplyEffectTab?.entries.some((entry) => entry.id === 'comet-ship')).toBe(false)
+    expect(multiplyTitleTab?.entries.length).toBeGreaterThan(0)
+    expect(multiplyTitleTab?.entries.every((entry) => entry.origin === 'multiply')).toBe(true)
     expect(addTabs.every((tab) => tab.entries.length === 0)).toBe(true)
     expect(getHomeShipPreviewVisuals(save.progress.equippedItems).window).toBe('planet-view')
+  })
+
+  it('keeps custom reward origins extensible beyond the visible star filters', () => {
+    expect(customStarFilterOrder).toEqual(['all', 'add', 'subtract', 'multiply'])
+    expect(customRewardOrigins).toEqual([
+      'all',
+      'add',
+      'subtract',
+      'multiply',
+      'divide',
+      'decimal',
+      'fraction',
+    ])
+    expect(matchesCustomStarFilter('divide', 'all')).toBe(true)
+    expect(matchesCustomStarFilter('divide', 'multiply')).toBe(false)
+    expect(matchesCustomStarFilter('multiply', 'multiply')).toBe(true)
   })
 
   it('unlocks level icons every five levels without changing save data', () => {

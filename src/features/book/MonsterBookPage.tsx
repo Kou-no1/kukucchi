@@ -186,38 +186,41 @@ export function MonsterBookPage() {
 
   return (
     <AppShell title="図かん" backTo="/home">
-      <section className="book-command" aria-labelledby="book-title">
-        <p className="welcome">ぜんぶのコレクション</p>
-        <h2 id="book-title">
-          ぜんぶで {progress.overall.owned}/{progress.overall.total}こ あつめた！
-        </h2>
-        <div className="book-meter" aria-label={`ぜんたい ${progress.overall.percent}%`}>
-          <span style={{ width: `${progress.overall.percent}%` }} />
-        </div>
-      </section>
+      <div className="book-fixed-panel">
+        <section className="book-command" aria-labelledby="book-title">
+          <p className="welcome">ぜんぶのコレクション</p>
+          <h2 id="book-title">
+            ぜんぶで {progress.overall.owned}/{progress.overall.total}こ あつめた！
+          </h2>
+          <div className="book-meter" aria-label={`ぜんたい ${progress.overall.percent}%`}>
+            <span style={{ width: `${progress.overall.percent}%` }} />
+          </div>
+        </section>
 
-      <nav className="book-tabs" aria-label="図かんタブ">
-        {tabs.map((tab) => (
-          <button
-            className={activeTab === tab.id ? 'selected' : ''}
-            type="button"
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </nav>
+        <nav className="book-tabs" aria-label="図かんタブ">
+          {tabs.map((tab) => (
+            <button
+              className={activeTab === tab.id ? 'selected' : ''}
+              type="button"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
 
-      <section className="book-command compact-book-command" aria-label="タブのあつめたかず">
-        <h2>
-          あつめた かず {activeProgress.owned}/{activeProgress.total}こ（{activeProgress.percent}%）
-        </h2>
-      </section>
+        <section className="book-command compact-book-command" aria-label="タブのあつめたかず">
+          <h2>
+            あつめた かず {activeProgress.owned}/{activeProgress.total}こ（{activeProgress.percent}%）
+          </h2>
+        </section>
+      </div>
 
-      {activeTab === 'kukucchi' ? (
-        <section className="monster-grid book-grid" aria-label="くくっちのきろく">
-          {[
+      <div className="book-scroll-area">
+        {activeTab === 'kukucchi' ? (
+          <section className="monster-grid book-grid" aria-label="くくっちのきろく">
+            {[
             {
               no: 1,
               owned: Boolean(saveData.player),
@@ -282,8 +285,8 @@ export function MonsterBookPage() {
               </article>
             )
           })}
-        </section>
-      ) : null}
+          </section>
+        ) : null}
 
       {activeTab === 'monsters' ? (
         <>
@@ -616,28 +619,29 @@ export function MonsterBookPage() {
         </>
       ) : null}
 
-      {activeTab === 'titles' ? (
-        <section className="monster-grid book-grid" aria-label="しょうごう図かん">
-          {titleEntries.map((title, index) => (
-            <article
-              className={title.owned ? 'book-card title-book-card' : 'book-card silhouette title-book-card'}
-              key={title.id}
-              {...cardAction({
-                name: title.owned ? title.label : '？？？',
-                description: title.owned ? title.description : '',
-                acquiredAt: title.owned ? title.acquiredAt : null,
-                method: title.owned ? title.method : '？？？',
-                owned: title.owned,
-              })}
-            >
-              <span className="boss-no">S-{String(index + 1).padStart(2, '0')}</span>
-              <TitleEmblem title={title.label} locked={!title.owned} className="title-book-icon" />
-              <h2>{title.owned ? title.label : '？？？'}</h2>
-              {title.owned ? <p>{title.description}</p> : <p>まだです</p>}
-            </article>
-          ))}
-        </section>
-      ) : null}
+        {activeTab === 'titles' ? (
+          <section className="monster-grid book-grid" aria-label="しょうごう図かん">
+            {titleEntries.map((title, index) => (
+              <article
+                className={title.owned ? 'book-card title-book-card' : 'book-card silhouette title-book-card'}
+                key={title.id}
+                {...cardAction({
+                  name: title.owned ? title.label : '？？？',
+                  description: title.owned ? title.description : '',
+                  acquiredAt: title.owned ? title.acquiredAt : null,
+                  method: title.owned ? title.method : '？？？',
+                  owned: title.owned,
+                })}
+              >
+                <span className="boss-no">S-{String(index + 1).padStart(2, '0')}</span>
+                <TitleEmblem title={title.label} locked={!title.owned} className="title-book-icon" />
+                <h2>{title.owned ? title.label : '？？？'}</h2>
+                {title.owned ? <p>{title.description}</p> : <p>まだです</p>}
+              </article>
+            ))}
+          </section>
+        ) : null}
+      </div>
 
       {detail ? (
         <div className="book-detail-backdrop" role="presentation" onClick={() => setDetail(null)}>

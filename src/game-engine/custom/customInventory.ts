@@ -27,13 +27,23 @@ export type CustomEntryKind =
   | 'dedicated-buddy'
   | 'title'
 
+export type CustomOperationOrigin =
+  | 'add'
+  | 'subtract'
+  | 'multiply'
+  | 'divide'
+  | 'decimal'
+  | 'fraction'
+
+export type CustomRewardOrigin = 'all' | CustomOperationOrigin
+
 export type CustomStarFilter = 'all' | 'add' | 'subtract' | 'multiply'
 
 export type CustomInventoryEntry = {
   id: string
   tabId: CustomTabId
   kind: CustomEntryKind
-  origin: CustomStarFilter
+  origin: CustomRewardOrigin
   label: string
   description: string
   owned: boolean
@@ -77,6 +87,23 @@ export const customStarFilterLabels: Record<CustomStarFilter, string> = {
 }
 
 export const customStarFilterOrder: CustomStarFilter[] = ['all', 'add', 'subtract', 'multiply']
+
+export const customRewardOrigins: CustomRewardOrigin[] = [
+  'all',
+  'add',
+  'subtract',
+  'multiply',
+  'divide',
+  'decimal',
+  'fraction',
+]
+
+export function matchesCustomStarFilter(
+  origin: CustomRewardOrigin,
+  starFilter: CustomStarFilter,
+): boolean {
+  return starFilter === 'all' || origin === starFilter
+}
 
 function tabForVisualLayer(layer: ShopItemVisualLayer): CustomTabId | null {
   if (layer === 'window') {
@@ -236,7 +263,7 @@ export function buildCustomInventory(
     ...monsterBuddyEntries(save),
     ...dedicatedBuddyEntries(save),
     ...titleEntries(save),
-  ].filter((entry) => starFilter === 'all' || entry.origin === starFilter)
+  ].filter((entry) => matchesCustomStarFilter(entry.origin, starFilter))
   return tabOrder.map((tabId) => {
     const tabEntries = entries.filter((entry) => entry.tabId === tabId)
     return {

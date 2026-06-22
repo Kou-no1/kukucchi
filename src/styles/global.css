@@ -4300,8 +4300,23 @@ legend {
   text-shadow: 0 0 12px rgba(91, 233, 244, 0.58);
 }
 
+.book-fixed-panel {
+  position: sticky;
+  top: 10px;
+  z-index: 12;
+  display: grid;
+  gap: 10px;
+  padding-bottom: 10px;
+  background:
+    linear-gradient(180deg, rgba(7, 21, 37, 0.96) 0%, rgba(7, 21, 37, 0.88) 76%, transparent 100%);
+}
+
+.book-fixed-panel .book-command {
+  margin-top: 0;
+}
+
 .compact-book-command {
-  margin-top: 12px;
+  margin-top: 0;
   padding: 10px 12px;
 }
 
@@ -4313,7 +4328,7 @@ legend {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 8px;
-  margin-top: 12px;
+  margin-top: 0;
 }
 
 .book-tabs button {
@@ -4566,6 +4581,19 @@ legend {
 
 .book-grid {
   margin-top: 14px;
+}
+
+.book-scroll-area {
+  min-height: 240px;
+  max-height: clamp(240px, calc(100dvh - 390px), 680px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+}
+
+.book-scroll-area > .book-grid:first-child,
+.book-scroll-area > .collection-section:first-child {
+  margin-top: 0;
 }
 
 .book-card,
@@ -6784,6 +6812,9 @@ legend {
   grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.05fr);
   gap: 18px;
   align-items: start;
+  min-height: min(760px, calc(100dvh - 128px));
+  max-height: calc(100dvh - 128px);
+  overflow: hidden;
 }
 
 .custom-preview-panel,
@@ -6800,8 +6831,12 @@ legend {
 }
 
 .custom-preview-panel {
+  position: sticky;
+  top: 92px;
   display: grid;
   gap: 16px;
+  max-height: calc(100dvh - 128px);
+  overflow: hidden;
   padding: 18px;
 }
 
@@ -6931,7 +6966,10 @@ legend {
 
 .custom-inventory-panel {
   display: grid;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr);
   gap: 12px;
+  max-height: calc(100dvh - 128px);
+  overflow: hidden;
   padding: 14px;
 }
 
@@ -7012,6 +7050,10 @@ legend {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
   gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
 }
 
 .custom-item-card {
@@ -7029,6 +7071,19 @@ legend {
   color: #e8fbff;
   text-align: center;
   box-shadow: inset 0 0 16px rgba(91, 233, 244, 0.1);
+}
+
+.custom-inventory-panel > .custom-item-card {
+  grid-template-columns: auto minmax(0, 1fr);
+  min-height: 88px;
+  justify-items: start;
+  text-align: left;
+}
+
+.custom-inventory-panel > .custom-item-card .custom-item-emoji {
+  grid-row: 1 / 3;
+  width: 58px;
+  height: 58px;
 }
 
 .custom-item-card.selected {
@@ -7159,6 +7214,20 @@ legend {
 @media (max-width: 860px) {
   .custom-hub {
     grid-template-columns: 1fr;
+    min-height: 0;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .custom-preview-panel {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .custom-inventory-panel {
+    min-height: min(620px, calc(100dvh - 96px));
+    max-height: calc(100dvh - 96px);
   }
 
   .custom-tab-bar {
@@ -7167,17 +7236,61 @@ legend {
 }
 
 @media (max-width: 560px) {
+  .book-fixed-panel {
+    top: 6px;
+    gap: 8px;
+  }
+
+  .book-fixed-panel .book-command {
+    padding: 12px;
+  }
+
+  .book-fixed-panel .book-command h2 {
+    font-size: 1.25rem;
+  }
+
+  .book-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .book-tabs button {
+    min-height: 42px;
+    font-size: 0.86rem;
+  }
+
+  .book-scroll-area {
+    max-height: clamp(220px, calc(100dvh - 330px), 540px);
+  }
+
   .custom-star-filter {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .custom-tab-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .custom-tab {
+    flex: 0 0 112px;
+    min-height: 46px;
+    padding: 4px;
+    font-size: 0.86rem;
+  }
+
+  .custom-tab-heading h2 {
+    font-size: 1.25rem;
   }
 
   .custom-character-window {
     min-height: clamp(300px, 42vh, 390px);
     padding: 14px;
+  }
+
+  .custom-inventory-panel {
+    min-height: min(560px, calc(100dvh - 78px));
+    max-height: calc(100dvh - 78px);
   }
 
   .custom-character-window .kukucchi {
@@ -7199,6 +7312,15 @@ legend {
 
   .custom-item-card {
     min-height: 180px;
+  }
+
+  .custom-inventory-panel > .custom-item-card {
+    min-height: 78px;
+  }
+
+  .custom-inventory-panel > .custom-item-card .custom-item-emoji {
+    width: 52px;
+    height: 52px;
   }
 
   .level-icon-unlock-card {

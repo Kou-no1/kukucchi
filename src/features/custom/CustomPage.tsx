@@ -86,7 +86,12 @@ export function CustomPage() {
     () => buildCustomInventory(saveData, activeStarFilter),
     [activeStarFilter, saveData],
   )
-  const activeTab = inventory.find((tab) => tab.id === activeTabId) ?? inventory[0]
+  const requestedTab = inventory.find((tab) => tab.id === activeTabId)
+  const activeTab =
+    requestedTab && requestedTab.totalCount > 0
+      ? requestedTab
+      : inventory.find((tab) => tab.totalCount > 0) ?? requestedTab ?? inventory[0]
+
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const visual = getHomeShipPreviewVisuals(saveData.progress.equippedItems, equippedUfo?.variant)
   const buddyContent = renderBuddy(saveData.progress.equippedBuddyId)
