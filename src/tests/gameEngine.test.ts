@@ -379,11 +379,13 @@ describe('question generation', () => {
     expect(samples.every((question) => !/×\s*[1-9][0-9]/.test(question.prompt))).toBe(true)
   })
 
-  it('defines a live addition planet with five ordered generator areas', () => {
+  it('orders planets by school progression and defines a live addition planet with six areas', () => {
     const multiplyPlanet = planets.find((planet) => planet.id === 'multiply')
     const additionPlanet = planets.find((planet) => planet.id === 'add')
+    expect(planets.map((planet) => planet.id)).toEqual(['add', 'subtract', 'multiply'])
     expect(additionPlanet?.status).toBe('live')
     expect(additionPlanet?.areas.map((area) => area.name)).toEqual([
+      '1〜9のたしざん',
       '10までのたしざん',
       'くりあがりのたしざん',
       '2けたのたしざん',
@@ -397,10 +399,11 @@ describe('question generation', () => {
       'addition',
       'addition',
       'addition',
+      'addition',
     ])
   })
 
-  it('generates addition questions that match all five area rules', () => {
+  it('generates addition questions that match all six area rules', () => {
     const samples = Object.fromEntries(
       additionAreas.map((area, areaIndex) => [
         area.id,
@@ -412,6 +415,11 @@ describe('question generation', () => {
       ]),
     )
 
+    expect(samples['add-within-9'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 1 && left <= 8 && right >= 1 && right <= 8 && left + right <= 9
+    })).toBe(true)
     expect(samples['add-within-10'].every((question) => {
       const left = Number(question.metadata?.left)
       const right = Number(question.metadata?.right)
@@ -1829,6 +1837,17 @@ describe('mastery, review, missions, and storage', () => {
     expect(buddyTab?.entries.find((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))?.owned).toBe(true)
     expect(buddyTab?.entries.some((entry) => entry.label === '？？？')).toBe(true)
     expect(tabs.find((tab) => tab.id === 'title')?.entries.find((entry) => entry.selected)?.label).toBe('れんぞくせいかい')
+
+    const multiplyTabs = buildCustomInventory(save, 'multiply')
+    const addTabs = buildCustomInventory(save, 'add')
+    const multiplyBuddyTab = multiplyTabs.find((tab) => tab.id === 'buddy')
+    expect(tabs.find((tab) => tab.id === 'window')?.entries.find((entry) => entry.id === 'planet-view')?.origin).toBe('all')
+    expect(tabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === ufo!.id)?.origin).toBe('multiply')
+    expect(multiplyTabs.find((tab) => tab.id === 'window')?.entries.some((entry) => entry.id === 'planet-view')).toBe(false)
+    expect(multiplyBuddyTab?.entries.find((entry) => entry.id === monsterBuddySelectionId(2, 3))?.origin).toBe('multiply')
+    expect(multiplyBuddyTab?.entries.some((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))).toBe(false)
+    expect(addTabs.every((tab) => tab.entries.length === 0)).toBe(true)
+    expect(getHomeShipPreviewVisuals(save.progress.equippedItems).window).toBe('planet-view')
   })
 
   it('unlocks level icons every five levels without changing save data', () => {

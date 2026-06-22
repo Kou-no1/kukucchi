@@ -46,6 +46,9 @@ function hasNoCarry(left: number, right: number): boolean {
 }
 
 function matchesArea(areaId: AdditionAreaId, left: number, right: number): boolean {
+  if (areaId === 'add-within-9') {
+    return left >= 1 && left <= 8 && right >= 1 && right <= 8 && left + right <= 9
+  }
   if (areaId === 'add-within-10') {
     return left >= 1 && left <= 9 && right >= 1 && right <= 9 && left + right <= 10
   }
@@ -64,6 +67,9 @@ function matchesArea(areaId: AdditionAreaId, left: number, right: number): boole
 function difficultyForAddition(areaId: AdditionAreaId, left: number, right: number): number {
   const digitSum = ones(left) + ones(right)
   const tensSum = tens(left) + tens(right)
+  if (areaId === 'add-within-9') {
+    return left + right <= 5 ? 1 : 2
+  }
   if (areaId === 'add-within-10') {
     return left + right <= 6 ? 1 : 2
   }

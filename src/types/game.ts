@@ -10,6 +10,7 @@ export type QuestionCategory =
   | 'multiplication-basic'
   | 'multiplication-square'
   | 'pi-multiplication'
+  | 'addition-within-9'
   | 'addition-within-10'
   | 'addition-carry-basic'
   | 'addition-two-digit-no-carry'

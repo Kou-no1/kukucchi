@@ -13,7 +13,10 @@ import { equipShopItem, getHomeShipPreviewVisuals } from '../../data/shopItems'
 import { getUfoById } from '../../data/ufos'
 import {
   buildCustomInventory,
+  customStarFilterLabels,
+  customStarFilterOrder,
   type CustomInventoryEntry,
+  type CustomStarFilter,
   type CustomTabId,
 } from '../../game-engine/custom/customInventory'
 import {
@@ -78,7 +81,11 @@ function entrySourceLabel(entry: CustomInventoryEntry): string {
 export function CustomPage() {
   const { saveData, updateSaveData } = useSaveData()
   const [activeTabId, setActiveTabId] = useState<CustomTabId>('window')
-  const inventory = useMemo(() => buildCustomInventory(saveData), [saveData])
+  const [activeStarFilter, setActiveStarFilter] = useState<CustomStarFilter>('all')
+  const inventory = useMemo(
+    () => buildCustomInventory(saveData, activeStarFilter),
+    [activeStarFilter, saveData],
+  )
   const activeTab = inventory.find((tab) => tab.id === activeTabId) ?? inventory[0]
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const visual = getHomeShipPreviewVisuals(saveData.progress.equippedItems, equippedUfo?.variant)
@@ -209,6 +216,19 @@ export function CustomPage() {
         </section>
 
         <section className="custom-inventory-panel" aria-labelledby="custom-inventory-heading">
+          <div className="custom-star-filter" aria-label="星フィルタ">
+            {customStarFilterOrder.map((filter) => (
+              <button
+                className={activeStarFilter === filter ? 'selected' : ''}
+                key={filter}
+                type="button"
+                onClick={() => setActiveStarFilter(filter)}
+                aria-pressed={activeStarFilter === filter}
+              >
+                {customStarFilterLabels[filter]}
+              </button>
+            ))}
+          </div>
           <div className="custom-tab-bar" role="tablist" aria-label="もちものタブ">
             {inventory.map((tab) => (
               <button

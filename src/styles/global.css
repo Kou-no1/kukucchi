@@ -6935,6 +6935,30 @@ legend {
   padding: 14px;
 }
 
+.custom-star-filter {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.custom-star-filter button {
+  min-height: 46px;
+  padding: 6px 8px;
+  border: 2px solid rgba(91, 233, 244, 0.35);
+  border-radius: 8px;
+  background: rgba(3, 14, 28, 0.76);
+  color: #dffcff;
+  cursor: pointer;
+  font-weight: 950;
+}
+
+.custom-star-filter button.selected {
+  border-color: rgba(255, 216, 106, 0.9);
+  background: rgba(255, 216, 106, 0.18);
+  color: #ffffff;
+  box-shadow: 0 0 16px rgba(255, 216, 106, 0.22);
+}
+
 .custom-tab-bar {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -7143,6 +7167,10 @@ legend {
 }
 
 @media (max-width: 560px) {
+  .custom-star-filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .custom-tab-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

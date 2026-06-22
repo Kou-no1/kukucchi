@@ -27,10 +27,13 @@ export type CustomEntryKind =
   | 'dedicated-buddy'
   | 'title'
 
+export type CustomStarFilter = 'all' | 'add' | 'subtract' | 'multiply'
+
 export type CustomInventoryEntry = {
   id: string
   tabId: CustomTabId
   kind: CustomEntryKind
+  origin: CustomStarFilter
   label: string
   description: string
   owned: boolean
@@ -65,6 +68,15 @@ const tabLabels: Record<CustomTabId, string> = {
 }
 
 const tabOrder: CustomTabId[] = ['window', 'ufo', 'hat', 'suit', 'buddy', 'effect', 'title']
+
+export const customStarFilterLabels: Record<CustomStarFilter, string> = {
+  all: 'ぜんぶ',
+  add: 'たしざん',
+  subtract: 'ひきざん',
+  multiply: 'かけざん',
+}
+
+export const customStarFilterOrder: CustomStarFilter[] = ['all', 'add', 'subtract', 'multiply']
 
 function tabForVisualLayer(layer: ShopItemVisualLayer): CustomTabId | null {
   if (layer === 'window') {
@@ -106,6 +118,7 @@ function shopEntries(save: SaveData): CustomInventoryEntry[] {
         id: item.id,
         tabId,
         kind: 'shop',
+        origin: item.availableInShop === false ? 'multiply' : 'all',
         label: item.name,
         description: item.description,
         owned,
@@ -132,6 +145,7 @@ function ufoEntries(save: SaveData): CustomInventoryEntry[] {
       id: ufo.id,
       tabId: 'ufo',
       kind: 'ufo',
+      origin: 'multiply',
       label: ufo.name,
       description: ufo.description,
       owned,
@@ -157,6 +171,7 @@ function monsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
       id: selectionId,
       tabId: 'buddy',
       kind: 'monster-buddy',
+      origin: 'multiply',
       label: owned ? `${fact.left} × ${fact.right}` : '？？？',
       description: owned ? 'にがてをこくふくしたなかま' : 'にがてをこくふくすると なかまになる',
       owned,
@@ -177,6 +192,7 @@ function dedicatedBuddyEntries(save: SaveData): CustomInventoryEntry[] {
       id: selectionId,
       tabId: 'buddy',
       kind: 'dedicated-buddy',
+      origin: 'all',
       label: owned ? buddy.name : '？？？',
       description: owned ? buddy.description : `${buddyThemeLabels[buddy.theme]}のなかま`,
       owned,
@@ -198,6 +214,7 @@ function titleEntries(save: SaveData): CustomInventoryEntry[] {
         id: title.id,
         tabId: 'title',
         kind: 'title',
+        origin: 'multiply',
         label: owned ? title.label : '？？？',
         description: owned ? title.description : 'まだ見つけていないしょうごう',
         owned,
@@ -209,14 +226,17 @@ function titleEntries(save: SaveData): CustomInventoryEntry[] {
     .sort((left, right) => Number(right.owned) - Number(left.owned))
 }
 
-export function buildCustomInventory(save: SaveData): CustomInventoryTab[] {
+export function buildCustomInventory(
+  save: SaveData,
+  starFilter: CustomStarFilter = 'all',
+): CustomInventoryTab[] {
   const entries = [
     ...shopEntries(save),
     ...ufoEntries(save),
     ...monsterBuddyEntries(save),
     ...dedicatedBuddyEntries(save),
     ...titleEntries(save),
-  ]
+  ].filter((entry) => starFilter === 'all' || entry.origin === starFilter)
   return tabOrder.map((tabId) => {
     const tabEntries = entries.filter((entry) => entry.tabId === tabId)
     return {

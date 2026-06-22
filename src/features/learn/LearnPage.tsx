@@ -119,11 +119,12 @@ export function LearnPage() {
   const [searchParams] = useSearchParams()
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
-  const initialLearnKind: LearnKind = searchParams.get('planet') === 'add' ? 'addition' : 'kuku'
+  const fromAdditionPlanet = searchParams.get('planet') === 'add'
+  const initialLearnKind: LearnKind = fromAdditionPlanet ? 'addition' : 'kuku'
   const requestedAreaId = searchParams.get('area')
   const initialAdditionAreaId: AdditionAreaId = isAdditionAreaId(requestedAreaId)
     ? requestedAreaId
-    : 'add-within-10'
+    : 'add-within-9'
   const [phase, setPhase] = useState<LearnPhase>('ready')
   const [learnKind, setLearnKind] = useState<LearnKind>(initialLearnKind)
   const [additionAreaId, setAdditionAreaId] = useState<AdditionAreaId>(initialAdditionAreaId)
@@ -328,22 +329,24 @@ export function LearnPage() {
           backTo={backToPlanet}
           onStart={startLearn}
         >
-          <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
-            <strong>けいさん</strong>
-            <div className="segmented learn-start-segmented">
-              {(['kuku', 'addition', 'square', 'pi'] as const).map((kind) => (
-                <button
-                  className={learnKind === kind ? 'selected' : ''}
-                  key={kind}
-                  type="button"
-                  onClick={() => changeLearnKind(kind)}
-                  aria-pressed={learnKind === kind}
-                >
-                  {learnKindLabels[kind]}
-                </button>
-              ))}
+          {!fromAdditionPlanet ? (
+            <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
+              <strong>けいさん</strong>
+              <div className="segmented learn-start-segmented">
+                {(['kuku', 'addition', 'square', 'pi'] as const).map((kind) => (
+                  <button
+                    className={learnKind === kind ? 'selected' : ''}
+                    key={kind}
+                    type="button"
+                    onClick={() => changeLearnKind(kind)}
+                    aria-pressed={learnKind === kind}
+                  >
+                    {learnKindLabels[kind]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
 
           {learnKind === 'kuku' ? (
             <div className="stage-select-panel" aria-label="れんしゅうするだん">

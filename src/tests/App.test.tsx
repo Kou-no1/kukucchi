@@ -62,6 +62,10 @@ describe('app flow', () => {
   it('uses star-first navigation from home', async () => {
     const user = await completeOnboarding()
     expect(screen.getByRole('heading', { name: 'ほしをえらぶ' })).toBeInTheDocument()
+    const starRegion = screen.getByRole('region', { name: 'ほしをえらぶ' })
+    expect(
+      within(starRegion).getAllByText(/(?:たしざん|ひきざん|かけざん)のほし/).map((element) => element.textContent),
+    ).toEqual(['たしざんのほし', 'ひきざんのほし', 'かけざんのほし'])
     expect(screen.getByRole('link', { name: /かけざんのほし/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /たしざんのほし/ })).toBeInTheDocument()
     expect(screen.getByText('ひきざんのほし')).toBeInTheDocument()
@@ -85,6 +89,12 @@ describe('app flow', () => {
     expect(await screen.findByRole('heading', { name: 'たしざんのほし' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /おぼえる/ })).toBeInTheDocument()
     expect(screen.getAllByText('じゅんびちゅう').length).toBeGreaterThan(0)
+    await user.click(screen.getByRole('link', { name: /おぼえる/ }))
+    expect(await screen.findByRole('heading', { name: '1〜9のたしざん れんしゅう' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: '1〜9のたしざんこたえが9まで' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '九九' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '平方数' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: '円周率' })).not.toBeInTheDocument()
   })
 
   it('hides learning level setup and reflects player icon changes on home', async () => {
