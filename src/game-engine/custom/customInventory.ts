@@ -1,6 +1,12 @@
 import { getTitleDefinitions } from '../rewards/titles'
 import { createMultiplicationFactPool } from '../questions/factDifficulty'
 import { getCollectionRecord } from '../collection/collectionRecords'
+import {
+  additionCorrectForArea,
+  additionMonsterDefinitions,
+  isAdditionMonsterOwned,
+  type AdditionMonsterDefinition,
+} from '../../data/additionMonsters'
 import { buddyDefinitions, buddyThemeLabels, type BuddyDefinition } from '../../data/buddies'
 import {
   getEquipmentSlotForKind,
@@ -10,6 +16,7 @@ import {
 } from '../../data/shopItems'
 import { ufoDefinitions, type UfoDefinition } from '../../data/ufos'
 import type { SaveData } from '../../types/save'
+import type { OperationRewardOrigin, RewardOrigin, VisibleStarFilter } from '../../types/rewardOrigin'
 
 export type CustomTabId =
   | 'window'
@@ -24,20 +31,15 @@ export type CustomEntryKind =
   | 'shop'
   | 'ufo'
   | 'monster-buddy'
+  | 'addition-monster-buddy'
   | 'dedicated-buddy'
   | 'title'
 
-export type CustomOperationOrigin =
-  | 'add'
-  | 'subtract'
-  | 'multiply'
-  | 'divide'
-  | 'decimal'
-  | 'fraction'
+export type CustomOperationOrigin = OperationRewardOrigin
 
-export type CustomRewardOrigin = 'all' | CustomOperationOrigin
+export type CustomRewardOrigin = RewardOrigin
 
-export type CustomStarFilter = 'all' | 'add' | 'subtract' | 'multiply'
+export type CustomStarFilter = VisibleStarFilter
 
 export type CustomInventoryEntry = {
   id: string
@@ -57,6 +59,7 @@ export type CustomInventoryEntry = {
     left: number
     right: number
   }
+  additionMonster?: AdditionMonsterDefinition
 }
 
 export type CustomInventoryTab = {
@@ -145,7 +148,7 @@ function shopEntries(save: SaveData): CustomInventoryEntry[] {
         id: item.id,
         tabId,
         kind: 'shop',
-        origin: item.availableInShop === false ? 'multiply' : 'all',
+        origin: item.rewardOrigin ?? (item.availableInShop === false ? 'multiply' : 'all'),
         label: item.name,
         description: item.description,
         owned,
@@ -172,7 +175,7 @@ function ufoEntries(save: SaveData): CustomInventoryEntry[] {
       id: ufo.id,
       tabId: 'ufo',
       kind: 'ufo',
-      origin: 'multiply',
+      origin: ufo.origin ?? 'multiply',
       label: ufo.name,
       description: ufo.description,
       owned,
@@ -210,6 +213,27 @@ function monsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
   })
 }
 
+function additionMonsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
+  return additionMonsterDefinitions.map((monster) => {
+    const selectionId = `addition-monster:${monster.id}`
+    const owned = isAdditionMonsterOwned(save.progress.categoryCorrect, monster)
+    const progressCount = additionCorrectForArea(save.progress.categoryCorrect, monster.areaId)
+    return {
+      id: selectionId,
+      tabId: 'buddy',
+      kind: 'addition-monster-buddy',
+      origin: monster.origin,
+      label: owned ? monster.name : '？？？',
+      description: owned ? monster.description : `${progressCount}/${monster.threshold}もん`,
+      owned,
+      selected: owned && save.progress.equippedBuddyId === selectionId,
+      method: owned ? `${monster.threshold}もん せいかい` : 'たしざんの星',
+      acquiredAt: null,
+      additionMonster: monster,
+    } satisfies CustomInventoryEntry
+  })
+}
+
 function dedicatedBuddyEntries(save: SaveData): CustomInventoryEntry[] {
   return buddyDefinitions.map((buddy) => {
     const record = getCollectionRecord(save.progress.collectionRecords, 'buddy', buddy.id)
@@ -241,7 +265,7 @@ function titleEntries(save: SaveData): CustomInventoryEntry[] {
         id: title.id,
         tabId: 'title',
         kind: 'title',
-        origin: 'multiply',
+        origin: title.origin ?? 'multiply',
         label: owned ? title.label : '？？？',
         description: owned ? title.description : 'まだ見つけていないしょうごう',
         owned,
@@ -261,6 +285,7 @@ export function buildCustomInventory(
     ...shopEntries(save),
     ...ufoEntries(save),
     ...monsterBuddyEntries(save),
+    ...additionMonsterBuddyEntries(save),
     ...dedicatedBuddyEntries(save),
     ...titleEntries(save),
   ].filter((entry) => matchesCustomStarFilter(entry.origin, starFilter))

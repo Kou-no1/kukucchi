@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import { AppShell } from '../../components/common/AppShell'
+import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
 import { AdvancedMonsterSprite } from '../../components/collection/AdvancedMonsterSprite'
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
@@ -15,6 +16,12 @@ import {
   advancedProgressForCategory,
   isAdvancedMonsterOwned,
 } from '../../data/advancedMonsters'
+import {
+  additionAreaLabel,
+  additionCorrectForArea,
+  additionMonsterDefinitions,
+  isAdditionMonsterOwned,
+} from '../../data/additionMonsters'
 import { buddyDefinitions, buddyThemeLabels } from '../../data/buddies'
 import { advancedBossCategoryLabels, bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
 import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
@@ -345,6 +352,41 @@ export function MonsterBookPage() {
                   >
                     <span className="boss-no">A-{String(monster.no).padStart(2, '0')}</span>
                     <AdvancedMonsterSprite
+                      monster={monster}
+                      locked={!owned}
+                      className="book-pixel-icon"
+                    />
+                    <h2>{owned ? monster.name : '？？？'}</h2>
+                    <p>
+                      {owned
+                        ? monster.description
+                        : `${progressCount}/${monster.threshold}もん`}
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+          <section className="collection-section" aria-labelledby="addition-monsters-title">
+            <h2 id="addition-monsters-title">たしざんのなかま</h2>
+            <div className="monster-grid book-grid">
+              {additionMonsterDefinitions.map((monster) => {
+                const owned = isAdditionMonsterOwned(saveData.progress.categoryCorrect, monster)
+                const progressCount = additionCorrectForArea(saveData.progress.categoryCorrect, monster.areaId)
+                return (
+                  <article
+                    className={owned ? 'book-card addition-monster-card' : 'book-card silhouette addition-monster-card'}
+                    key={monster.id}
+                    {...cardAction({
+                      name: owned ? monster.name : '？？？',
+                      description: owned ? monster.description : `${additionAreaLabel(monster.areaId)}をれんしゅうしよう`,
+                      acquiredAt: null,
+                      method: owned ? `${monster.threshold}もん せいかい` : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">+{String(monster.no).padStart(2, '0')}</span>
+                    <AdditionMonsterSprite
                       monster={monster}
                       locked={!owned}
                       className="book-pixel-icon"

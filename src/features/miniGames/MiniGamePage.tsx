@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { KeyIcon } from '../../components/collection/KeyIcon'
@@ -11,6 +11,7 @@ import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { miniGameMinDifficulty } from '../../data/factDifficulty'
 import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../data/keys'
+import { additionAreas } from '../../data/planets'
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
 import { phase15EffectItemIds } from '../../data/shopItems'
 import { rarityStars } from '../../data/treasureItems'
@@ -18,7 +19,10 @@ import { getUfoById } from '../../data/ufos'
 import { addCollectionRecords } from '../../game-engine/collection/collectionRecords'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { averageStageDifficulty } from '../../game-engine/questions/factDifficulty'
-import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
+import {
+  generateAdditionQuestion,
+  generateMultiplicationQuestion,
+} from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { openTreasureChest } from '../../game-engine/treasure/treasureEngine'
@@ -84,7 +88,17 @@ const gameConfig: Record<
   },
 }
 
-function createMiniQuestion(stages = allStages): Question {
+export function createMiniQuestion({
+  planet = 'multiply',
+  stages = allStages,
+}: {
+  planet?: 'multiply' | 'add'
+  stages?: number[]
+} = {}): Question {
+  if (planet === 'add') {
+    const area = additionAreas[Math.floor(Math.random() * additionAreas.length)] ?? additionAreas[0]
+    return generateAdditionQuestion(area.id)
+  }
   return generateMultiplicationQuestion({
     answerMode: 'choice',
     stages,
@@ -105,12 +119,16 @@ function monsterFactFromQuestion(question: Question): { left: number; right: num
 
 export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
+  const isAdditionPlanet = searchParams.get('planet') === 'add'
+  const questionPlanet = isAdditionPlanet ? 'add' : 'multiply'
+  const backTo = isAdditionPlanet ? '/planet/add' : '/planet/multiply'
   const config = gameConfig[variant]
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [phase, setPhase] = useState<MiniGamePhase>('ready')
-  const [question, setQuestion] = useState<Question>(createMiniQuestion)
+  const [question, setQuestion] = useState<Question>(() => createMiniQuestion({ planet: questionPlanet }))
   const [selectedBattleStages, setSelectedBattleStages] = useState<number[]>([...allStages])
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
@@ -134,7 +152,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   const attackWarning = variant === 'battle' && (results.length + 1) % 4 === 0
   const questionStages = variant === 'battle' ? selectedBattleStages : allStages
-  const battleMonsterFact = monsterFactFromQuestion(question)
+  const battleMonsterFact = questionPlanet === 'multiply' ? monsterFactFromQuestion(question) : null
 
   function toggleBattleStage(stage: number) {
     const exists = selectedBattleStages.includes(stage)
@@ -153,7 +171,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   function resetRunState() {
     finishedRef.current = false
-    setQuestion(createMiniQuestion(questionStages))
+    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages }))
     setFeedback('idle')
     setResults([])
     setScoreState({ score: 0, combo: 0, maxCombo: 0 })
@@ -176,11 +194,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   }
 
   const nextQuestion = useCallback(() => {
-    setQuestion(createMiniQuestion(questionStages))
+    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages }))
     setFeedback('idle')
     setTimeLeftMs(battleTimeLimitMs)
     startedAtRef.current = Date.now()
-  }, [questionStages])
+  }, [questionPlanet, questionStages])
 
   const finish = useCallback(
     (
@@ -222,6 +240,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         finishedAt: new Date().toISOString(),
       })
       const details: NonNullable<GameSessionSummary['details']> = {}
+      if (isAdditionPlanet) {
+        details.planet = 'add'
+      }
       if (variant === 'battle') {
         details.heartsLeft = options.battleHearts ?? hearts
         details.specialUses = options.specialUses ?? specialUses
@@ -362,7 +383,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [distance, earnedKeyIds, enemyHp, hearts, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
+    [distance, earnedKeyIds, enemyHp, hearts, isAdditionPlanet, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
   )
 
   const recordAnswer = useCallback(
@@ -533,13 +554,13 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'ready') {
     return (
-      <AppShell title={config.title} backTo="/planet/multiply" className="mode-ready-shell mini-game-ready-shell">
+      <AppShell title={config.title} backTo={backTo} className="mode-ready-shell mini-game-ready-shell">
         <ModeStartScreen
           title={config.title}
           eyebrow={config.eyebrow}
           description={config.startDescription}
           level={saveData.player?.level ?? 1}
-          backTo="/planet/multiply"
+          backTo={backTo}
           onStart={startGame}
         >
           {variant === 'battle' ? (
@@ -577,7 +598,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   if (phase === 'chests') {
     return (
-      <AppShell title="たからばこ" backTo="/planet/multiply">
+      <AppShell title="たからばこ" backTo={backTo}>
         <section className="treasure-chest-stage" aria-labelledby="treasure-open-title">
           <p className="welcome">かぎ {keys}ほん</p>
           <h2 id="treasure-open-title">ひらくたからばこをえらぼう</h2>
@@ -620,12 +641,12 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const limitPercent = Math.max(0, Math.round((timeLeftMs / battleTimeLimitMs) * 100))
 
   return (
-    <AppShell title={config.title} backTo="/planet/multiply" className="game-shell">
+    <AppShell title={config.title} backTo={backTo} className="game-shell">
       <section
         className={`mission-companion mini-game-command mini-game-command-${variant}`}
         aria-label={config.title}
       >
-        {variant === 'battle' ? (
+        {variant === 'battle' && battleMonsterFact ? (
           <MonsterSprite
             left={battleMonsterFact.left}
             right={battleMonsterFact.right}

@@ -1,7 +1,8 @@
 import type { BossDifficultyId } from '../types/save'
 import { defaultMinDifficultyByBossDifficulty } from './factDifficulty'
+import type { AdditionAreaId } from './planets'
 
-export type BossGroup = 'basic' | 'advanced'
+export type BossGroup = 'basic' | 'advanced' | 'addition'
 export type BossAdvancedCategory = 'square' | 'pi' | 'development'
 
 export const advancedBossCategoryLabels: Record<BossAdvancedCategory, string> = {
@@ -13,6 +14,7 @@ export const advancedBossCategoryLabels: Record<BossAdvancedCategory, string> = 
 export type BossReward = {
   itemId?: string
   ufoId?: string
+  effectId?: string
   title: string
 }
 
@@ -35,6 +37,7 @@ export type BossDefinition = {
   emoji: string
   description: string
   stages?: number[]
+  additionAreaId?: AdditionAreaId
   advancedCategory?: BossAdvancedCategory
   difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
   rewards: Record<BossDifficultyId, BossReward>
@@ -125,6 +128,138 @@ function createRewards(seed: { id: string; shortLabel: string }): Record<BossDif
   }
 }
 
+const additionBossSeeds: Array<{
+  id: string
+  no: number
+  areaId: AdditionAreaId
+  label: string
+  shortLabel: string
+  emoji: string
+  description: string
+  normalTitle: string
+  normalUfoId?: string
+  normalEffectId?: string
+  difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
+}> = [
+  {
+    id: 'boss-add-within-9',
+    no: 13,
+    areaId: 'add-within-9',
+    label: 'たすたすキング',
+    shortLabel: 'たすたす',
+    emoji: '+1',
+    description: '1〜9のたしざんを見守る、やさしいプラスの王さま。',
+    normalTitle: 'たしざんビギナー',
+    difficultyOverrides: {
+      normal: { hp: 6, questionCount: 8 },
+      hard: { hp: 8, questionCount: 10, timeLimitSeconds: 7 },
+      fast: { hp: 10, questionCount: 12, timeLimitSeconds: 4 },
+      gekimuzu: { hp: 9, questionCount: 10, timeLimitSeconds: 2.4 },
+    },
+  },
+  {
+    id: 'boss-add-within-10',
+    no: 14,
+    areaId: 'add-within-10',
+    label: 'とーたすプリンス',
+    shortLabel: 'とーたす',
+    emoji: '+10',
+    description: '10までのまとまりを丸くまとめる、たしざんの王子。',
+    normalTitle: 'とーたすチャレンジャー',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 7 },
+      fast: { timeLimitSeconds: 4 },
+      gekimuzu: { timeLimitSeconds: 2.2 },
+    },
+  },
+  {
+    id: 'boss-add-carry-basic',
+    no: 15,
+    areaId: 'add-carry-basic',
+    label: 'くりあがりマスター',
+    shortLabel: 'くりあがり',
+    emoji: '+↑',
+    description: 'くりあがりの山をこえる、強めのたしざんボス。',
+    normalTitle: 'くりあがりファイター',
+    normalUfoId: 'boss-add-carry-basic-ufo',
+    difficultyOverrides: {
+      normal: { hp: 9, questionCount: 12 },
+      hard: { hp: 11, questionCount: 14, timeLimitSeconds: 6 },
+      fast: { hp: 13, questionCount: 16, timeLimitSeconds: 3 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 1.8 },
+    },
+  },
+  {
+    id: 'boss-add-two-digit-no-carry',
+    no: 16,
+    areaId: 'add-two-digit-no-carry',
+    label: 'にけたバロン',
+    shortLabel: 'にけた',
+    emoji: '+2',
+    description: '十の位と一の位をならべて戦う、2けたのボス。',
+    normalTitle: 'にけたたしざんナイト',
+    normalEffectId: 'add-plus-burst',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 8 },
+      fast: { timeLimitSeconds: 5 },
+      gekimuzu: { timeLimitSeconds: 3.4 },
+    },
+  },
+  {
+    id: 'boss-add-two-digit-carry',
+    no: 17,
+    areaId: 'add-two-digit-carry',
+    label: 'くりくりエンペラー',
+    shortLabel: 'くりくり',
+    emoji: '++',
+    description: '2けたのくりあがりを大きく押し上げる強めのボス。',
+    normalTitle: '2けたくりあがりガード',
+    normalUfoId: 'boss-add-two-digit-carry-ufo',
+    difficultyOverrides: {
+      normal: { hp: 9, questionCount: 12 },
+      hard: { hp: 11, questionCount: 14, timeLimitSeconds: 7 },
+      fast: { hp: 13, questionCount: 16, timeLimitSeconds: 4 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 2.8 },
+    },
+  },
+  {
+    id: 'boss-add-three-digit',
+    no: 18,
+    areaId: 'add-three-digit',
+    label: 'おおたすジェネラル',
+    shortLabel: 'おおたす',
+    emoji: '+3',
+    description: '3けたの大きな数をどっしり受けとめる、たしざん最強ボス。',
+    normalTitle: '大きいかずコマンダー',
+    normalUfoId: 'boss-add-three-digit-ufo',
+    difficultyOverrides: {
+      normal: { hp: 10, questionCount: 12 },
+      hard: { hp: 12, questionCount: 14, timeLimitSeconds: 8 },
+      fast: { hp: 14, questionCount: 16, timeLimitSeconds: 5 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 3.2 },
+    },
+  },
+]
+
+function createAdditionRewards(seed: (typeof additionBossSeeds)[number]): Record<BossDifficultyId, BossReward> {
+  return {
+    normal: {
+      ufoId: seed.normalUfoId,
+      effectId: seed.normalEffectId,
+      title: seed.normalTitle,
+    },
+    hard: {
+      title: `${seed.shortLabel}ハードスター`,
+    },
+    fast: {
+      title: `${seed.shortLabel}スピードスター`,
+    },
+    gekimuzu: {
+      title: `${seed.shortLabel}げきムズスター`,
+    },
+  }
+}
+
 export const bosses: BossDefinition[] = [
   ...basicBossSeeds.map((seed) => ({
     ...seed,
@@ -191,12 +326,26 @@ export const bosses: BossDefinition[] = [
     },
     rewards: createRewards({ id: 'boss-development', shortLabel: 'にじいろキング' }),
   },
+  ...additionBossSeeds.map((seed) => ({
+    id: seed.id,
+    no: seed.no,
+    group: 'addition' as const,
+    label: seed.label,
+    shortLabel: seed.shortLabel,
+    emoji: seed.emoji,
+    description: seed.description,
+    additionAreaId: seed.areaId,
+    difficultyOverrides: seed.difficultyOverrides,
+    rewards: createAdditionRewards(seed),
+  })),
 ]
 
 const itemKinds: BossLimitedItem['kind'][] = ['wear', 'hat', 'furniture', 'background']
 
-export const bossLimitedItems: BossLimitedItem[] = bosses.flatMap((boss) =>
-  bossItemDifficultyIds.map((difficulty, difficultyIndex) => ({
+export const bossLimitedItems: BossLimitedItem[] = bosses
+  .filter((boss) => boss.group !== 'addition')
+  .flatMap((boss) =>
+    bossItemDifficultyIds.map((difficulty, difficultyIndex) => ({
     id: boss.rewards[difficulty].itemId ?? `${boss.id}-${difficulty}-item`,
     bossId: boss.id,
     difficulty,
@@ -205,11 +354,14 @@ export const bossLimitedItems: BossLimitedItem[] = bosses.flatMap((boss) =>
     description: `${boss.label}を${getBossDifficulty(boss, difficulty).label}でクリアした証です。`,
     kind: itemKinds[(boss.no + difficultyIndex) % itemKinds.length],
     tag: 'ボスげんてい',
-  })),
-)
+    })),
+  )
 
 export const legendaryBossTitle = 'でんせつのくくチャンピオン'
 export const allGekimuzuTitle = 'すべてをしるもの'
+
+export const additionMasterTitle = 'たしざんマスター'
+export const additionLegendTitle = 'たしざんレジェンド'
 
 export function getBossDifficulty(
   boss: BossDefinition,

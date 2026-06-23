@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import { AppShell } from '../../components/common/AppShell'
 import { BuddySprite } from '../../components/collection/BuddySprite'
+import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getLevelIconById, getUnlockedLevelIcons } from '../../data/levelIcons'
+import { getAdditionMonsterById } from '../../data/additionMonsters'
 import { playerIcons } from '../../data/playerIcons'
 import { defaultCharacterName } from '../../data/shipName'
 import { equipShopItem, getHomeShipPreviewVisuals } from '../../data/shopItems'
@@ -26,6 +28,12 @@ import {
 import { useSaveData } from '../../hooks/useSaveData'
 
 function renderBuddy(selectionId: string | null, className = 'custom-preview-buddy') {
+  const additionMonster = selectionId?.startsWith('addition-monster:')
+    ? getAdditionMonsterById(selectionId.replace(/^addition-monster:/, ''))
+    : undefined
+  if (additionMonster) {
+    return <AdditionMonsterSprite monster={additionMonster} className={className} />
+  }
   const monster = parseMonsterBuddySelectionId(selectionId)
   if (monster) {
     return <MonsterSprite left={monster.left} right={monster.right} className={className} />
@@ -44,6 +52,15 @@ function EntryIcon({ entry }: { entry: CustomInventoryEntry }) {
       <MonsterSprite
         left={entry.monsterFact.left}
         right={entry.monsterFact.right}
+        locked={locked}
+        className="custom-item-sprite"
+      />
+    )
+  }
+  if (entry.kind === 'addition-monster-buddy' && entry.additionMonster) {
+    return (
+      <AdditionMonsterSprite
+        monster={entry.additionMonster}
         locked={locked}
         className="custom-item-sprite"
       />
@@ -122,7 +139,11 @@ export function CustomPage() {
           },
         }
       }
-      if (entry.kind === 'monster-buddy' || entry.kind === 'dedicated-buddy') {
+      if (
+        entry.kind === 'monster-buddy' ||
+        entry.kind === 'addition-monster-buddy' ||
+        entry.kind === 'dedicated-buddy'
+      ) {
         return {
           ...current,
           progress: {

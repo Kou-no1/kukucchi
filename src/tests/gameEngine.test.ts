@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import globalCss from '../styles/global.css?raw'
 import { isCorrectAnswer } from '../game-engine/questions/answer'
 import {
   generateAdditionQuestion,
@@ -64,7 +65,19 @@ import {
   isAdvancedMonsterOwned,
   newlyOwnedAdvancedMonsters,
 } from '../data/advancedMonsters'
-import { allGekimuzuTitle, bossDifficulties, bosses, bossLimitedItems } from '../data/bosses'
+import {
+  additionLegendTitle,
+  additionMasterTitle,
+  allGekimuzuTitle,
+  bossDifficulties,
+  bosses,
+  bossLimitedItems,
+} from '../data/bosses'
+import {
+  additionMonsterDefinitions,
+  additionAreaCorrectKey,
+  isAdditionMonsterOwned,
+} from '../data/additionMonsters'
 import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
@@ -77,6 +90,8 @@ import {
   homeShipPreviewLayers,
   isShopTier2Unlocked,
   galaxySwirlEffectId,
+  addGatherLightEffectId,
+  addPlusBurstEffectId,
   phase15EffectItemIds,
   rainbowAuraEffectId,
   shopEffectItemIds,
@@ -86,7 +101,14 @@ import {
 } from '../data/shopItems'
 import { normalizeCharacterNameInput, normalizeShipNameInput } from '../data/shipName'
 import { treasureItems } from '../data/treasureItems'
-import { getUfoForBoss, specialUfoId, ufoDefinitions } from '../data/ufos'
+import {
+  additionDoubleDomeUfoId,
+  additionPlusRingUfoId,
+  additionSunriseUfoId,
+  getUfoForBoss,
+  specialUfoId,
+  ufoDefinitions,
+} from '../data/ufos'
 import { containsBannedWord, validateShipName } from '../utils/bannedWords'
 import {
   applyBossClearReward,
@@ -162,6 +184,8 @@ import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import { applySessionResult } from '../services/resultService'
 import type { AnswerResult, GameSessionSummary } from '../types/game'
 import type { SaveData } from '../types/save'
+import { createSpeedQuestion } from '../features/speed/SpeedPage'
+import { createMiniQuestion } from '../features/miniGames/MiniGamePage'
 
 function result(overrides: Partial<AnswerResult> = {}): AnswerResult {
   return {
@@ -1684,7 +1708,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(coreShopItems).toHaveLength(20)
     expect(suitShopItems).toHaveLength(5)
     expect(shopBuddyDefinitions).toHaveLength(11)
-    expect(shopItems).toHaveLength(39)
+    expect(shopItems).toHaveLength(41)
     const prices = coreShopItems.map((item) => item.price)
     expect(prices.at(0)).toBe(50)
     expect(prices.at(-1)).toBe(10000)
@@ -1695,15 +1719,16 @@ describe('mastery, review, missions, and storage', () => {
     expect(suitShopItems.map((item) => item.price)).toEqual([200, 250, 300, 350, 400])
     expect(suitShopItems.every((item) => item.kind === 'suit' && getShopItemTier(item) === 1)).toBe(true)
     expect(shopBuddyDefinitions.every((buddy) => buddy.source === 'shop')).toBe(true)
-    expect(phase15EffectItemIds).toHaveLength(6)
-    expect(shopEffectItemIds).toHaveLength(4)
+    expect(phase15EffectItemIds).toHaveLength(8)
+    expect(shopEffectItemIds).toHaveLength(5)
     expect(treasureEffectItemIds).toEqual([rainbowAuraEffectId])
-    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(6)
+    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(8)
     expect(
       shopEffectItemIds.map((itemId) => shopItems.find((item) => item.id === itemId)?.price),
-    ).toEqual([300, 350, 400, 350])
+    ).toEqual([300, 350, 400, 350, 500])
     expect(shopItems.find((item) => item.id === rainbowAuraEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === galaxySwirlEffectId)?.availableInShop).toBe(false)
+    expect(shopItems.find((item) => item.id === addPlusBurstEffectId)?.availableInShop).toBe(false)
   })
 
   it('maps equipped shop items to home ship visual layers', () => {
@@ -1853,9 +1878,12 @@ describe('mastery, review, missions, and storage', () => {
     expect(tabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === ufo!.id)?.origin).toBe('multiply')
     expect(tabs.find((tab) => tab.id === 'buddy')?.entries.find((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))?.origin).toBe('all')
     expect(tabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === 'comet-ship')?.origin).toBe('all')
+    expect(tabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === addGatherLightEffectId)?.origin).toBe('all')
     expect(tabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === galaxySwirlEffectId)?.origin).toBe('multiply')
     expect(multiplyTabs.find((tab) => tab.id === 'window')?.entries.some((entry) => entry.id === 'planet-view')).toBe(false)
-    expect(multiplyUfoTab?.entries).toHaveLength(ufoDefinitions.length)
+    expect(multiplyUfoTab?.entries).toHaveLength(
+      ufoDefinitions.filter((entry) => (entry.origin ?? 'multiply') === 'multiply').length,
+    )
     expect(multiplyUfoTab?.entries.find((entry) => entry.id === ufo!.id)?.origin).toBe('multiply')
     expect(multiplyBuddyTab?.entries.find((entry) => entry.id === monsterBuddySelectionId(2, 3))?.origin).toBe('multiply')
     expect(multiplyBuddyTab?.entries.some((entry) => entry.id === dedicatedBuddySelectionId('star-jelly'))).toBe(false)
@@ -1863,7 +1891,14 @@ describe('mastery, review, missions, and storage', () => {
     expect(multiplyEffectTab?.entries.some((entry) => entry.id === 'comet-ship')).toBe(false)
     expect(multiplyTitleTab?.entries.length).toBeGreaterThan(0)
     expect(multiplyTitleTab?.entries.every((entry) => entry.origin === 'multiply')).toBe(true)
-    expect(addTabs.every((tab) => tab.entries.length === 0)).toBe(true)
+    expect(addTabs.find((tab) => tab.id === 'ufo')?.entries.map((entry) => entry.id)).toEqual([
+      additionPlusRingUfoId,
+      additionDoubleDomeUfoId,
+      additionSunriseUfoId,
+    ])
+    expect(addTabs.find((tab) => tab.id === 'buddy')?.entries).toHaveLength(18)
+    expect(addTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === addPlusBurstEffectId)?.origin).toBe('add')
+    expect(addTabs.find((tab) => tab.id === 'title')?.entries.some((entry) => entry.origin === 'add')).toBe(true)
     expect(getHomeShipPreviewVisuals(save.progress.equippedItems).window).toBe('planet-view')
   })
 
@@ -2302,10 +2337,90 @@ describe('mastery, review, missions, and storage', () => {
     expect(second.rewardUfoIds).toEqual([])
   })
 
-  it('grants the all-gekimuzu reward once when the final boss clears', () => {
-    const finalBoss = bosses[bosses.length - 1]
+  it('defines addition monsters and counts them in the book', () => {
+    expect(additionMonsterDefinitions).toHaveLength(18)
+    expect(additionMonsterDefinitions.every((monster) => monster.origin === 'add')).toBe(true)
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [additionAreaCorrectKey('add-within-9')]: 20,
+    }
+    expect(additionMonsterDefinitions.filter((monster) => isAdditionMonsterOwned(save.progress.categoryCorrect, monster))).toHaveLength(3)
+    const progress = calculateBookProgress(save)
+    expect(progress.tabs.monsters.total).toBeGreaterThanOrEqual(18)
+    expect(progress.tabs.monsters.owned).toBeGreaterThanOrEqual(3)
+  })
+
+  it('grants addition boss UFOs, effects, and titles with add origin custom entries', () => {
+    const addCarryBoss = bosses.find((boss) => boss.id === 'boss-add-carry-basic')
+    const addEffectBoss = bosses.find((boss) => boss.id === 'boss-add-two-digit-no-carry')
+    expect(addCarryBoss).toBeTruthy()
+    expect(addEffectBoss).toBeTruthy()
+    if (!addCarryBoss || !addEffectBoss) {
+      return
+    }
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [additionAreaCorrectKey('add-carry-basic')]: 20,
+      [additionAreaCorrectKey('add-two-digit-no-carry')]: 20,
+    }
+    expect(isBossUnlocked(addCarryBoss, save)).toBe(true)
+    const carryClear = applyBossClearReward(save, addCarryBoss.id, 'normal', 9000)
+    expect(carryClear.rewardUfoIds).toEqual([additionPlusRingUfoId])
+    expect(carryClear.rewardTitles).toContain(addCarryBoss.rewards.normal.title)
+    expect(carryClear.save.progress.ownedUfos).toContain(additionPlusRingUfoId)
+
+    const effectClear = applyBossClearReward(carryClear.save, addEffectBoss.id, 'normal', 9000)
+    expect(effectClear.rewardEffectIds).toEqual([addPlusBurstEffectId])
+    expect(effectClear.save.progress.ownedItems).toContain(addPlusBurstEffectId)
+    expect(effectClear.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('effect', addPlusBurstEffectId) }),
+    )
+
+    const addTabs = buildCustomInventory(effectClear.save, 'add')
+    expect(addTabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === additionPlusRingUfoId)?.owned).toBe(true)
+    expect(addTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === addPlusBurstEffectId)?.owned).toBe(true)
+  })
+
+  it('grants addition master and legend titles separately from legacy all-gekimuzu rewards', () => {
+    const additionBosses = bosses.filter((boss) => boss.group === 'addition')
+    expect(additionBosses).toHaveLength(6)
     let save: SaveData = createSaveWithPlayer()
-    for (const boss of bosses.slice(0, -1)) {
+    for (const boss of additionBosses) {
+      save = applyBossClearReward(save, boss.id, 'normal', 8000).save
+    }
+    expect(save.player?.titles).toContain(additionMasterTitle)
+    for (const boss of additionBosses) {
+      save = applyBossClearReward(save, boss.id, 'hard', 8000).save
+      save = applyBossClearReward(save, boss.id, 'fast', 8000).save
+      save = applyBossClearReward(save, boss.id, 'gekimuzu', 8000).save
+    }
+    expect(save.player?.titles).toContain(additionLegendTitle)
+    expect(save.progress.ownedUfos).not.toContain(specialUfoId)
+    expect(save.progress.ownedItems).not.toContain(galaxySwirlEffectId)
+  })
+
+  it('generates addition questions in speed and play helpers', () => {
+    const speedQuestion = createSpeedQuestion({
+      planet: 'add',
+      selectedAreas: ['add-within-9'],
+    })
+    expect(speedQuestion.id.startsWith('add:add-within-9:')).toBe(true)
+    const playQuestion = createMiniQuestion({ planet: 'add' })
+    expect(playQuestion.id.startsWith('add:')).toBe(true)
+    expect(playQuestion.category.startsWith('addition-')).toBe(true)
+  })
+
+  it('caps level icon previews in settings CSS', () => {
+    expect(globalCss).toContain('.settings-level-icon')
+    expect(globalCss).toContain('max-width: 80px')
+    expect(globalCss).toContain('max-height: 80px')
+  })
+
+  it('grants the all-gekimuzu reward once when the final boss clears', () => {
+    const legacyBosses = bosses.filter((boss) => boss.group !== 'addition')
+    const finalBoss = legacyBosses[legacyBosses.length - 1]
+    let save: SaveData = createSaveWithPlayer()
+    for (const boss of legacyBosses.slice(0, -1)) {
       save = applyBossClearReward(save, boss.id, 'gekimuzu', 8000).save
     }
     expect(save.progress.ownedUfos).not.toContain(specialUfoId)

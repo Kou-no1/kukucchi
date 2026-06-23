@@ -797,7 +797,9 @@ legend {
 .kukucchi-effect-aura-ring .kukucchi-effect-layer,
 .kukucchi-effect-soft-light .kukucchi-effect-layer,
 .kukucchi-effect-rainbow-aura .kukucchi-effect-layer,
-.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer {
+.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer,
+.kukucchi-effect-gather-light .kukucchi-effect-layer,
+.kukucchi-effect-plus-burst .kukucchi-effect-layer {
   opacity: 1;
 }
 
@@ -812,7 +814,11 @@ legend {
 .kukucchi-effect-rainbow-aura .kukucchi-effect-layer::before,
 .kukucchi-effect-rainbow-aura .kukucchi-effect-layer::after,
 .kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::before,
-.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::after {
+.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::after,
+.kukucchi-effect-gather-light .kukucchi-effect-layer::before,
+.kukucchi-effect-gather-light .kukucchi-effect-layer::after,
+.kukucchi-effect-plus-burst .kukucchi-effect-layer::before,
+.kukucchi-effect-plus-burst .kukucchi-effect-layer::after {
   position: absolute;
   content: '';
 }
@@ -951,9 +957,47 @@ legend {
     radial-gradient(circle at 78% 72%, rgba(255, 255, 255, 0.72) 0 3%, transparent 4%);
 }
 
+.kukucchi-effect-gather-light .kukucchi-effect-layer::before {
+  inset: 4%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 12% 22%, rgba(255, 238, 128, 0.8) 0 3%, transparent 4%),
+    radial-gradient(circle at 88% 18%, rgba(118, 240, 168, 0.72) 0 3%, transparent 4%),
+    radial-gradient(circle at 16% 82%, rgba(255, 159, 95, 0.72) 0 3%, transparent 4%),
+    radial-gradient(circle at 82% 76%, rgba(255, 255, 255, 0.78) 0 3%, transparent 4%);
+  filter: drop-shadow(0 0 12px rgba(255, 211, 92, 0.55));
+  animation: gatherLightIn 3.2s ease-in-out infinite;
+}
+
+.kukucchi-effect-gather-light .kukucchi-effect-layer::after {
+  inset: 34%;
+  border-radius: 50%;
+  background: rgba(255, 238, 128, 0.58);
+  box-shadow: 0 0 18px rgba(255, 211, 92, 0.68);
+  animation: gatherLightPulse 3.2s ease-in-out infinite;
+}
+
+.kukucchi-effect-plus-burst .kukucchi-effect-layer::before {
+  inset: 18%;
+  background:
+    linear-gradient(90deg, transparent 0 43%, rgba(255, 238, 128, 0.9) 44% 56%, transparent 57%),
+    linear-gradient(0deg, transparent 0 43%, rgba(118, 240, 168, 0.86) 44% 56%, transparent 57%);
+  filter: drop-shadow(0 0 16px rgba(255, 211, 92, 0.74));
+  animation: plusBurstPop 2.4s ease-out infinite;
+}
+
+.kukucchi-effect-plus-burst .kukucchi-effect-layer::after {
+  inset: 10%;
+  border: 3px solid rgba(255, 238, 128, 0.54);
+  border-radius: 50%;
+  animation: plusBurstRing 2.4s ease-out infinite;
+}
+
 .kukucchi.effect-low.kukucchi-effect-star-dust .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-soft-light .kukucchi-effect-layer::after,
-.kukucchi.effect-low.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::after {
+.kukucchi.effect-low.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::after,
+.kukucchi.effect-low.kukucchi-effect-gather-light .kukucchi-effect-layer::after,
+.kukucchi.effect-low.kukucchi-effect-plus-burst .kukucchi-effect-layer::after {
   display: none;
 }
 
@@ -1046,6 +1090,59 @@ legend {
 @keyframes galaxySwirlSpin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes gatherLightIn {
+  0%,
+  100% {
+    opacity: 0.48;
+    transform: scale(1.08);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(0.72);
+  }
+}
+
+@keyframes gatherLightPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: scale(0.75);
+  }
+  50% {
+    opacity: 0.86;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes plusBurstPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.55) rotate(0deg);
+  }
+  28% {
+    opacity: 1;
+    transform: scale(1.08) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.42) rotate(0deg);
+  }
+}
+
+@keyframes plusBurstRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  35% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.24);
   }
 }
 
@@ -4932,6 +5029,25 @@ legend {
   height: 76px;
 }
 
+.addition-boss-sprite {
+  width: 88px;
+  height: 76px;
+  max-width: 100%;
+  filter: drop-shadow(0 0 14px rgba(255, 211, 92, 0.35));
+}
+
+.addition-boss-sprite.compact,
+.boss-hud-sprite.addition-boss-sprite {
+  width: 54px;
+  height: 54px;
+}
+
+.planet-boss-chip-sprite {
+  width: 56px;
+  height: 56px;
+  justify-self: center;
+}
+
 .boss-hud-title {
   display: inline-flex;
   align-items: center;
@@ -5149,6 +5265,43 @@ legend {
 
 .ufo-badge-mixed .ufo-badge-body {
   background: linear-gradient(90deg, #5be9f4, #7d8dff, #ff72b6, #ffe36e);
+}
+
+.ufo-badge-add-plus-ring .ufo-badge-dome {
+  background: linear-gradient(155deg, #fff2a8, #76f0a8);
+}
+
+.ufo-badge-add-plus-ring .ufo-badge-body {
+  border-color: rgba(255, 211, 92, 0.86);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.6) 0 18%, transparent 19%),
+    linear-gradient(90deg, #ffd35c, #34d399);
+}
+
+.ufo-badge-add-double-dome .ufo-badge-dome {
+  width: 62%;
+  background:
+    radial-gradient(circle at 34% 48%, rgba(255, 255, 255, 0.78) 0 18%, transparent 19%),
+    radial-gradient(circle at 66% 48%, rgba(255, 255, 255, 0.72) 0 18%, transparent 19%),
+    linear-gradient(155deg, #ffd7e6, #ff77aa);
+}
+
+.ufo-badge-add-double-dome .ufo-badge-body {
+  background: linear-gradient(90deg, #ff77aa, #ffd35c, #76f0a8);
+}
+
+.ufo-badge-add-sunrise {
+  filter: drop-shadow(0 0 18px rgba(255, 211, 92, 0.62));
+}
+
+.ufo-badge-add-sunrise .ufo-badge-dome {
+  background:
+    repeating-conic-gradient(from 0deg, #fff2a8 0 12deg, #ff9f5f 13deg 24deg),
+    linear-gradient(155deg, #ffd35c, #ff8f5f);
+}
+
+.ufo-badge-add-sunrise .ufo-badge-body {
+  background: linear-gradient(90deg, #ff8f5f, #ffd35c, #fff2a8);
 }
 
 .ufo-badge-special {
@@ -6793,6 +6946,8 @@ legend {
 .settings-level-icon {
   width: 100%;
   height: 100%;
+  max-width: 80px;
+  max-height: 80px;
 }
 
 .home-current-title {

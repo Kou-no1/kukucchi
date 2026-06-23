@@ -1,4 +1,5 @@
 import { shopBuddyDefinitions } from './buddies'
+import type { RewardOrigin } from '../types/rewardOrigin'
 
 export type ShopItemKind =
   | 'wear'
@@ -36,6 +37,7 @@ export type ShopItem = {
   tier?: 1 | 2
   countsTowardTierUnlock?: boolean
   availableInShop?: boolean
+  rewardOrigin?: RewardOrigin
 }
 
 export type HomeShipVisuals = Partial<Record<ShopItemVisualLayer, string>>
@@ -383,6 +385,8 @@ export const buddyShopItems: ShopItem[] = shopBuddyDefinitions.map((buddy, index
 
 export const rainbowAuraEffectId = 'rainbow-aura'
 export const galaxySwirlEffectId = 'galaxy-swirl'
+export const addGatherLightEffectId = 'add-gather-light'
+export const addPlusBurstEffectId = 'add-plus-burst'
 
 export const additionalEffectItems: ShopItem[] = [
   {
@@ -423,11 +427,37 @@ export const additionalEffectItems: ShopItem[] = [
     countsTowardTierUnlock: false,
     availableInShop: false,
   },
+  {
+    id: addGatherLightEffectId,
+    no: 40,
+    name: 'あつまるひかり',
+    description: '外から光の粒が中央にあつまって、たしざんみたいにふえていく',
+    price: 500,
+    emoji: '+',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'gather-light' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: addPlusBurstEffectId,
+    no: 41,
+    name: 'プラスバースト',
+    description: '+ 字の光がぱっと広がる、たしざんボスのひかり',
+    price: 0,
+    emoji: '+',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'plus-burst' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+    availableInShop: false,
+    rewardOrigin: 'add',
+  },
 ]
 
-export const shopEffectItemIds = ['comet-ship', 'sparkle-trail', 'comet-burst', 'soft-light']
+export const shopEffectItemIds = ['comet-ship', 'sparkle-trail', 'comet-burst', 'soft-light', addGatherLightEffectId]
 export const treasureEffectItemIds = [rainbowAuraEffectId]
-export const bossRewardEffectItemIds = [galaxySwirlEffectId]
+export const bossRewardEffectItemIds = [galaxySwirlEffectId, addPlusBurstEffectId]
 export const phase15EffectItemIds = [
   ...shopEffectItemIds,
   ...treasureEffectItemIds,

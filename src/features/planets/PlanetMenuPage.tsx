@@ -1,7 +1,15 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
+import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
+import { bosses } from '../../data/bosses'
 import { additionAreas, getPlanetById, type PlanetId } from '../../data/planets'
+import {
+  getClearedStars,
+  isBossUnlocked,
+  remainingQuestionsToUnlockBoss,
+} from '../../game-engine/bosses/bossEngine'
+import { useSaveData } from '../../hooks/useSaveData'
 import { PlayerCommandPanel, WeakFactsPanel } from '../home/HomePanels'
 
 type PlanetMode = {
@@ -90,21 +98,23 @@ const additionModes: PlanetMode[] = [
     ready: true,
     icon: '+',
     badge: '01',
-    subtitle: '5エリアをれんしゅう',
+    subtitle: '6エリアをれんしゅう',
   },
   {
     label: 'あそぶ',
-    ready: false,
+    href: '/rocket?planet=add',
+    ready: true,
     icon: 'VS',
     badge: '02',
-    subtitle: 'B2でついか',
+    subtitle: 'たしざんロケット',
   },
   {
     label: 'スピード',
-    ready: false,
+    href: '/speed?planet=add',
+    ready: true,
     icon: '30',
     badge: '03',
-    subtitle: 'B2いこう',
+    subtitle: 'たしざんタイム',
   },
 ]
 
@@ -154,6 +164,7 @@ function modeCard(mode: PlanetMode): ReactNode {
 
 export function PlanetMenuPage() {
   const { planetId } = useParams()
+  const { saveData } = useSaveData()
   if (!isPlanetId(planetId)) {
     return <Navigate to="/home" replace />
   }
@@ -166,6 +177,7 @@ export function PlanetMenuPage() {
     '--planet-text': planet.theme.text,
   } as CSSProperties
   const modes = planet.id === 'add' ? additionModes : multiplyModes
+  const additionBosses = bosses.filter((boss) => boss.group === 'addition')
 
   return (
     <AppShell title={planet.shortName} backTo="/home" className="planet-menu-shell">
@@ -196,26 +208,61 @@ export function PlanetMenuPage() {
           </section>
 
           {planet.id === 'add' ? (
-            <section className="planet-area-list" aria-labelledby="addition-area-menu-title">
-              <div className="section-heading-row">
-                <div>
-                  <p className="welcome">たしざん</p>
-                  <h2 id="addition-area-menu-title">エリアれんしゅう</h2>
+            <>
+              <section className="planet-area-list" aria-labelledby="addition-area-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">たしざん</p>
+                    <h2 id="addition-area-menu-title">エリアれんしゅう</h2>
+                  </div>
                 </div>
-              </div>
-              <div className="stage-chip-grid addition-area-grid">
-                {additionAreas.map((area) => (
-                  <Link
-                    className="stage-chip addition-area-chip"
-                    key={area.id}
-                    to={`/learn?planet=add&area=${area.id}`}
-                  >
-                    <strong>{area.name}</strong>
-                    <span>{area.description}</span>
-                  </Link>
-                ))}
-              </div>
-            </section>
+                <div className="stage-chip-grid addition-area-grid">
+                  {additionAreas.map((area) => (
+                    <Link
+                      className="stage-chip addition-area-chip"
+                      key={area.id}
+                      to={`/learn?planet=add&area=${area.id}`}
+                    >
+                      <strong>{area.name}</strong>
+                      <span>{area.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+              <section className="planet-area-list addition-boss-list" aria-labelledby="addition-boss-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">B2</p>
+                    <h2 id="addition-boss-menu-title">たしざんボス</h2>
+                  </div>
+                </div>
+                <div className="stage-chip-grid addition-area-grid">
+                  {additionBosses.map((boss) => {
+                    const unlocked = isBossUnlocked(boss, saveData)
+                    const remaining = remainingQuestionsToUnlockBoss(boss, saveData)
+                    return (
+                      <Link
+                        className={unlocked ? 'stage-chip addition-area-chip' : 'stage-chip addition-area-chip locked'}
+                        key={boss.id}
+                        to={`/boss/${boss.id}`}
+                      >
+                        <AdditionBossSprite
+                          boss={boss}
+                          locked={!unlocked}
+                          compact
+                          className="planet-boss-chip-sprite"
+                        />
+                        <strong>{unlocked ? boss.label : '？？？'}</strong>
+                        <span>
+                          {'★'.repeat(getClearedStars(saveData, boss.id)) ||
+                            (remaining !== null ? `あと${remaining}もん` : boss.shortLabel)}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </section>
+            </>
           ) : null}
 
           <WeakFactsPanel className="planet-weak-panel" />

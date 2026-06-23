@@ -1,11 +1,19 @@
 import type { GameSessionSummary } from '../../types/game'
 import type { SaveData } from '../../types/save'
-import { allGekimuzuTitle, bosses, legendaryBossTitle } from '../../data/bosses'
+import {
+  allGekimuzuTitle,
+  additionLegendTitle,
+  additionMasterTitle,
+  bosses,
+  legendaryBossTitle,
+} from '../../data/bosses'
+import type { RewardOrigin } from '../../types/rewardOrigin'
 
 type TitleRule = {
   id: string
   label: string
   description: string
+  origin?: RewardOrigin
   canEarn: (summary: GameSessionSummary, save: SaveData) => boolean
 }
 
@@ -14,6 +22,7 @@ export type TitleDefinition = {
   label: string
   description: string
   method: string
+  origin?: RewardOrigin
 }
 
 export type TitleEmblemRarity = 'common' | 'rare' | 'epic' | 'legendary'
@@ -23,6 +32,7 @@ export type TitleEmblemFamily =
   | 'streak'
   | 'boss-basic'
   | 'boss-advanced'
+  | 'boss-addition'
   | 'master'
   | 'legendary'
 
@@ -33,6 +43,24 @@ export type TitleEmblemDefinition = {
   primary: string
   secondary: string
   accent: string
+}
+
+function hasAdditionResult(summary: GameSessionSummary): boolean {
+  return summary.results.some((result) => result.questionId.startsWith('add:'))
+}
+
+function maxCorrectComboForAdditionArea(summary: GameSessionSummary, areaId: string): number {
+  let combo = 0
+  let maxCombo = 0
+  for (const result of summary.results) {
+    if (result.correct && result.questionId.startsWith(`add:${areaId}:`)) {
+      combo += 1
+      maxCombo = Math.max(maxCombo, combo)
+    } else {
+      combo = 0
+    }
+  }
+  return maxCombo
 }
 
 export const titleRules: TitleRule[] = [
@@ -72,6 +100,20 @@ export const titleRules: TitleRule[] = [
     description: '5れんぞく正解をきめたしるし',
     canEarn: (summary) => summary.maxCombo >= 5,
   },
+  {
+    id: 'addition-first-step',
+    label: 'たしざんのたまご',
+    description: 'たしざんの星で初めて問題を解いたしるし',
+    origin: 'add',
+    canEarn: (summary) => hasAdditionResult(summary),
+  },
+  {
+    id: 'addition-carry-30-combo',
+    label: 'くりあがりちょうじん',
+    description: 'くりあがりのたしざんを30問連続で正解したしるし',
+    origin: 'add',
+    canEarn: (summary) => maxCorrectComboForAdditionArea(summary, 'add-carry-basic') >= 30,
+  },
 ]
 
 function uniqueTitleDefinitions(definitions: TitleDefinition[]): TitleDefinition[] {
@@ -94,12 +136,14 @@ export function getTitleDefinitions(): TitleDefinition[] {
     id: titleRecordId(rule.label),
     label: rule.label,
     description: rule.description,
+    origin: rule.origin,
     method: 'がくしゅうリザルト',
   }))
   const bossDefinitions = bosses.flatMap((boss) =>
     Object.values(boss.rewards).map((reward) => ({
       id: titleRecordId(reward.title),
       label: reward.title,
+      origin: boss.group === 'addition' ? ('add' as const) : ('multiply' as const),
       description: `${boss.label}にいどんだしるし`,
       method: `${boss.label} ボスバトル`,
     })),
@@ -118,6 +162,20 @@ export function getTitleDefinitions(): TitleDefinition[] {
       label: allGekimuzuTitle,
       description: 'すべてのげきムズをこえたしるし',
       method: '全ボスげきムズ',
+    },
+    {
+      id: titleRecordId(additionMasterTitle),
+      label: additionMasterTitle,
+      description: 'たしざんの6エリアボスをすべてたおしたしるし',
+      method: 'たしざん全エリアボス',
+      origin: 'add' as const,
+    },
+    {
+      id: titleRecordId(additionLegendTitle),
+      label: additionLegendTitle,
+      description: 'たしざんの6エリアをげきムズでこえたしるし',
+      method: 'たしざん全エリアげきムズ',
+      origin: 'add' as const,
     },
   ])
 }
@@ -178,9 +236,21 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
     }
   }
 
+  if (title === additionMasterTitle || title === additionLegendTitle) {
+    return {
+      family: title === additionLegendTitle ? 'legendary' : 'master',
+      rarity: title === additionLegendTitle ? 'legendary' : 'epic',
+      motif: '+',
+      primary: '#ffd35c',
+      secondary: '#34d399',
+      accent: title === additionLegendTitle ? '#ff7aa8' : '#ffffff',
+    }
+  }
+
   const bossReward = bossRewardTitleMap.get(title)
   if (bossReward) {
     const isAdvanced = bossReward.bossGroup === 'advanced'
+    const isAddition = bossReward.bossGroup === 'addition'
     const rarityByDifficulty: Record<string, TitleEmblemRarity> = {
       normal: 'common',
       hard: 'rare',
@@ -188,11 +258,11 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
       gekimuzu: 'epic',
     }
     return {
-      family: isAdvanced ? 'boss-advanced' : 'boss-basic',
+      family: isAddition ? 'boss-addition' : isAdvanced ? 'boss-advanced' : 'boss-basic',
       rarity: rarityByDifficulty[bossReward.difficultyId] ?? 'rare',
-      motif: bossReward.difficultyId === 'gekimuzu' ? '★' : isAdvanced ? '◇' : '×',
-      primary: isAdvanced ? '#a78bfa' : '#5be9f4',
-      secondary: isAdvanced ? '#22d3ee' : '#4d75ff',
+      motif: isAddition ? '+' : bossReward.difficultyId === 'gekimuzu' ? '★' : isAdvanced ? '◇' : '×',
+      primary: isAddition ? '#ffd35c' : isAdvanced ? '#a78bfa' : '#5be9f4',
+      secondary: isAddition ? '#34d399' : isAdvanced ? '#22d3ee' : '#4d75ff',
       accent: bossReward.difficultyId === 'normal' ? '#e8fbff' : '#ffd86a',
     }
   }
@@ -205,6 +275,16 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
       motif: '✦',
       primary: '#5be9f4',
       secondary: '#1d4ed8',
+      accent: '#ffffff',
+    }
+  }
+  if (rule?.origin === 'add') {
+    return {
+      family: 'streak',
+      rarity: rule.id === 'addition-carry-30-combo' ? 'epic' : 'common',
+      motif: '+',
+      primary: '#ffd35c',
+      secondary: '#16a34a',
       accent: '#ffffff',
     }
   }

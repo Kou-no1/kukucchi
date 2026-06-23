@@ -1,6 +1,16 @@
 import { bosses } from './bosses'
+import type { RewardOrigin } from '../types/rewardOrigin'
 
-export type UfoVariant = 'stage' | 'all' | 'square' | 'pi' | 'mixed' | 'special'
+export type UfoVariant =
+  | 'stage'
+  | 'all'
+  | 'square'
+  | 'pi'
+  | 'mixed'
+  | 'special'
+  | 'add-plus-ring'
+  | 'add-double-dome'
+  | 'add-sunrise'
 
 export type UfoDefinition = {
   id: string
@@ -11,13 +21,17 @@ export type UfoDefinition = {
   variant: UfoVariant
   lights: number
   motif: string
+  origin?: RewardOrigin
 }
 
 export const specialUfoId = 'ufo-special-master'
+export const additionPlusRingUfoId = 'boss-add-carry-basic-ufo'
+export const additionDoubleDomeUfoId = 'boss-add-two-digit-carry-ufo'
+export const additionSunriseUfoId = 'boss-add-three-digit-ufo'
 
 const bossUfoSeeds: Record<
   string,
-  Pick<UfoDefinition, 'name' | 'description' | 'variant' | 'lights' | 'motif'>
+  Pick<UfoDefinition, 'name' | 'description' | 'variant' | 'lights' | 'motif' | 'origin'>
 > = {
   'boss-stage-2': {
     name: 'ツインライトごう',
@@ -103,24 +117,59 @@ const bossUfoSeeds: Record<
     lights: 9,
     motif: '虹',
   },
+  'boss-add-carry-basic': {
+    name: 'プラスリング号',
+    description: '光る + 型リングでくりあがりを押し上げる、たしざん専用UFO。',
+    variant: 'add-plus-ring',
+    lights: 8,
+    motif: '+',
+    origin: 'add',
+  },
+  'boss-add-two-digit-carry': {
+    name: 'ダブルドーム号',
+    description: '2つのドームが合体した、2けたくりあがりのUFO。',
+    variant: 'add-double-dome',
+    lights: 10,
+    motif: '++',
+    origin: 'add',
+  },
+  'boss-add-three-digit': {
+    name: 'サンライズ号',
+    description: '朝日のような光で大きい数を照らす、たしざん最終UFO。',
+    variant: 'add-sunrise',
+    lights: 12,
+    motif: '+3',
+    origin: 'add',
+  },
 }
 
-export const bossUfos: UfoDefinition[] = bosses.map((boss) => ({
-  id: `${boss.id}-ufo`,
-  no: boss.no,
-  bossId: boss.id,
-  ...bossUfoSeeds[boss.id],
-}))
+export const bossUfos: UfoDefinition[] = bosses.flatMap((boss) => {
+  const seed = bossUfoSeeds[boss.id]
+  if (!seed) {
+    return []
+  }
+  return [
+    {
+      id: `${boss.id}-ufo`,
+      no: boss.no,
+      bossId: boss.id,
+      ...seed,
+    },
+  ]
+})
+
+const legacyBossUfoCount = bosses.filter((boss) => boss.group !== 'addition').length
 
 export const specialUfo: UfoDefinition = {
   id: specialUfoId,
-  no: bosses.length + 1,
+  no: bossUfos.length + 1,
   bossId: null,
   name: 'にじいろレジェンドごう',
-  description: `${bosses.length}体のげきムズボスをすべてこえた特別なUFO。`,
+  description: `${legacyBossUfoCount}体のげきムズボスをすべてこえた特別なUFO。`,
   variant: 'special',
   lights: 12,
   motif: '虹',
+  origin: 'multiply',
 }
 
 export const ufoDefinitions: UfoDefinition[] = [...bossUfos, specialUfo]

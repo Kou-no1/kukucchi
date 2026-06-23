@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { defaultSpeedStages, speedDurations } from '../../data/factDifficulty'
+import { additionAreas, type AdditionAreaId } from '../../data/planets'
 import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { averageStageDifficulty } from '../../game-engine/questions/factDifficulty'
-import { generateMultiplicationQuestion } from '../../game-engine/questions/questionGenerator'
+import {
+  generateAdditionQuestion,
+  generateMultiplicationQuestion,
+} from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
 import { useDailyUsage } from '../../hooks/useDailyUsage'
@@ -22,10 +26,19 @@ type SpeedPhase = 'ready' | 'running'
 
 const allStages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 
-function createSpeedQuestion(selectedStages: number[]): Question {
+export type SpeedQuestionSource =
+  | { planet: 'multiply'; selectedStages: number[] }
+  | { planet: 'add'; selectedAreas: AdditionAreaId[] }
+
+export function createSpeedQuestion(source: SpeedQuestionSource): Question {
+  if (source.planet === 'add') {
+    const areas = source.selectedAreas.length > 0 ? source.selectedAreas : additionAreas.map((area) => area.id)
+    const areaId = areas[Math.floor(Math.random() * areas.length)] ?? additionAreas[0].id
+    return generateAdditionQuestion(areaId)
+  }
   return generateMultiplicationQuestion({
     answerMode: 'choice',
-    stages: selectedStages,
+    stages: source.selectedStages,
     minDifficulty: 1,
   })
 }
@@ -36,8 +49,11 @@ function stageStars(stage: number): string {
 
 export function SpeedPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { saveData, setSaveData, updateSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
+  const isAdditionPlanet = searchParams.get('planet') === 'add'
+  const backTo = isAdditionPlanet ? '/planet/add' : '/planet/multiply'
   const savedSpeedSettings = saveData.progress.speedSettings
   const initialStages =
     savedSpeedSettings.selectedStages.length > 0
@@ -45,9 +61,16 @@ export function SpeedPage() {
       : [...defaultSpeedStages]
   const [phase, setPhase] = useState<SpeedPhase>('ready')
   const [selectedStages, setSelectedStages] = useState<number[]>(initialStages)
+  const [selectedAreas, setSelectedAreas] = useState<AdditionAreaId[]>(additionAreas.map((area) => area.id))
   const [durationSeconds, setDurationSeconds] = useState(savedSpeedSettings.durationSeconds)
   const [timeLeft, setTimeLeft] = useState(durationSeconds)
-  const [question, setQuestion] = useState(() => createSpeedQuestion(initialStages))
+  const [question, setQuestion] = useState(() =>
+    createSpeedQuestion(
+      isAdditionPlanet
+        ? { planet: 'add', selectedAreas: additionAreas.map((area) => area.id) }
+        : { planet: 'multiply', selectedStages: initialStages },
+    ),
+  )
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
   const [scoreState, setScoreState] = useState<ScoreState>({
@@ -64,8 +87,13 @@ export function SpeedPage() {
   )
 
   const createQuestion = useCallback(
-    () => createSpeedQuestion(sortedStages),
-    [sortedStages],
+    () =>
+      createSpeedQuestion(
+        isAdditionPlanet
+          ? { planet: 'add', selectedAreas }
+          : { planet: 'multiply', selectedStages: sortedStages },
+      ),
+    [isAdditionPlanet, selectedAreas, sortedStages],
   )
 
   const saveSpeedSettings = useCallback(
@@ -97,12 +125,22 @@ export function SpeedPage() {
       results,
       finishedAt: new Date().toISOString(),
     })
-    const applied = applySessionResult(saveData, rawSummary, {
+    const summary = isAdditionPlanet
+      ? {
+          ...rawSummary,
+          details: {
+            ...rawSummary.details,
+            planet: 'add',
+            selectedAreas,
+          },
+        }
+      : rawSummary
+    const applied = applySessionResult(saveData, summary, {
       rewardBudgetPaused: rewardBudgetReached,
     })
     setSaveData(applied.save)
     navigate('/result', { state: { summary: applied.summary } })
-  }, [navigate, phase, results, rewardBudgetReached, saveData, scoreState.maxCombo, scoreState.score, setSaveData])
+  }, [isAdditionPlanet, navigate, phase, results, rewardBudgetReached, saveData, scoreState.maxCombo, scoreState.score, selectedAreas, setSaveData])
 
   useEffect(() => {
     if (phase !== 'running') {
@@ -137,6 +175,25 @@ export function SpeedPage() {
     const nextStages = selectedStages.length === allStages.length ? [2] : [...allStages]
     setSelectedStages(nextStages)
     saveSpeedSettings(nextStages)
+  }
+
+  function toggleArea(areaId: AdditionAreaId) {
+    const exists = selectedAreas.includes(areaId)
+    const nextAreas = exists
+      ? selectedAreas.filter((candidate) => candidate !== areaId)
+      : [...selectedAreas, areaId]
+    if (nextAreas.length === 0) {
+      return
+    }
+    setSelectedAreas(nextAreas)
+  }
+
+  function toggleAllAreas() {
+    setSelectedAreas(
+      selectedAreas.length === additionAreas.length
+        ? [additionAreas[0].id]
+        : additionAreas.map((area) => area.id),
+    )
   }
 
   function changeDuration(nextDuration: number) {
@@ -191,43 +248,71 @@ export function SpeedPage() {
   }
 
   return (
-    <AppShell title="すぴーど" backTo="/planet/multiply" className={phase === 'running' ? 'game-shell' : 'mode-ready-shell speed-ready-shell'}>
+    <AppShell title="すぴーど" backTo={backTo} className={phase === 'running' ? 'game-shell' : 'mode-ready-shell speed-ready-shell'}>
       {phase === 'ready' ? (
         <ModeStartScreen
           title={`${durationSeconds}びょうちゃれんじ`}
           eyebrow="わーぷじゅんびOK"
           description="だんをえらんで、じぶんのきろくにちょうせん！"
           level={saveData.player?.level ?? 1}
-          backTo="/planet/multiply"
+          backTo={backTo}
           onStart={startGame}
         >
-          <div className="stage-select-panel" aria-label="だんをえらぶ">
-            <div className="start-option-header">
-              <strong>だんをえらぶ</strong>
-              <button className="secondary-action compact-action" type="button" onClick={toggleAllStages}>
-                ぜんぶ
-              </button>
+          {isAdditionPlanet ? (
+            <div className="stage-select-panel" aria-label="エリアをえらぶ">
+              <div className="start-option-header">
+                <strong>エリアをえらぶ</strong>
+                <button className="secondary-action compact-action" type="button" onClick={toggleAllAreas}>
+                  ぜんぶ
+                </button>
+              </div>
+              <div className="stage-chip-grid">
+                {additionAreas.map((area) => {
+                  const selected = selectedAreas.includes(area.id)
+                  return (
+                    <button
+                      className={selected ? 'stage-chip selected' : 'stage-chip'}
+                      key={area.id}
+                      type="button"
+                      onClick={() => toggleArea(area.id)}
+                      aria-pressed={selected}
+                    >
+                      <strong>{area.shortName}</strong>
+                      <span>{area.name}</span>
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-            <div className="stage-chip-grid">
-              {allStages.map((stage) => {
-                const selected = selectedStages.includes(stage)
-                const stars = stageStars(stage)
-                return (
-                  <button
-                    className={selected ? 'stage-chip selected' : 'stage-chip'}
-                    key={stage}
-                    type="button"
-                    onClick={() => toggleStage(stage)}
-                    aria-pressed={selected}
-                  >
-                    <strong>{stage}のだん</strong>
-                    <span>{stars}</span>
-                    {stars.length >= 4 ? <small>けいけんちアップ！</small> : null}
-                  </button>
-                )
-              })}
+          ) : (
+            <div className="stage-select-panel" aria-label="だんをえらぶ">
+              <div className="start-option-header">
+                <strong>だんをえらぶ</strong>
+                <button className="secondary-action compact-action" type="button" onClick={toggleAllStages}>
+                  ぜんぶ
+                </button>
+              </div>
+              <div className="stage-chip-grid">
+                {allStages.map((stage) => {
+                  const selected = selectedStages.includes(stage)
+                  const stars = stageStars(stage)
+                  return (
+                    <button
+                      className={selected ? 'stage-chip selected' : 'stage-chip'}
+                      key={stage}
+                      type="button"
+                      onClick={() => toggleStage(stage)}
+                      aria-pressed={selected}
+                    >
+                      <strong>{stage}のだん</strong>
+                      <span>{stars}</span>
+                      {stars.length >= 4 ? <small>けいけんちアップ！</small> : null}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
           <div className="duration-select-panel" aria-label="ちゃれんじじかん">
             <strong>ちゃれんじ</strong>
             <div className="segmented">
@@ -267,7 +352,11 @@ export function SpeedPage() {
               <div>
                 <p className="welcome">たいむわーぷちゅう</p>
                 <h2>{durationSeconds}びょうちゃれんじ</h2>
-                <p className="title-line">{sortedStages.join('・')}のだんからしゅつだいちゅう</p>
+                <p className="title-line">
+                  {isAdditionPlanet
+                    ? `${selectedAreas.length}エリアからしゅつだいちゅう`
+                    : `${sortedStages.join('・')}のだんからしゅつだいちゅう`}
+                </p>
               </div>
             </aside>
           </section>

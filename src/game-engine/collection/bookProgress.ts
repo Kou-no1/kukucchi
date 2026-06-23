@@ -1,5 +1,6 @@
 import { bossLimitedItems, bosses, bossDifficultyIds } from '../../data/bosses'
 import { advancedMonsterDefinitions, isAdvancedMonsterOwned } from '../../data/advancedMonsters'
+import { additionMonsterDefinitions, isAdditionMonsterOwned } from '../../data/additionMonsters'
 import { keyTypes } from '../../data/keys'
 import { buddyDefinitions } from '../../data/buddies'
 import { rocketBadges } from '../../data/rocketBadges'
@@ -58,6 +59,9 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const advancedMonsterOwned = advancedMonsterDefinitions.filter((monster) =>
     isAdvancedMonsterOwned(save.progress.categoryCorrect, monster),
   ).length
+  const additionMonsterOwned = additionMonsterDefinitions.filter((monster) =>
+    isAdditionMonsterOwned(save.progress.categoryCorrect, monster),
+  ).length
   const titleDefinitions = getTitleDefinitions()
   const definedTitles = new Set(titleDefinitions.map((title) => title.label))
   const ownedTitleCount = new Set((save.player?.titles ?? []).filter((title) => definedTitles.has(title))).size
@@ -67,8 +71,8 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const tabs: Record<BookTabId, BookProgressCount> = {
     kukucchi: countPercent(countKukucchiRecords(save), kukucchiRecordTotal + rocketBadges.length),
     monsters: countPercent(
-      new Set(save.progress.monsterBook).size + advancedMonsterOwned,
-      monsterTotal + advancedMonsterDefinitions.length,
+      new Set(save.progress.monsterBook).size + advancedMonsterOwned + additionMonsterOwned,
+      monsterTotal + advancedMonsterDefinitions.length + additionMonsterDefinitions.length,
     ),
     buddies: countPercent(new Set(save.progress.monsterBook).size + ownedBuddyCount, monsterTotal + buddyDefinitions.length),
     ufos: countPercent(new Set(save.progress.ownedUfos).size, ufoDefinitions.length),

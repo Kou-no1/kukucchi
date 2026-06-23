@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNoticeModal'
 import { StatPill } from '../../components/common/StatPill'
+import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
 import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
@@ -17,6 +18,7 @@ import {
   getBossLimitedItem,
 } from '../../data/bosses'
 import type { BossDefinition, BossDifficulty } from '../../data/bosses'
+import { getShopItemById } from '../../data/shopItems'
 import { getUfoById, getUfoForBoss } from '../../data/ufos'
 import {
   applyBossClearReward,
@@ -31,6 +33,7 @@ import { isCorrectAnswer } from '../../game-engine/questions/answer'
 import { createMultiplicationFactPool } from '../../game-engine/questions/factDifficulty'
 import {
   generateAdvancedQuestion,
+  generateAdditionQuestion,
   generateMissingFactorQuestion,
   generateMultiplicationFactQuestion,
 } from '../../game-engine/questions/questionGenerator'
@@ -55,6 +58,7 @@ type BossBattleResult = {
   elapsedMs: number
   rewardItemIds: string[]
   rewardUfoIds: string[]
+  rewardEffectIds: string[]
   rewardTitles: string[]
   grandReward: boolean
 }
@@ -66,6 +70,9 @@ function pick<T>(items: T[]): T {
 }
 
 function createBossQuestion(boss: BossDefinition, difficulty: BossDifficulty): Question {
+  if (boss.additionAreaId) {
+    return generateAdditionQuestion(boss.additionAreaId)
+  }
   if (boss.advancedCategory) {
     return generateAdvancedQuestion(boss.advancedCategory)
   }
@@ -84,7 +91,14 @@ function formatSeconds(milliseconds: number): string {
   return `${Math.max(0, milliseconds / 1000).toFixed(1)}秒`
 }
 
-export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advanced' }) {
+function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group']): string {
+  if (boss?.group === 'addition' || group === 'addition') {
+    return '/planet/add'
+  }
+  return boss?.group === 'advanced' || group === 'advanced' ? '/advanced' : '/battle'
+}
+
+export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['group'] }) {
   const { bossId } = useParams()
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached, shouldShowNotice } = useDailyUsage()
@@ -147,6 +161,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
             firstClear: false,
             rewardItemIds: [],
             rewardUfoIds: [],
+            rewardEffectIds: [],
             rewardTitles: [],
             grandReward: false,
           }
@@ -160,6 +175,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
         elapsedMs,
         rewardItemIds: reward.rewardItemIds,
         rewardUfoIds: reward.rewardUfoIds,
+        rewardEffectIds: reward.rewardEffectIds,
         rewardTitles: reward.rewardTitles,
         grandReward: reward.grandReward,
       })
@@ -270,7 +286,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   }
 
   if (phase === 'ready' && activeBoss && activeDifficulty) {
-    const backTo = activeBoss.group === 'advanced' ? '/advanced' : '/battle'
+    const backTo = bossBackTo(activeBoss, group)
     return (
       <AppShell title={activeBoss.label} backTo={backTo}>
         <ModeStartScreen
@@ -304,10 +320,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     const limitMs = activeDifficulty.timeLimitSeconds ? activeDifficulty.timeLimitSeconds * 1000 : 0
     const timePercent = limitMs ? Math.max(0, Math.round((timeLeftMs / limitMs) * 100)) : 100
     const activeBossVariant = advancedBossVariantForBossId(activeBoss.id)
+    const activeAdditionBoss = activeBoss.group === 'addition'
     return (
       <AppShell
         title={activeBoss.label}
-        backTo={activeBoss.group === 'advanced' ? '/advanced' : '/battle'}
+        backTo={bossBackTo(activeBoss, group)}
         className="game-shell"
       >
         <section className="boss-arena" aria-labelledby="boss-question">
@@ -316,6 +333,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
               {activeBossVariant ? (
                 <AdvancedBossSprite
                   variant={activeBossVariant}
+                  compact
+                  className="boss-hud-sprite"
+                />
+              ) : activeAdditionBoss ? (
+                <AdditionBossSprite
+                  boss={activeBoss}
                   compact
                   className="boss-hud-sprite"
                 />
@@ -360,10 +383,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
     const hasRewards =
       battleResult.rewardItemIds.length > 0 ||
       battleResult.rewardUfoIds.length > 0 ||
+      battleResult.rewardEffectIds.length > 0 ||
       battleResult.rewardTitles.length > 0
     const finalTitleUnlocked = battleResult.rewardTitles.includes(allGekimuzuTitle)
     return (
-      <AppShell title={battleResult.boss.label} backTo={battleResult.boss.group === 'advanced' ? '/advanced' : '/battle'}>
+      <AppShell title={battleResult.boss.label} backTo={bossBackTo(battleResult.boss, group)}>
         {finalTitleUnlocked ? (
           <div className="final-title-celebration" role="status" aria-live="polite">
             <strong>すべてをしるもの！</strong>
@@ -402,6 +426,9 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
               {battleResult.rewardUfoIds.map((ufoId) => (
                 <span key={ufoId}>🛸 {getUfoById(ufoId)?.name ?? ufoId}</span>
               ))}
+              {battleResult.rewardEffectIds.map((effectId) => (
+                <span key={effectId}>+ {getShopItemById(effectId)?.name ?? effectId}</span>
+              ))}
               {battleResult.rewardTitles.map((title) => (
                 <span key={title}>🏷️ {title}</span>
               ))}
@@ -433,7 +460,10 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
   }
 
   return (
-    <AppShell title={group === 'advanced' ? '高学年ボス' : 'ボスバトル'} backTo={group === 'advanced' ? '/advanced' : '/planet/multiply'}>
+    <AppShell
+      title={group === 'addition' ? 'たしざんボス' : group === 'advanced' ? '高学年ボス' : 'ボスバトル'}
+      backTo={bossBackTo(null, group)}
+    >
       <section className="boss-list" aria-label="ボス一覧">
         {visibleBosses.map((boss) => {
           const unlocked = isBossUnlocked(boss, saveData)
@@ -441,6 +471,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
           const bossVariant = advancedBossVariantForBossId(boss.id)
           const rewardUfo = getUfoForBoss(boss.id)
           const remainingToUnlock = remainingQuestionsToUnlockBoss(boss, saveData)
+          const additionBoss = boss.group === 'addition'
           const ownsRewardUfo = rewardUfo
             ? saveData.progress.ownedUfos.includes(rewardUfo.id)
             : false
@@ -450,6 +481,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: 'basic' | 'advance
               {bossVariant ? (
                 <AdvancedBossSprite
                   variant={bossVariant}
+                  locked={!unlocked}
+                  className="boss-card-sprite"
+                />
+              ) : additionBoss ? (
+                <AdditionBossSprite
+                  boss={boss}
                   locked={!unlocked}
                   className="boss-card-sprite"
                 />
