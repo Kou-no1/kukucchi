@@ -98,7 +98,7 @@ const additionModes: PlanetMode[] = [
     ready: true,
     icon: '+',
     badge: '01',
-    subtitle: '6エリアをれんしゅう',
+    subtitle: '6えりあをれんしゅう',
   },
   {
     label: 'あそぶ',
@@ -106,15 +106,15 @@ const additionModes: PlanetMode[] = [
     ready: true,
     icon: 'VS',
     badge: '02',
-    subtitle: 'たしざんロケット',
+    subtitle: 'たしざんろけっと',
   },
   {
-    label: 'スピード',
+    label: 'すぴーど',
     href: '/speed?planet=add',
     ready: true,
     icon: '30',
     badge: '03',
-    subtitle: 'たしざんタイム',
+    subtitle: 'たしざんたいむ',
   },
 ]
 
@@ -143,7 +143,7 @@ function modeCard(mode: PlanetMode): ReactNode {
       </span>
       <strong>{mode.label}</strong>
       <small>{mode.subtitle}</small>
-      <span>{mode.callToAction ?? (mode.ready ? 'スタート' : 'じゅんびちゅう')}</span>
+      <span>{mode.callToAction ?? (mode.ready ? 'すたーと' : 'じゅんびちゅう')}</span>
     </>
   )
 
@@ -186,7 +186,7 @@ export function PlanetMenuPage() {
           {planetSymbol(planet.id)}
         </span>
         <div className="planet-menu-copy">
-          <p className="welcome">ほしのメニュー</p>
+          <p className="welcome">{planet.id === 'add' ? 'ほしのめにゅー' : 'ほしのメニュー'}</p>
           <h2 id="planet-menu-title">{planet.name}</h2>
           <p className="title-line">
             {planet.status === 'live'
@@ -213,7 +213,7 @@ export function PlanetMenuPage() {
                 <div className="section-heading-row">
                   <div>
                     <p className="welcome">たしざん</p>
-                    <h2 id="addition-area-menu-title">エリアれんしゅう</h2>
+                    <h2 id="addition-area-menu-title">えりあれんしゅう</h2>
                   </div>
                 </div>
                 <div className="stage-chip-grid addition-area-grid">
@@ -233,7 +233,7 @@ export function PlanetMenuPage() {
                 <div className="section-heading-row">
                   <div>
                     <p className="welcome">B2</p>
-                    <h2 id="addition-boss-menu-title">たしざんボス</h2>
+                    <h2 id="addition-boss-menu-title">たしざんぼす</h2>
                   </div>
                 </div>
                 <div className="stage-chip-grid addition-area-grid">

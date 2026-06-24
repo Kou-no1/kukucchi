@@ -388,7 +388,7 @@ export function ResultPage() {
 
       {summary.newTitles.length > 0 ? (
         <section className="mission-section" aria-labelledby="title-earned">
-          <h2 id="title-earned">新しい称号</h2>
+          <h2 id="title-earned">あたらしいしょうごう</h2>
           <div className="fact-list">
             {summary.newTitles.map((title) => (
               <span key={title}>{title}</span>
@@ -398,9 +398,9 @@ export function ResultPage() {
       ) : null}
 
       <section className="weak-section" aria-labelledby="result-weak">
-        <h2 id="result-weak">まちがえたモンスター</h2>
+        <h2 id="result-weak">まちがえたもんすたー</h2>
         {summary.weakFacts.length === 0 ? (
-          <p className="quiet-text">今はありません</p>
+          <p className="quiet-text">いまはありません</p>
         ) : (
           <div className="fact-list">
             {summary.weakFacts.map((fact) => (

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
+import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { playerIcons } from '../../data/playerIcons'
 import { initializeAudio } from '../../services/audioService'
 import { createPlayerFromOnboarding } from '../../storage/saveData'
@@ -60,7 +61,7 @@ export function OnboardingPage() {
                   onClick={() => setIcon(option.id)}
                   aria-pressed={option.id === icon}
                 >
-                  <span aria-hidden="true">{option.emoji}</span>
+                  <PlayerIconBadge icon={option} className="settings-level-icon" />
                   {option.label}
                 </button>
               ))}

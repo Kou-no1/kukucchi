@@ -2,6 +2,7 @@ import { StatPill } from '../../components/common/StatPill'
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getLevelIconById } from '../../data/levelIcons'
@@ -47,7 +48,11 @@ export function HomePlayerStrip() {
     <section className="home-player-strip" aria-label="プレイヤー情報">
       <div className="home-name-row">
         <span className="player-icon-badge" aria-label={`${playerIcon.label}アイコン`}>
-          {levelIcon ? <LevelIconBadge icon={levelIcon} className="home-level-icon" /> : playerIcon.emoji}
+          {levelIcon ? (
+            <LevelIconBadge icon={levelIcon} className="home-level-icon" />
+          ) : (
+            <PlayerIconBadge icon={playerIcon} className="home-level-icon" />
+          )}
         </span>
         <div>
           <p className="welcome">ようこそ</p>
@@ -85,7 +90,11 @@ export function PlayerCommandPanel({ className = '' }: { className?: string }) {
         <div className="home-title-block">
           <div className="home-name-row">
             <span className="player-icon-badge" aria-label={`${playerIcon.label}アイコン`}>
-              {levelIcon ? <LevelIconBadge icon={levelIcon} className="home-level-icon" /> : playerIcon.emoji}
+              {levelIcon ? (
+                <LevelIconBadge icon={levelIcon} className="home-level-icon" />
+              ) : (
+                <PlayerIconBadge icon={playerIcon} className="home-level-icon" />
+              )}
             </span>
             <h2>{player?.nickname ?? 'くくとも'}</h2>
           </div>
@@ -96,7 +105,7 @@ export function PlayerCommandPanel({ className = '' }: { className?: string }) {
         </div>
 
         <section className="home-mission-compact" aria-labelledby="mission-title">
-          <h2 id="mission-title">今日のミッション</h2>
+          <h2 id="mission-title">きょうのめあて</h2>
           <div className="mission-list">
             {saveData.progress.missions.slice(0, 3).map((mission) => (
               <div className="mission-item" key={mission.id}>
@@ -140,7 +149,7 @@ export function PlayerCommandPanel({ className = '' }: { className?: string }) {
         <TitleEmblem title={crewTitle} className="ship-title-badge" />
         <div className="character-window-copy ship-name-only">
           <strong className="character-name-line">{characterName}</strong>
-          <h2>{shipName}号</h2>
+          <h2>{shipName}ごう</h2>
         </div>
       </aside>
     </section>

@@ -8,12 +8,14 @@ export function AppShell({
   backTo = '/home',
   className = '',
   rightAction,
+  onBack,
 }: {
   children: ReactNode
   title: string
   backTo?: string
   className?: string
   rightAction?: ReactNode
+  onBack?: () => void
 }) {
   const location = useLocation()
   const { rewardBudgetReached } = useDailyUsage()
@@ -22,7 +24,11 @@ export function AppShell({
   return (
     <div className={['app-shell', className].filter(Boolean).join(' ')}>
       <header className="top-bar">
-        {showBack ? (
+        {showBack && onBack ? (
+          <button className="icon-button" type="button" onClick={onBack} aria-label="もどる">
+            ←
+          </button>
+        ) : showBack ? (
           <Link className="icon-button" to={backTo} aria-label="もどる">
             ←
           </Link>

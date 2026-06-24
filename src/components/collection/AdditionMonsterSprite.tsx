@@ -144,7 +144,7 @@ export const AdditionMonsterSprite = memo(function AdditionMonsterSprite({
       className={classNames('monster-pixel-sprite addition-monster-sprite', className)}
       viewBox="0 0 104 104"
       role="img"
-      aria-label={locked ? '未入手たしざんモンスター' : monster.name}
+      aria-label={locked ? 'みかくとくたしざんもんすたー' : monster.name}
       shapeRendering="crispEdges"
     >
       <circle cx="52" cy="52" r="45" fill={colors.glow} opacity={locked ? 0.1 : 0.2} />

@@ -380,7 +380,7 @@ export function applyBossClearReward(
                 kind: 'title',
                 id: titleRecordId(title),
                 acquiredAt: clearedAt,
-                method: title === additionMasterTitle ? 'たしざん全エリアボス' : 'たしざん全エリアげきムズ',
+                method: title === additionMasterTitle ? 'たしざんぜんえりあぼす' : 'たしざんぜんえりあげきむず',
               })),
             ),
           },

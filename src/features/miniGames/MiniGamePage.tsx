@@ -9,9 +9,13 @@ import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
 import { ModeStartScreen } from '../../components/game/ModeStartScreen'
+import {
+  additionRocketDifficulties,
+  getAdditionRocketDifficulty,
+  type AdditionRocketDifficultyId,
+} from '../../data/additionRocket'
 import { miniGameMinDifficulty } from '../../data/factDifficulty'
 import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../data/keys'
-import { additionAreas } from '../../data/planets'
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
 import { phase15EffectItemIds } from '../../data/shopItems'
 import { rarityStars } from '../../data/treasureItems'
@@ -91,18 +95,24 @@ const gameConfig: Record<
 export function createMiniQuestion({
   planet = 'multiply',
   stages = allStages,
+  additionRocketDifficulty = 'hard',
+  rng = Math.random,
 }: {
   planet?: 'multiply' | 'add'
   stages?: number[]
+  additionRocketDifficulty?: AdditionRocketDifficultyId
+  rng?: () => number
 } = {}): Question {
   if (planet === 'add') {
-    const area = additionAreas[Math.floor(Math.random() * additionAreas.length)] ?? additionAreas[0]
-    return generateAdditionQuestion(area.id)
+    const difficulty = getAdditionRocketDifficulty(additionRocketDifficulty)
+    const areaId = difficulty.areaIds[Math.floor(rng() * difficulty.areaIds.length)] ?? difficulty.areaIds[0]
+    return generateAdditionQuestion(areaId, { rng })
   }
   return generateMultiplicationQuestion({
     answerMode: 'choice',
     stages,
     minDifficulty: miniGameMinDifficulty,
+    rng,
   })
 }
 
@@ -128,7 +138,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const config = gameConfig[variant]
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [phase, setPhase] = useState<MiniGamePhase>('ready')
-  const [question, setQuestion] = useState<Question>(() => createMiniQuestion({ planet: questionPlanet }))
+  const [additionRocketDifficulty, setAdditionRocketDifficulty] =
+    useState<AdditionRocketDifficultyId>('easy')
+  const [question, setQuestion] = useState<Question>(() =>
+    createMiniQuestion({ planet: questionPlanet, additionRocketDifficulty }),
+  )
   const [selectedBattleStages, setSelectedBattleStages] = useState<number[]>([...allStages])
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
   const [results, setResults] = useState<AnswerResult[]>([])
@@ -171,7 +185,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   function resetRunState() {
     finishedRef.current = false
-    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages }))
+    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages, additionRocketDifficulty }))
     setFeedback('idle')
     setResults([])
     setScoreState({ score: 0, combo: 0, maxCombo: 0 })
@@ -194,11 +208,11 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   }
 
   const nextQuestion = useCallback(() => {
-    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages }))
+    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages, additionRocketDifficulty }))
     setFeedback('idle')
     setTimeLeftMs(battleTimeLimitMs)
     startedAtRef.current = Date.now()
-  }, [questionPlanet, questionStages])
+  }, [additionRocketDifficulty, questionPlanet, questionStages])
 
   const finish = useCallback(
     (
@@ -242,6 +256,9 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       const details: NonNullable<GameSessionSummary['details']> = {}
       if (isAdditionPlanet) {
         details.planet = 'add'
+      }
+      if (isAdditionPlanet && variant === 'rocket') {
+        details.additionRocketDifficulty = additionRocketDifficulty
       }
       if (variant === 'battle') {
         details.heartsLeft = options.battleHearts ?? hearts
@@ -383,7 +400,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [distance, earnedKeyIds, enemyHp, hearts, isAdditionPlanet, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
+    [additionRocketDifficulty, distance, earnedKeyIds, enemyHp, hearts, isAdditionPlanet, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
   )
 
   const recordAnswer = useCallback(
@@ -561,6 +578,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
           description={config.startDescription}
           level={saveData.player?.level ?? 1}
           backTo={backTo}
+          startLabel={isAdditionPlanet ? 'すたーと！' : undefined}
           onStart={startGame}
         >
           {variant === 'battle' ? (
@@ -589,6 +607,25 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
                 })}
               </div>
               <p className="quiet-text">えらんだだんのモンスターだけが出るよ</p>
+            </div>
+          ) : null}
+          {isAdditionPlanet && variant === 'rocket' ? (
+            <div className="duration-select-panel addition-rocket-difficulty-panel" aria-label="むずかしさをえらぶ">
+              <strong>むずかしさ</strong>
+              <div className="segmented learn-start-segmented">
+                {additionRocketDifficulties.map((difficulty) => (
+                  <button
+                    className={additionRocketDifficulty === difficulty.id ? 'selected' : ''}
+                    key={difficulty.id}
+                    type="button"
+                    onClick={() => setAdditionRocketDifficulty(difficulty.id)}
+                    aria-pressed={additionRocketDifficulty === difficulty.id}
+                  >
+                    {difficulty.label}
+                    <small>{difficulty.description}</small>
+                  </button>
+                ))}
+              </div>
             </div>
           ) : null}
         </ModeStartScreen>

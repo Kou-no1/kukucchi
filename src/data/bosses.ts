@@ -145,11 +145,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-within-9',
     no: 13,
     areaId: 'add-within-9',
-    label: 'たすたすキング',
+    label: 'たすたすきんぐ',
     shortLabel: 'たすたす',
     emoji: '+1',
-    description: '1〜9のたしざんを見守る、やさしいプラスの王さま。',
-    normalTitle: 'たしざんビギナー',
+    description: '1〜9のたしざんをみまもる、やさしいぷらすのおうさま。',
+    normalTitle: 'たしざんびぎなー',
     difficultyOverrides: {
       normal: { hp: 6, questionCount: 8 },
       hard: { hp: 8, questionCount: 10, timeLimitSeconds: 7 },
@@ -161,11 +161,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-within-10',
     no: 14,
     areaId: 'add-within-10',
-    label: 'とーたすプリンス',
+    label: 'とーたすぷりんす',
     shortLabel: 'とーたす',
     emoji: '+10',
-    description: '10までのまとまりを丸くまとめる、たしざんの王子。',
-    normalTitle: 'とーたすチャレンジャー',
+    description: '10までのまとまりをまるくまとめる、たしざんのおうじ。',
+    normalTitle: 'とーたすちゃれんじゃー',
     difficultyOverrides: {
       hard: { timeLimitSeconds: 7 },
       fast: { timeLimitSeconds: 4 },
@@ -176,11 +176,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-carry-basic',
     no: 15,
     areaId: 'add-carry-basic',
-    label: 'くりあがりマスター',
+    label: 'くりあがりますたー',
     shortLabel: 'くりあがり',
     emoji: '+↑',
-    description: 'くりあがりの山をこえる、強めのたしざんボス。',
-    normalTitle: 'くりあがりファイター',
+    description: 'くりあがりのやまをこえる、つよめのたしざんぼす。',
+    normalTitle: 'くりあがりふぁいたー',
     normalUfoId: 'boss-add-carry-basic-ufo',
     difficultyOverrides: {
       normal: { hp: 9, questionCount: 12 },
@@ -193,11 +193,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-two-digit-no-carry',
     no: 16,
     areaId: 'add-two-digit-no-carry',
-    label: 'にけたバロン',
+    label: 'にけたばろん',
     shortLabel: 'にけた',
     emoji: '+2',
-    description: '十の位と一の位をならべて戦う、2けたのボス。',
-    normalTitle: 'にけたたしざんナイト',
+    description: 'じゅうのくらいといちのくらいをならべてたたかう、2けたのぼす。',
+    normalTitle: 'にけたたしざんないと',
     normalEffectId: 'add-plus-burst',
     difficultyOverrides: {
       hard: { timeLimitSeconds: 8 },
@@ -209,11 +209,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-two-digit-carry',
     no: 17,
     areaId: 'add-two-digit-carry',
-    label: 'くりくりエンペラー',
+    label: 'くりくりえんぺらー',
     shortLabel: 'くりくり',
     emoji: '++',
-    description: '2けたのくりあがりを大きく押し上げる強めのボス。',
-    normalTitle: '2けたくりあがりガード',
+    description: '2けたのくりあがりをおおきくおしあげるつよめのぼす。',
+    normalTitle: '2けたくりあがりがーど',
     normalUfoId: 'boss-add-two-digit-carry-ufo',
     difficultyOverrides: {
       normal: { hp: 9, questionCount: 12 },
@@ -226,11 +226,11 @@ const additionBossSeeds: Array<{
     id: 'boss-add-three-digit',
     no: 18,
     areaId: 'add-three-digit',
-    label: 'おおたすジェネラル',
+    label: 'おおたすじぇねらる',
     shortLabel: 'おおたす',
     emoji: '+3',
-    description: '3けたの大きな数をどっしり受けとめる、たしざん最強ボス。',
-    normalTitle: '大きいかずコマンダー',
+    description: '3けたのおおきなかずをどっしりうけとめる、たしざんさいきょうぼす。',
+    normalTitle: 'おおきいかずこまんだー',
     normalUfoId: 'boss-add-three-digit-ufo',
     difficultyOverrides: {
       normal: { hp: 10, questionCount: 12 },
@@ -249,13 +249,13 @@ function createAdditionRewards(seed: (typeof additionBossSeeds)[number]): Record
       title: seed.normalTitle,
     },
     hard: {
-      title: `${seed.shortLabel}ハードスター`,
+      title: `${seed.shortLabel}はーどすたー`,
     },
     fast: {
-      title: `${seed.shortLabel}スピードスター`,
+      title: `${seed.shortLabel}すぴーどすたー`,
     },
     gekimuzu: {
-      title: `${seed.shortLabel}げきムズスター`,
+      title: `${seed.shortLabel}げきむずすたー`,
     },
   }
 }
@@ -360,8 +360,8 @@ export const bossLimitedItems: BossLimitedItem[] = bosses
 export const legendaryBossTitle = 'でんせつのくくチャンピオン'
 export const allGekimuzuTitle = 'すべてをしるもの'
 
-export const additionMasterTitle = 'たしざんマスター'
-export const additionLegendTitle = 'たしざんレジェンド'
+export const additionMasterTitle = 'たしざんますたー'
+export const additionLegendTitle = 'たしざんれじぇんど'
 
 export function getBossDifficulty(
   boss: BossDefinition,

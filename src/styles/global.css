@@ -7634,3 +7634,194 @@ legend {
 .reward-budget-modal {
   text-align: center;
 }
+
+/* Phase B2.1: keep every Kukucchi UFO preview on one shared coordinate scale. */
+.kukucchi {
+  --kukucchi-ring-size: 210px;
+  --kukucchi-ring-border: 10px;
+  --kukucchi-cockpit-width-ratio: 0.552;
+  --kukucchi-cockpit-height-ratio: 0.41;
+  --kukucchi-body-width-ratio: 0.352;
+  --kukucchi-ship-top-ratio: 0.54;
+  --kukucchi-ship-width-ratio: 0.8;
+  --kukucchi-ship-height-ratio: 0.238;
+  --kukucchi-ship-border: 4px;
+}
+
+.character-window .kukucchi {
+  --kukucchi-ring-size: 132px;
+  --kukucchi-ring-border: 6px;
+  --kukucchi-ship-border: 3px;
+}
+
+.home-character-window .kukucchi {
+  --kukucchi-ring-size: 150px;
+  --kukucchi-ring-border: 6px;
+  --kukucchi-ship-top-ratio: 0.48;
+  --kukucchi-ship-border: 3px;
+}
+
+.mode-ready-shell .mode-start-screen .kukucchi {
+  --kukucchi-ring-size: 112px;
+  --kukucchi-ring-border: 6px;
+  --kukucchi-ship-border: 3px;
+}
+
+.game-shell .speed-companion .kukucchi {
+  --kukucchi-ring-size: 62px;
+  --kukucchi-ring-border: 4px;
+  --kukucchi-ship-border: 3px;
+}
+
+.custom-character-window .kukucchi {
+  --kukucchi-ring-size: 255px;
+}
+
+.ufo-ring {
+  width: var(--kukucchi-ring-size);
+  border-width: var(--kukucchi-ring-border);
+}
+
+.ufo-cockpit {
+  width: calc(var(--kukucchi-ring-size) * var(--kukucchi-cockpit-width-ratio));
+  height: calc(var(--kukucchi-ring-size) * var(--kukucchi-cockpit-height-ratio));
+  border-width: var(--kukucchi-ship-border);
+}
+
+.kukucchi-body {
+  width: calc(var(--kukucchi-ring-size) * var(--kukucchi-body-width-ratio));
+}
+
+.ufo-ship {
+  top: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-top-ratio));
+  width: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-width-ratio));
+  height: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-height-ratio));
+  border-width: var(--kukucchi-ship-border);
+}
+
+.character-window .ufo-ship,
+.home-character-window .ufo-ship,
+.mode-ready-shell .mode-start-screen .ufo-ship,
+.game-shell .speed-companion .ufo-ship,
+.custom-character-window .ufo-ship {
+  top: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-top-ratio));
+  width: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-width-ratio));
+  height: calc(var(--kukucchi-ring-size) * var(--kukucchi-ship-height-ratio));
+  border-width: var(--kukucchi-ship-border);
+}
+
+@media (max-width: 760px) {
+  .home-character-window .kukucchi {
+    --kukucchi-ring-size: 132px;
+  }
+}
+
+@media (max-width: 700px) {
+  .custom-character-window .kukucchi {
+    --kukucchi-ring-size: 210px;
+  }
+}
+
+.mode-ready-shell .mode-start-options {
+  padding-bottom: 10px;
+  scroll-padding-bottom: 10px;
+}
+
+.learn-ready-shell .learn-answer-mode-panel {
+  grid-column: 1 / -1;
+}
+
+.addition-rocket-difficulty-panel {
+  grid-column: 1 / -1;
+}
+
+.addition-rocket-difficulty-panel .segmented {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.addition-rocket-difficulty-panel button {
+  min-width: 0;
+  white-space: normal;
+}
+
+.addition-rocket-difficulty-panel small {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  line-height: 1.1;
+}
+
+.player-icon-badge-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 430px) {
+  .mode-ready-shell {
+    overflow-x: hidden;
+  }
+
+  .mode-ready-shell .mode-start-screen {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .mode-ready-shell .mode-start-screen > .kukucchi {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .mode-ready-shell .mode-start-copy,
+  .mode-ready-shell .mode-start-options,
+  .mode-ready-shell .mode-start-actions {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .mode-ready-shell .mode-start-copy {
+    grid-row: 2;
+  }
+
+  .mode-ready-shell .mode-start-options {
+    grid-row: 3;
+  }
+
+  .mode-ready-shell .mode-start-actions {
+    grid-row: 4;
+  }
+
+  .learn-ready-shell .mode-start-options {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .learn-ready-shell .learn-answer-mode-panel {
+    padding: 2px 6px;
+  }
+
+  .learn-ready-shell .learn-answer-mode-panel .learn-start-segmented {
+    gap: 4px;
+  }
+
+  .learn-ready-shell .learn-answer-mode-panel button {
+    min-height: 28px;
+    padding-block: 2px;
+  }
+
+  .addition-rocket-difficulty-panel .segmented {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .addition-rocket-difficulty-panel button {
+    padding-inline: 3px;
+    font-size: 0.64rem;
+  }
+
+  .addition-rocket-difficulty-panel small {
+    font-size: 0.55rem;
+  }
+}

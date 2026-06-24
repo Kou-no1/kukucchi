@@ -24,6 +24,7 @@ import {
   calculateSpeedBonus,
 } from '../game-engine/scoring/score'
 import {
+  buildSessionSummary,
   buildExpProgressAnimationSteps,
   calculateCoins,
   calculateExp,
@@ -81,6 +82,8 @@ import {
 import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
+import { additionRocketDifficulties } from '../data/additionRocket'
+import { playerIcons } from '../data/playerIcons'
 import {
   equipShopItem,
   getEquippedItemForSlot,
@@ -419,7 +422,7 @@ describe('question generation', () => {
       'くりあがりのたしざん',
       '2けたのたしざん',
       '2けたのたしざん（くりあがり）',
-      '大きいかずのたしざん',
+      'おおきいかずのたしざん',
     ])
     expect(additionPlanet?.theme.primary).not.toBe(multiplyPlanet?.theme.primary)
     expect(additionAreas.map((area) => area.generator.operation)).toEqual([
@@ -1938,6 +1941,17 @@ describe('mastery, review, missions, and storage', () => {
     ])
   })
 
+  it('defines the starter name icons as SVG motifs instead of emoji', () => {
+    expect(playerIcons.map((icon) => icon.id)).toEqual(['たまご', 'ほし', 'はな', 'そら'])
+    expect(playerIcons.every((icon) => !Object.prototype.hasOwnProperty.call(icon, 'emoji'))).toBe(
+      true,
+    )
+    expect(playerIcons.every((icon) => icon.motif && icon.colors.base && icon.colors.accent)).toBe(
+      true,
+    )
+    expect(globalCss).toContain('.player-icon-badge-svg')
+  })
+
   it('uses the actual overcome condition in the weak fact hint text', () => {
     expect(weakFactHintText).toBe('べつの日に また せいかいすると きえるよ')
     expect(weakFactHintText).not.toContain('れんぞく')
@@ -1977,6 +1991,22 @@ describe('mastery, review, missions, and storage', () => {
         fullOpen.progress.collectionRecords.some(
           (record) => record.id === collectionRecordId('advanced-monster', monster.id),
         ) && isAdvancedMonsterOwned(fullOpen.progress.categoryCorrect, monster),
+      ),
+    ).toBe(true)
+    expect(
+      additionMonsterDefinitions.every((monster) =>
+        isAdditionMonsterOwned(fullOpen.progress.categoryCorrect, monster),
+      ),
+    ).toBe(true)
+    expect(
+      [additionPlusRingUfoId, additionDoubleDomeUfoId, additionSunriseUfoId].every((ufoId) =>
+        fullOpen.progress.ownedUfos.includes(ufoId),
+      ),
+    ).toBe(true)
+    expect(fullOpen.progress.ownedItems).toContain(addPlusBurstEffectId)
+    expect(
+      additionRocketDifficulties.every((difficulty) =>
+        fullOpen.player?.titles.includes(difficulty.title),
       ),
     ).toBe(true)
     expect(keyTypes.every((key) => (fullOpen.progress.treasureKeys[key.id]?.count ?? 0) >= 5)).toBe(
@@ -2408,6 +2438,57 @@ describe('mastery, review, missions, and storage', () => {
     const playQuestion = createMiniQuestion({ planet: 'add' })
     expect(playQuestion.id.startsWith('add:')).toBe(true)
     expect(playQuestion.category.startsWith('addition-')).toBe(true)
+  })
+
+  it('splits addition rocket questions into three difficulty ranges', () => {
+    const easyQuestion = createMiniQuestion({
+      planet: 'add',
+      additionRocketDifficulty: 'easy',
+      rng: () => 0.99,
+    })
+    expect(Number(easyQuestion.metadata?.left)).toBeLessThanOrEqual(9)
+    expect(Number(easyQuestion.metadata?.right)).toBeLessThanOrEqual(9)
+
+    const normalQuestion = createMiniQuestion({
+      planet: 'add',
+      additionRocketDifficulty: 'normal',
+      rng: () => 0.99,
+    })
+    expect(Number(normalQuestion.metadata?.left)).toBeLessThanOrEqual(99)
+    expect(Number(normalQuestion.metadata?.right)).toBeLessThanOrEqual(99)
+
+    const hardQuestion = createMiniQuestion({
+      planet: 'add',
+      additionRocketDifficulty: 'hard',
+      rng: () => 0.99,
+    })
+    expect(Number(hardQuestion.metadata?.left)).toBeGreaterThanOrEqual(100)
+    expect(Number(hardQuestion.metadata?.right)).toBeGreaterThanOrEqual(100)
+    expect(additionRocketDifficulties.map((difficulty) => difficulty.title)).toEqual([
+      'ろけっとびぎなー',
+      'ろけっとぱいろっと',
+      'ろけっときゃぷてん',
+    ])
+    for (const difficulty of additionRocketDifficulties) {
+      const rawSummary = buildSessionSummary({
+        id: `rocket-${difficulty.id}`,
+        mode: 'rocket',
+        maxCombo: 14,
+        score: 100,
+        results: Array.from({ length: 14 }, () =>
+          result({ questionId: 'add:add-within-9:1+1', prompt: '1 + 1', expectedAnswer: 2 }),
+        ),
+        finishedAt: '2026-01-05T00:00:00.000Z',
+      })
+      const summary: GameSessionSummary = {
+        ...rawSummary,
+        details: {
+          planet: 'add',
+          additionRocketDifficulty: difficulty.id,
+        },
+      }
+      expect(judgeNewTitles(summary, createSaveWithPlayer())).toContain(difficulty.title)
+    }
   })
 
   it('caps level icon previews in settings CSS', () => {

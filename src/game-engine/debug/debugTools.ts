@@ -1,4 +1,5 @@
 import { advancedMonsterDefinitions } from '../../data/advancedMonsters'
+import { additionAreaCorrectKey, additionMonsterDefinitions } from '../../data/additionMonsters'
 import { bossDifficulties, bosses, bossLimitedItems } from '../../data/bosses'
 import { buddyDefinitions } from '../../data/buddies'
 import { keyTypes } from '../../data/keys'
@@ -102,11 +103,15 @@ export function fullOpenDebugSaveData(
   }
 
   const titleDefinitions = getTitleDefinitions()
-  const categoryCorrect = {
+  const categoryCorrect: Record<string, number> = {
     ...save.progress.categoryCorrect,
     'multiplication-square': Math.max(save.progress.categoryCorrect['multiplication-square'] ?? 0, 40),
     'pi-multiplication': Math.max(save.progress.categoryCorrect['pi-multiplication'] ?? 0, 40),
     development: Math.max(save.progress.categoryCorrect.development ?? 0, 40),
+  }
+  for (const monster of additionMonsterDefinitions) {
+    const key = additionAreaCorrectKey(monster.areaId)
+    categoryCorrect[key] = Math.max(categoryCorrect[key] ?? 0, monster.threshold)
   }
   const titles = Array.from(
     new Set([...(save.player?.titles ?? []), ...titleDefinitions.map((title) => title.label)]),

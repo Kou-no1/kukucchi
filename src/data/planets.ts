@@ -126,7 +126,7 @@ export const additionAreas: AreaDefinition[] = [
     no: 5,
     name: '2けたのたしざん（くりあがり）',
     shortName: '2けたくりあがり',
-    description: '一のくらいでくりあがり',
+    description: 'いちのくらいでくりあがり',
     generator: {
       operation: 'addition',
       areaId: 'add-two-digit-carry',
@@ -139,8 +139,8 @@ export const additionAreas: AreaDefinition[] = [
   {
     id: 'add-three-digit',
     no: 6,
-    name: '大きいかずのたしざん',
-    shortName: '大きいかず',
+    name: 'おおきいかずのたしざん',
+    shortName: 'おおきいかず',
     description: '3けた+3けた',
     generator: {
       operation: 'addition',

@@ -94,7 +94,7 @@ export function AdditionBossSprite({
       className={classNames('addition-boss-sprite', compact && 'compact', className)}
       viewBox="0 0 128 128"
       role="img"
-      aria-label={locked ? '未解放たしざんボス' : boss.label}
+      aria-label={locked ? 'みかいほうたしざんぼす' : boss.label}
       shapeRendering="crispEdges"
     >
       <circle cx="64" cy="66" r="54" fill={colors.glow} opacity={locked ? 0.1 : 0.22} />

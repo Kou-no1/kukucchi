@@ -7,6 +7,7 @@ import {
   bosses,
   legendaryBossTitle,
 } from '../../data/bosses'
+import { additionRocketDifficulties } from '../../data/additionRocket'
 import type { RewardOrigin } from '../../types/rewardOrigin'
 
 type TitleRule = {
@@ -103,17 +104,28 @@ export const titleRules: TitleRule[] = [
   {
     id: 'addition-first-step',
     label: 'たしざんのたまご',
-    description: 'たしざんの星で初めて問題を解いたしるし',
+    description: 'たしざんのほしではじめてもんだいをといたしるし',
     origin: 'add',
     canEarn: (summary) => hasAdditionResult(summary),
   },
   {
     id: 'addition-carry-30-combo',
     label: 'くりあがりちょうじん',
-    description: 'くりあがりのたしざんを30問連続で正解したしるし',
+    description: 'くりあがりのたしざんを30もんれんぞくでせいかいしたしるし',
     origin: 'add',
     canEarn: (summary) => maxCorrectComboForAdditionArea(summary, 'add-carry-basic') >= 30,
   },
+  ...additionRocketDifficulties.map((difficulty) => ({
+    id: `addition-rocket-${difficulty.id}`,
+    label: difficulty.title,
+    description: `${difficulty.label}のろけっとをくりあしたしるし`,
+    origin: 'add' as const,
+    canEarn: (summary: GameSessionSummary) =>
+      summary.mode === 'rocket' &&
+      summary.details?.planet === 'add' &&
+      summary.details?.additionRocketDifficulty === difficulty.id &&
+      summary.totalQuestions >= 14,
+  })),
 ]
 
 function uniqueTitleDefinitions(definitions: TitleDefinition[]): TitleDefinition[] {
@@ -145,7 +157,7 @@ export function getTitleDefinitions(): TitleDefinition[] {
       label: reward.title,
       origin: boss.group === 'addition' ? ('add' as const) : ('multiply' as const),
       description: `${boss.label}にいどんだしるし`,
-      method: `${boss.label} ボスバトル`,
+      method: boss.group === 'addition' ? `${boss.label} ぼすばとる` : `${boss.label} ボスバトル`,
     })),
   )
   return uniqueTitleDefinitions([
@@ -166,15 +178,15 @@ export function getTitleDefinitions(): TitleDefinition[] {
     {
       id: titleRecordId(additionMasterTitle),
       label: additionMasterTitle,
-      description: 'たしざんの6エリアボスをすべてたおしたしるし',
-      method: 'たしざん全エリアボス',
+      description: 'たしざんの6えりあぼすをすべてたおしたしるし',
+      method: 'たしざんぜんえりあぼす',
       origin: 'add' as const,
     },
     {
       id: titleRecordId(additionLegendTitle),
       label: additionLegendTitle,
-      description: 'たしざんの6エリアをげきムズでこえたしるし',
-      method: 'たしざん全エリアげきムズ',
+      description: 'たしざんの6えりあをげきむずでこえたしるし',
+      method: 'たしざんぜんえりあげきむず',
       origin: 'add' as const,
     },
   ])

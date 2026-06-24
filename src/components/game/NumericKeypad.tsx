@@ -14,8 +14,8 @@ export function NumericKeypad({
     : ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']
 
   return (
-    <div className="keypad" aria-label="数字キーパッド">
-      <output className="keypad-output" aria-label="入力中の答え">
+    <div className="keypad" aria-label="すうじきーぱっど">
+      <output className="keypad-output" aria-label="にゅうりょくちゅうのこたえ">
         {value || ' '}
       </output>
       <div className="key-grid">

@@ -4,6 +4,7 @@ import { BuddySprite } from '../../components/collection/BuddySprite'
 import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
@@ -194,7 +195,7 @@ export function CustomPage() {
       <section className="custom-hub">
         <section className="custom-preview-panel" aria-labelledby="custom-preview-heading">
           <div className="preview-customizer-heading">
-            <p className="welcome">くくっち号</p>
+            <p className="welcome">くくっちごう</p>
             <h2 id="custom-preview-heading">カスタム</h2>
           </div>
           <aside className="character-window custom-character-window" aria-label="装備プレビュー">
@@ -218,7 +219,7 @@ export function CustomPage() {
                   onClick={() => choosePlayerIcon(icon.id)}
                   aria-pressed={saveData.player?.icon === icon.id}
                 >
-                  <span aria-hidden="true">{icon.emoji}</span>
+                  <PlayerIconBadge icon={icon} className="level-icon-choice-svg" />
                   <small>{icon.label}</small>
                 </button>
               ))}

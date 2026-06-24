@@ -11,6 +11,7 @@ type ModeStartScreenProps = {
   backTo: string
   children?: ReactNode
   onBack?: () => void
+  startLabel?: string
   onStart: () => void
 }
 
@@ -22,6 +23,7 @@ export function ModeStartScreen({
   backTo,
   children,
   onBack,
+  startLabel = 'スタート！',
   onStart,
 }: ModeStartScreenProps) {
   const [countdown, setCountdown] = useState<number | null>(null)
@@ -55,7 +57,7 @@ export function ModeStartScreen({
           onClick={startCountdown}
           disabled={countdown !== null}
         >
-          {countdown === null ? 'スタート！' : countdown}
+          {countdown === null ? startLabel : countdown}
         </button>
         {onBack ? (
           <button className="secondary-action" type="button" onClick={onBack}>

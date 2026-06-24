@@ -227,7 +227,7 @@ function additionMonsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
       description: owned ? monster.description : `${progressCount}/${monster.threshold}もん`,
       owned,
       selected: owned && save.progress.equippedBuddyId === selectionId,
-      method: owned ? `${monster.threshold}もん せいかい` : 'たしざんの星',
+      method: owned ? `${monster.threshold}もん せいかい` : 'たしざんのほし',
       acquiredAt: null,
       additionMonster: monster,
     } satisfies CustomInventoryEntry

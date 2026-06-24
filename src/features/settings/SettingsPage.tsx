@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { TutorialModal } from '../../components/common/TutorialModal'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
+import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { getUnlockedLevelIcons } from '../../data/levelIcons'
 import { playerIcons } from '../../data/playerIcons'
 import {
@@ -272,7 +273,7 @@ export function SettingsPage() {
               onClick={() => updateIcon(icon.id)}
               aria-pressed={saveData.player?.icon === icon.id}
             >
-              <span aria-hidden="true">{icon.emoji}</span>
+              <PlayerIconBadge icon={icon} className="settings-level-icon" />
               {icon.label}
             </button>
           ))}

@@ -253,9 +253,10 @@ export function SpeedPage() {
         <ModeStartScreen
           title={`${durationSeconds}びょうちゃれんじ`}
           eyebrow="わーぷじゅんびOK"
-          description="だんをえらんで、じぶんのきろくにちょうせん！"
+          description={isAdditionPlanet ? 'えりあをえらんで、じぶんのきろくにちょうせん！' : 'だんをえらんで、じぶんのきろくにちょうせん！'}
           level={saveData.player?.level ?? 1}
           backTo={backTo}
+          startLabel={isAdditionPlanet ? 'すたーと！' : undefined}
           onStart={startGame}
         >
           {isAdditionPlanet ? (

@@ -323,10 +323,11 @@ export function LearnPage() {
                 ? `${selectedAdditionArea.name} れんしゅう`
                 : `${learnKindLabels[learnKind]} れんしゅう`
           }
-          eyebrow="9もんぜんぶチャレンジ"
-          description="けいさんとこたえかたをえらんで、スタートしよう！"
+          eyebrow={learnKind === 'addition' ? '9もんぜんぶちゃれんじ' : '9もんぜんぶチャレンジ'}
+          description="けいさんとこたえかたをえらんで、すたーとしよう！"
           level={saveData.player?.level ?? 1}
           backTo={backToPlanet}
+          startLabel={learnKind === 'addition' ? 'すたーと！' : undefined}
           onStart={startLearn}
         >
           {!fromAdditionPlanet ? (
@@ -372,9 +373,9 @@ export function LearnPage() {
           ) : null}
 
           {learnKind === 'addition' ? (
-            <div className="stage-select-panel addition-area-panel" aria-label="れんしゅうするエリア">
+            <div className="stage-select-panel addition-area-panel" aria-label="れんしゅうするえりあ">
               <div className="start-option-header">
-                <strong>れんしゅうするエリア</strong>
+                <strong>れんしゅうするえりあ</strong>
                 <span>{selectedAdditionArea.shortName}</span>
               </div>
               <div className="stage-chip-grid addition-area-grid">
@@ -413,7 +414,7 @@ export function LearnPage() {
             </div>
           ) : null}
 
-          <div className="duration-select-panel" aria-label="こたえかたをえらぶ">
+          <div className="duration-select-panel learn-answer-mode-panel" aria-label="こたえかたをえらぶ">
             <strong>こたえかた</strong>
             <div className="segmented learn-start-segmented">
               <button
@@ -432,14 +433,14 @@ export function LearnPage() {
                 disabled={learnKind === 'pi' || learnKind === 'addition'}
                 aria-disabled={learnKind === 'pi' || learnKind === 'addition'}
               >
-                入力
+                {learnKind === 'addition' ? 'にゅうりょく' : '入力'}
               </button>
             </div>
           </div>
         </ModeStartScreen>
       ) : (
         <>
-          <section className="learn-console learn-run-console" aria-label="練習設定">
+          <section className="learn-console learn-run-console" aria-label="れんしゅうせってい">
             <div className="learn-run-status">
               <span>
                 {learnKind === 'kuku'
@@ -458,10 +459,10 @@ export function LearnPage() {
               <small>9もんぜんぶ</small>
             </div>
 
-            <aside className="character-window" aria-label="宇宙ぼうけん">
+            <aside className="character-window" aria-label="うちゅうぼうけん">
               <KukucchiCharacter level={saveData.player?.level ?? 1} mood="cheer" />
               <div className="character-window-copy">
-                <p className="welcome">くくっち号、しゅっぱつ！</p>
+                <p className="welcome">くくっちごう、しゅっぱつ！</p>
                 <h2>{learnKind === 'kuku' ? `${stage}のだんステーション` : `${learnKindLabels[learnKind]}ステーション`}</h2>
               </div>
             </aside>
@@ -473,7 +474,7 @@ export function LearnPage() {
                 {results.length}/{goalQuestions}
               </span>
               <button type="button" onClick={handleSpeak}>
-                聞く
+                きく
               </button>
             </div>
             <h2 id="question-title" className="question-prompt">

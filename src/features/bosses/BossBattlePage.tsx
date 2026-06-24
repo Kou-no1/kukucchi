@@ -285,24 +285,37 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
     nextQuestion(boss, difficulty, 0)
   }
 
+  function returnToBossSelect() {
+    setActiveBoss(null)
+    setActiveDifficulty(null)
+    setQuestion(null)
+    setFeedback('idle')
+    setResults([])
+    setScoreState({ score: 0, combo: 0, maxCombo: 0 })
+    setDamage(0)
+    setBattleResult(null)
+    setPhase('select')
+  }
+
   if (phase === 'ready' && activeBoss && activeDifficulty) {
     const backTo = bossBackTo(activeBoss, group)
     return (
-      <AppShell title={activeBoss.label} backTo={backTo}>
+      <AppShell title={activeBoss.label} backTo={backTo} onBack={bossId ? undefined : returnToBossSelect}>
         <ModeStartScreen
           title={activeBoss.label}
-          eyebrow={activeDifficulty.label}
-          description={`${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきムズはミスなしでクリア！`}
+          eyebrow={group === 'addition' ? activeDifficulty.label.replace('ムズ', 'むず') : activeDifficulty.label}
+          description={
+            group === 'addition'
+              ? `${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきむずはミスなしでクリア！`
+              : `${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきムズはミスなしでクリア！`
+          }
           level={saveData.player?.level ?? 1}
           backTo={backTo}
-          onBack={() => {
-            setActiveBoss(null)
-            setActiveDifficulty(null)
-            setPhase('select')
-          }}
+          onBack={bossId ? undefined : returnToBossSelect}
+          startLabel={group === 'addition' ? 'すたーと！' : undefined}
           onStart={() => startBattle(activeBoss, activeDifficulty)}
         >
-          <div className="boss-start-summary" aria-label="ボスバトルのじゅんび">
+          <div className="boss-start-summary" aria-label={group === 'addition' ? 'ぼすばとるのじゅんび' : 'ボスバトルのじゅんび'}>
             <span>もんだい {activeDifficulty.questionCount}</span>
             <span>HP {activeDifficulty.hp}</span>
             <span>
@@ -326,6 +339,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
         title={activeBoss.label}
         backTo={bossBackTo(activeBoss, group)}
         className="game-shell"
+        onBack={bossId ? undefined : returnToBossSelect}
       >
         <section className="boss-arena" aria-labelledby="boss-question">
           <div className="boss-hud">
@@ -387,7 +401,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
       battleResult.rewardTitles.length > 0
     const finalTitleUnlocked = battleResult.rewardTitles.includes(allGekimuzuTitle)
     return (
-      <AppShell title={battleResult.boss.label} backTo={bossBackTo(battleResult.boss, group)}>
+      <AppShell
+        title={battleResult.boss.label}
+        backTo={bossBackTo(battleResult.boss, group)}
+        onBack={bossId ? undefined : returnToBossSelect}
+      >
         {finalTitleUnlocked ? (
           <div className="final-title-celebration" role="status" aria-live="polite">
             <strong>すべてをしるもの！</strong>
@@ -461,7 +479,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
 
   return (
     <AppShell
-      title={group === 'addition' ? 'たしざんボス' : group === 'advanced' ? '高学年ボス' : 'ボスバトル'}
+      title={group === 'addition' ? 'たしざんぼす' : group === 'advanced' ? '高学年ボス' : 'ボスバトル'}
       backTo={bossBackTo(null, group)}
     >
       <section className="boss-list" aria-label="ボス一覧">
