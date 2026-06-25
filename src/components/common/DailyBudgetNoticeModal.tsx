@@ -19,16 +19,21 @@ export function DailyBudgetNoticeModal({
   }
 
   return (
-    <div className="modal-backdrop" role="presentation">
-      <section className="tutorial-modal reward-budget-modal" role="dialog" aria-modal="true">
+    <div className="reward-budget-backdrop" role="presentation">
+      <section
+        className="tutorial-modal reward-budget-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reward-budget-modal-title"
+      >
         <div className="tutorial-visual" aria-hidden="true">
           🌟
         </div>
-        <h2>{budgetMinutes}分 たったよ</h2>
+        <h2 id="reward-budget-modal-title">{budgetMinutes}ぷん たったよ</h2>
         <p>このあとは コインとけいけんちは たまらないよ。</p>
         <p>あそびと きろくは そのまま つづけられるよ。</p>
         <button className="primary-action wide" type="button" onClick={close}>
-          OK
+          わかった
         </button>
       </section>
     </div>

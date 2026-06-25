@@ -15,14 +15,14 @@ export const additionRocketDifficulties: AdditionRocketDifficultyDefinition[] = 
     id: 'easy',
     label: 'やさしい',
     description: '1けたのたしざん',
-    title: 'ろけっとびぎなー',
+    title: 'たしざんロケットビギナー',
     areaIds: ['add-within-9', 'add-within-10', 'add-carry-basic'],
   },
   {
     id: 'normal',
     label: 'ふつう',
     description: '2けたまでのたしざん',
-    title: 'ろけっとぱいろっと',
+    title: 'たしざんロケットパイロット',
     areaIds: [
       'add-within-9',
       'add-within-10',
@@ -35,7 +35,7 @@ export const additionRocketDifficulties: AdditionRocketDifficultyDefinition[] = 
     id: 'hard',
     label: 'むずかしい',
     description: '3けたまでのたしざん',
-    title: 'ろけっときゃぷてん',
+    title: 'たしざんロケットキャプテン',
     areaIds: [
       'add-within-9',
       'add-within-10',

@@ -17,8 +17,17 @@ import { DEFAULT_DAILY_BUDGET_MINUTES } from '../game-engine/school/dailyUsage'
 import { DEFAULT_SCHOOL_MODE_2_ENABLED } from '../game-engine/school/schoolMode2'
 import { titleRecordId } from '../game-engine/rewards/titles'
 
-export const SAVE_DATA_VERSION = 13
+export const SAVE_DATA_VERSION = 14
 const LEGACY_ADVANCED_BOSS_RESET_VERSION = 10
+const ADDITION_ROCKET_TITLE_MIGRATION_VERSION = 14
+const additionRocketTitleMigrationEntries = [
+  ['ろけっとびぎなー', 'たしざんロケットビギナー'],
+  ['ろけっとぱいろっと', 'たしざんロケットパイロット'],
+  ['ろけっときゃぷてん', 'たしざんロケットキャプテン'],
+] as const
+const additionRocketTitleMigrationMap = new Map<string, string>(
+  additionRocketTitleMigrationEntries,
+)
 
 const legacyAdvancedBossIds = ['boss-square', 'boss-pi'] as const
 const legacyAdvancedBossIdSet = new Set<string>(legacyAdvancedBossIds)
@@ -105,6 +114,71 @@ function normalizePlayer(player: SaveData['player'] | undefined | null): SaveDat
     shipName: coerceShipName(partialPlayer.shipName),
     characterName: coerceCharacterName(partialPlayer.characterName),
   }
+}
+
+function migrateAdditionRocketTitle(title: string): string {
+  return additionRocketTitleMigrationMap.get(title) ?? title
+}
+
+function uniqueTitles(titles: string[]): string[] {
+  return Array.from(new Set(titles))
+}
+
+function migrateAdditionRocketTitlePlayer(player: SaveData['player']): SaveData['player'] {
+  if (!player) {
+    return player
+  }
+  return {
+    ...player,
+    titles: uniqueTitles(player.titles.map(migrateAdditionRocketTitle)),
+    currentTitle: migrateAdditionRocketTitle(player.currentTitle),
+  }
+}
+
+function migrateAdditionRocketTitleRecord(record: CollectionRecord): CollectionRecord {
+  const migrated = additionRocketTitleMigrationEntries.find(
+    ([oldTitle]) => record.id === collectionRecordId('title', titleRecordId(oldTitle)),
+  )
+  if (!migrated) {
+    return record
+  }
+  const [oldTitle, newTitle] = migrated
+  return {
+    ...record,
+    id: collectionRecordId('title', titleRecordId(newTitle)),
+    method: record.method.replace(oldTitle, newTitle),
+  }
+}
+
+function migrateAdditionRocketTitleRecords(records: CollectionRecord[]): CollectionRecord[] {
+  const byId = new Map<string, CollectionRecord>()
+  for (const record of records.map(migrateAdditionRocketTitleRecord)) {
+    if (!byId.has(record.id)) {
+      byId.set(record.id, record)
+    }
+  }
+  return Array.from(byId.values())
+}
+
+function migrateAdditionRocketTitleProgress(progress: ProgressData): ProgressData {
+  return {
+    ...progress,
+    collectionRecords: migrateAdditionRocketTitleRecords(progress.collectionRecords),
+  }
+}
+
+function maybeMigrateAdditionRocketTitlePlayer(
+  player: SaveData['player'],
+  shouldMigrate: boolean,
+): SaveData['player'] {
+  return shouldMigrate ? migrateAdditionRocketTitlePlayer(player) : player
+}
+
+function maybeMigrateAdditionRocketTitleProgress(
+  progress: ProgressData,
+  shouldMigrate: boolean,
+): ProgressData {
+  return shouldMigrate ? migrateAdditionRocketTitleProgress(progress) : progress
 }
 
 function resetLegacyAdvancedBossPlayer(player: SaveData['player']): SaveData['player'] {
@@ -248,15 +322,75 @@ export function migrateSaveData(raw: unknown): SaveData {
   const defaults = createDefaultSaveData()
   const shouldResetLegacyAdvancedBosses =
     (candidate.version ?? 0) < LEGACY_ADVANCED_BOSS_RESET_VERSION
+  const shouldMigrateAdditionRocketTitles =
+    (candidate.version ?? 0) < ADDITION_ROCKET_TITLE_MIGRATION_VERSION
   if (candidate.version === SAVE_DATA_VERSION) {
     return {
       ...defaults,
       ...candidate,
-      player: maybeResetLegacyAdvancedBossPlayer(
+      player: maybeMigrateAdditionRocketTitlePlayer(
+        maybeResetLegacyAdvancedBossPlayer(
+          normalizePlayer(candidate.player),
+          shouldResetLegacyAdvancedBosses,
+        ),
+        shouldMigrateAdditionRocketTitles,
+      ),
+      progress: maybeMigrateAdditionRocketTitleProgress(
+        maybeResetLegacyAdvancedBossProgress(
+          {
+            ...defaults.progress,
+            ...candidate.progress,
+            facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
+            categoryCorrect: candidate.progress?.categoryCorrect ?? {},
+            bossProgress: candidate.progress?.bossProgress ?? {},
+            bossItems: candidate.progress?.bossItems ?? [],
+            ownedUfos: candidate.progress?.ownedUfos ?? [],
+            equippedUfoId: candidate.progress?.equippedUfoId ?? null,
+            equippedBuddyId: candidate.progress?.equippedBuddyId ?? null,
+            speedSettings: {
+              ...defaults.progress.speedSettings,
+              ...candidate.progress?.speedSettings,
+              selectedStages:
+                candidate.progress?.speedSettings?.selectedStages ??
+                defaults.progress.speedSettings.selectedStages,
+              durationSeconds:
+                candidate.progress?.speedSettings?.durationSeconds ??
+                defaults.progress.speedSettings.durationSeconds,
+            },
+            rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
+            rocketBadges: candidate.progress?.rocketBadges ?? [],
+            collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
+            ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
+            treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
+          },
+          shouldResetLegacyAdvancedBosses,
+        ),
+        shouldMigrateAdditionRocketTitles,
+      ),
+      settings: {
+        ...defaults.settings,
+        ...candidate.settings,
+      },
+      tutorial: {
+        ...defaults.tutorial,
+        ...candidate.tutorial,
+      },
+    }
+  }
+
+  return {
+    ...defaults,
+    ...candidate,
+    version: SAVE_DATA_VERSION,
+    player: maybeMigrateAdditionRocketTitlePlayer(
+      maybeResetLegacyAdvancedBossPlayer(
         normalizePlayer(candidate.player),
         shouldResetLegacyAdvancedBosses,
       ),
-      progress: maybeResetLegacyAdvancedBossProgress(
+      shouldMigrateAdditionRocketTitles,
+    ),
+    progress: maybeMigrateAdditionRocketTitleProgress(
+      maybeResetLegacyAdvancedBossProgress(
         {
           ...defaults.progress,
           ...candidate.progress,
@@ -285,53 +419,7 @@ export function migrateSaveData(raw: unknown): SaveData {
         },
         shouldResetLegacyAdvancedBosses,
       ),
-      settings: {
-        ...defaults.settings,
-        ...candidate.settings,
-      },
-      tutorial: {
-        ...defaults.tutorial,
-        ...candidate.tutorial,
-      },
-    }
-  }
-
-  return {
-    ...defaults,
-    ...candidate,
-    version: SAVE_DATA_VERSION,
-    player: maybeResetLegacyAdvancedBossPlayer(
-      normalizePlayer(candidate.player),
-      shouldResetLegacyAdvancedBosses,
-    ),
-    progress: maybeResetLegacyAdvancedBossProgress(
-      {
-        ...defaults.progress,
-        ...candidate.progress,
-        facts: cleanTimeOnlyMonsterFacts(candidate.progress?.facts ?? {}),
-        categoryCorrect: candidate.progress?.categoryCorrect ?? {},
-        bossProgress: candidate.progress?.bossProgress ?? {},
-        bossItems: candidate.progress?.bossItems ?? [],
-        ownedUfos: candidate.progress?.ownedUfos ?? [],
-        equippedUfoId: candidate.progress?.equippedUfoId ?? null,
-        equippedBuddyId: candidate.progress?.equippedBuddyId ?? null,
-        speedSettings: {
-          ...defaults.progress.speedSettings,
-          ...candidate.progress?.speedSettings,
-          selectedStages:
-            candidate.progress?.speedSettings?.selectedStages ??
-            defaults.progress.speedSettings.selectedStages,
-          durationSeconds:
-            candidate.progress?.speedSettings?.durationSeconds ??
-            defaults.progress.speedSettings.durationSeconds,
-        },
-        rocketBestDistance: candidate.progress?.rocketBestDistance ?? 0,
-        rocketBadges: candidate.progress?.rocketBadges ?? [],
-        collectionRecords: normalizeCollectionRecords(candidate.progress?.collectionRecords),
-        ownedTreasureItems: candidate.progress?.ownedTreasureItems ?? [],
-        treasureKeys: normalizeTreasureKeys(candidate.progress?.treasureKeys),
-      },
-      shouldResetLegacyAdvancedBosses,
+      shouldMigrateAdditionRocketTitles,
     ),
     settings: {
       ...defaults.settings,

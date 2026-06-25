@@ -1178,29 +1178,85 @@ legend {
 }
 
 .kukucchi-ufo-stage .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #8cc7ff, #476b9e);
   background: linear-gradient(180deg, #d7f5ff, #6f94c8 60%, #405c92);
 }
 
 .kukucchi-ufo-all .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #9bf7ff, #4d75ff);
   background: linear-gradient(180deg, #fff7b4, #65e7ff 54%, #4d75ff);
 }
 
 .kukucchi-ufo-square .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #9ad2ff, #526486);
   background: linear-gradient(180deg, #e7fbff, #86c7ff 52%, #526486);
   border-radius: 34% 34% 50% 50%;
 }
 
 .kukucchi-ufo-pi .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #b59fff, #4e3c7a);
   background: linear-gradient(180deg, #d9ccff, #8b65ff 52%, #3d315f);
 }
 
 .kukucchi-ufo-mixed .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #ff9ccd, #6d7dff);
   background: linear-gradient(90deg, #5be9f4, #7d8dff, #ff72b6, #ffe36e);
 }
 
 .kukucchi-ufo-special .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #fff4a2, #ff72b6);
   background: linear-gradient(90deg, #fff4a2, #5be9f4, #ff72b6);
   box-shadow: 0 0 24px rgba(255, 227, 110, 0.42);
+}
+
+.kukucchi-ufo-add-plus-ring .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #fff4a2, #55c878);
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(255, 244, 162, 0.76) 0 17%, transparent 18%),
+    linear-gradient(180deg, #ffe8a6, #75df88 56%, #327856);
+}
+
+.kukucchi-ufo-add-plus-ring .ufo-ship::before {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  z-index: 3;
+  color: #ffffff;
+  content: "+";
+  font-size: clamp(0.8rem, calc(var(--kukucchi-ring-size) * 0.08), 1.35rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.72);
+  transform: translateX(-50%);
+}
+
+.kukucchi-ufo-add-double-dome .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #ffb4dd, #5dcbd6);
+  background:
+    radial-gradient(ellipse at 35% 20%, rgba(255, 255, 255, 0.72) 0 15%, transparent 16%),
+    radial-gradient(ellipse at 65% 20%, rgba(255, 255, 255, 0.72) 0 15%, transparent 16%),
+    linear-gradient(180deg, #d9fbff, #ffb4dd 56%, #5966a3);
+}
+
+.kukucchi-ufo-add-double-dome .ufo-cockpit {
+  background:
+    radial-gradient(circle at 34% 44%, rgba(255, 255, 255, 0.38) 0 18%, transparent 19%),
+    radial-gradient(circle at 66% 44%, rgba(255, 255, 255, 0.38) 0 18%, transparent 19%),
+    rgba(133, 235, 255, 0.7);
+}
+
+.kukucchi-ufo-add-sunrise .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #ffe36e, #ff8b4e);
+  background:
+    radial-gradient(ellipse at 50% 14%, rgba(255, 246, 184, 0.92) 0 19%, transparent 20%),
+    linear-gradient(110deg, #fff4a2, #ffb44e 48%, #e65f6a);
+  box-shadow: 0 0 24px rgba(255, 180, 78, 0.42);
+}
+
+.kukucchi-ufo-add-sunrise .ufo-cockpit {
+  background:
+    radial-gradient(circle at 50% 72%, rgba(255, 227, 110, 0.42) 0 28%, transparent 29%),
+    linear-gradient(180deg, rgba(255, 244, 162, 0.74), rgba(133, 235, 255, 0.64));
 }
 
 .kukucchi-cheer .ufo-ring {
@@ -1314,6 +1370,36 @@ legend {
   border-radius: 50%;
   background: linear-gradient(180deg, #d7e6ff, #6f839c 60%, #394b69);
   box-shadow: 0 0 22px rgba(104, 244, 255, 0.24);
+  transform: translateX(-50%);
+}
+
+.ufo-landing-gear {
+  position: absolute;
+  bottom: -5%;
+  z-index: 1;
+  width: 16%;
+  height: 34%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  border-top: 0;
+  border-radius: 0 0 999px 999px;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(255, 255, 255, 0.52) 0 18%, transparent 19%),
+    var(--kukucchi-gear-color, linear-gradient(180deg, #8fb4d9, #4d6686));
+  box-shadow: inset 0 -4px 8px rgba(2, 10, 24, 0.24);
+}
+
+.gear-left {
+  left: 31%;
+  transform: translateX(-50%);
+}
+
+.gear-center {
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.gear-right {
+  left: 69%;
   transform: translateX(-50%);
 }
 
@@ -7631,7 +7717,19 @@ legend {
   text-shadow: 0 0 12px rgba(255, 227, 110, 0.4);
 }
 
+.reward-budget-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(2, 10, 24, 0.68);
+  backdrop-filter: blur(8px);
+}
+
 .reward-budget-modal {
+  width: min(100%, 420px);
   text-align: center;
 }
 
@@ -7641,11 +7739,12 @@ legend {
   --kukucchi-ring-border: 10px;
   --kukucchi-cockpit-width-ratio: 0.552;
   --kukucchi-cockpit-height-ratio: 0.41;
-  --kukucchi-body-width-ratio: 0.352;
+  --kukucchi-body-width-ratio: 0.42;
   --kukucchi-ship-top-ratio: 0.54;
   --kukucchi-ship-width-ratio: 0.8;
   --kukucchi-ship-height-ratio: 0.238;
   --kukucchi-ship-border: 4px;
+  --kukucchi-gear-color: linear-gradient(180deg, #8fb4d9, #4d6686);
 }
 
 .character-window .kukucchi {

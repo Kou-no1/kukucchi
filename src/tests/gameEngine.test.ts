@@ -862,19 +862,19 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v8Save)
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.progress.facts[timeOnly.id]).toBeUndefined()
     expect(migrated.progress.facts[wrong.id]).toBeTruthy()
   })
 
   it('generates daily missions and migrates save data', () => {
     const save = createDefaultSaveData()
-    expect(save.version).toBe(13)
+    expect(save.version).toBe(14)
     expect(save.settings.dailyBudgetMinutes).toBe(10)
     expect(save.settings.schoolMode2Enabled).toBe(true)
     expect(generateDailyMissions(save, new Date('2026-01-01')).length).toBe(3)
     const migrated = migrateSaveData({ version: 1 })
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.settings.dailyBudgetMinutes).toBe(10)
     expect(migrated.settings.schoolMode2Enabled).toBe(true)
     expect(migrated.player).toBeNull()
@@ -889,6 +889,44 @@ describe('mastery, review, missions, and storage', () => {
     expect(migrated.progress.collectionRecords).toEqual([])
     expect(migrated.progress.ownedTreasureItems).toEqual([])
     expect(Object.keys(migrated.progress.treasureKeys)).toHaveLength(5)
+  })
+
+  it('migrates legacy addition rocket titles to dedicated title names', () => {
+    const oldTitle = 'ろけっとぱいろっと'
+    const newTitle = 'たしざんロケットパイロット'
+    const v13Save: SaveData = {
+      ...createSaveWithPlayer(),
+      version: 13,
+      player: {
+        ...createSaveWithPlayer().player!,
+        titles: ['はじめのいっぽ', oldTitle],
+        currentTitle: oldTitle,
+      },
+      progress: {
+        ...createSaveWithPlayer().progress,
+        collectionRecords: [
+          {
+            id: collectionRecordId('title', titleRecordId(oldTitle)),
+            acquiredAt: '2026-01-05T00:00:00.000Z',
+            method: 'がくしゅうリザルト',
+          },
+        ],
+      },
+    }
+
+    const migrated = migrateSaveData(v13Save)
+    expect(migrated.version).toBe(14)
+    expect(migrated.player?.titles).toContain(newTitle)
+    expect(migrated.player?.titles).not.toContain(oldTitle)
+    expect(migrated.player?.currentTitle).toBe(newTitle)
+    expect(migrated.progress.collectionRecords).toContainEqual({
+      id: collectionRecordId('title', titleRecordId(newTitle)),
+      acquiredAt: '2026-01-05T00:00:00.000Z',
+      method: 'がくしゅうリザルト',
+    })
+    expect(migrated.progress.collectionRecords).not.toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('title', titleRecordId(oldTitle)) }),
+    )
   })
 
   it('counts title book progress from existing title definitions', () => {
@@ -1413,7 +1451,7 @@ describe('mastery, review, missions, and storage', () => {
     delete (legacy.player as Record<string, unknown>).shipName
     delete (legacy.player as Record<string, unknown>).characterName
     const migrated = migrateSaveData(legacy)
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.player?.shipName).toBe('くくっち')
     expect(migrated.player?.characterName).toBe('くくっち')
   })
@@ -1460,7 +1498,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     }
     const migrated = migrateSaveData(v4Save)
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.progress.speedSettings.durationSeconds).toBe(30)
     expect(migrated.progress.speedSettings.selectedStages).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9])
     expect(migrated.progress.rocketBestDistance).toBe(0)
@@ -1511,7 +1549,7 @@ describe('mastery, review, missions, and storage', () => {
       finishedAt: '2026-01-03T00:00:00.000Z',
     }
     const applied = applySessionResult(save, summary)
-    expect(applied.save.version).toBe(13)
+    expect(applied.save.version).toBe(14)
     expect(applied.save.progress.categoryCorrect['multiplication-square']).toBe(3)
     expect(applied.save.progress.collectionRecords).toContainEqual(
       expect.objectContaining({
@@ -2279,7 +2317,7 @@ describe('mastery, review, missions, and storage', () => {
       },
     })
 
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.progress.bossProgress['boss-square']).toBeUndefined()
     expect(migrated.progress.bossProgress['boss-development']).toBeTruthy()
     expect(migrated.progress.bossItems).not.toContain(squareItem)
@@ -2320,7 +2358,7 @@ describe('mastery, review, missions, and storage', () => {
         },
       },
     })
-    expect(migrated.version).toBe(13)
+    expect(migrated.version).toBe(14)
     expect(migrated.progress.bossProgress['boss-square']).toBeTruthy()
   })
 
@@ -2465,9 +2503,9 @@ describe('mastery, review, missions, and storage', () => {
     expect(Number(hardQuestion.metadata?.left)).toBeGreaterThanOrEqual(100)
     expect(Number(hardQuestion.metadata?.right)).toBeGreaterThanOrEqual(100)
     expect(additionRocketDifficulties.map((difficulty) => difficulty.title)).toEqual([
-      'ろけっとびぎなー',
-      'ろけっとぱいろっと',
-      'ろけっときゃぷてん',
+      'たしざんロケットビギナー',
+      'たしざんロケットパイロット',
+      'たしざんロケットキャプテン',
     ])
     for (const difficulty of additionRocketDifficulties) {
       const rawSummary = buildSessionSummary({

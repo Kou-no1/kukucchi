@@ -481,7 +481,7 @@ export function SettingsPage() {
 
       <section className="settings-section version-section" aria-label="バージョン">
         <button className="version-tap-target" type="button" onClick={handleVersionTap}>
-          バージョン 15.5 / SaveData v{SAVE_DATA_VERSION}
+          バージョン 15.9 / SaveData v{SAVE_DATA_VERSION}
         </button>
         {debugPasswordOpen && !debugOpen ? (
           <form

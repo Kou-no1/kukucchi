@@ -88,6 +88,9 @@ export function KukucchiCharacter({
       <div className="ufo-ring" data-preview-layers={homeShipPreviewLayers.join('>')}>
         <span className="kukucchi-window-layer" data-preview-layer="window" aria-hidden="true" />
         <div className="ufo-ship" data-preview-layer="ufo">
+          <span className="ufo-landing-gear gear-left" aria-hidden="true" />
+          <span className="ufo-landing-gear gear-center" aria-hidden="true" />
+          <span className="ufo-landing-gear gear-right" aria-hidden="true" />
           <span className="ufo-light light-a" />
           <span className="ufo-light light-b" />
           <span className="ufo-light light-c" />
