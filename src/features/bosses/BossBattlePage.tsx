@@ -92,6 +92,15 @@ function formatSeconds(milliseconds: number): string {
 }
 
 function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group']): string {
+  if (!boss) {
+    if (group === 'addition') {
+      return '/planet/add'
+    }
+    if (group === 'advanced') {
+      return '/advanced'
+    }
+    return '/home'
+  }
   if (boss?.group === 'addition' || group === 'addition') {
     return '/planet/add'
   }

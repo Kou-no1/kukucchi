@@ -99,6 +99,20 @@ describe('app flow', () => {
     expect(screen.queryByRole('button', { name: '円周率' })).not.toBeInTheDocument()
   })
 
+  it('returns home from multiplication boss selection', async () => {
+    const user = await completeOnboarding()
+    await user.click(screen.getByRole('link', { name: /かけざんのほし/ }))
+    expect(await screen.findByRole('heading', { name: 'かけざんのほし' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: /ぼすばとる/ }))
+    expect(await screen.findByRole('heading', { name: 'ボスバトル' })).toBeInTheDocument()
+    const back = screen.getByRole('link', { name: 'もどる' })
+    expect(back).toHaveAttribute('href', '#/home')
+
+    await user.click(back)
+    expect(await screen.findByRole('heading', { name: 'ほしをえらぶ' })).toBeInTheDocument()
+  })
+
   it('hides learning level setup and reflects player icon changes on home', async () => {
     const user = userEvent.setup()
     render(<App />)
