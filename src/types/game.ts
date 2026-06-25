@@ -4,7 +4,7 @@ export type LearningLevel =
   | 'challenge'
   | 'advanced'
 
-export type ArithmeticOperation = 'multiplication' | 'addition' | 'subtraction'
+export type ArithmeticOperation = 'multiplication' | 'addition' | 'subtraction' | 'division'
 
 export type QuestionCategory =
   | 'multiplication-basic'
@@ -22,6 +22,9 @@ export type QuestionCategory =
   | 'subtraction-two-digit-no-borrow'
   | 'subtraction-two-digit-borrow'
   | 'subtraction-three-digit'
+  | 'division-no-remainder'
+  | 'division-with-remainder'
+  | 'division-large'
   | 'two-digit-times-one-digit'
   | 'two-digit-times-two-digit'
   | 'divisors'
@@ -31,6 +34,12 @@ export type QuestionCategory =
   | 'lcm'
 
 export type AnswerMode = 'choice' | 'input'
+export type RemainderAnswerValue = {
+  kind: 'remainder'
+  quotient: number
+  remainder: number
+}
+export type AnswerValue = number | string | RemainderAnswerValue
 export type GameMode =
   | 'learn'
   | 'speed'
@@ -45,8 +54,8 @@ export type Question = {
   id: string
   category: QuestionCategory
   prompt: string
-  answer: number | string
-  choices?: Array<number | string>
+  answer: AnswerValue
+  choices?: AnswerValue[]
   explanation?: string
   difficulty: number
   metadata?: Record<string, unknown>
@@ -55,8 +64,8 @@ export type Question = {
 export type AnswerResult = {
   questionId: string
   prompt: string
-  expectedAnswer: number | string
-  givenAnswer: number | string
+  expectedAnswer: AnswerValue
+  givenAnswer: AnswerValue
   correct: boolean
   difficulty?: number
   responseTimeMs: number

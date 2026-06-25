@@ -4,6 +4,7 @@ import { AppShell } from '../../components/common/AppShell'
 import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
 import { AdvancedMonsterSprite } from '../../components/collection/AdvancedMonsterSprite'
 import { BuddySprite } from '../../components/collection/BuddySprite'
+import { DivisionMonsterSprite } from '../../components/collection/DivisionMonsterSprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { SubtractionMonsterSprite } from '../../components/collection/SubtractionMonsterSprite'
@@ -29,6 +30,12 @@ import {
   subtractionCorrectForArea,
   subtractionMonsterDefinitions,
 } from '../../data/subtractionMonsters'
+import {
+  divisionAreaLabel,
+  divisionCorrectForArea,
+  divisionMonsterDefinitions,
+  isDivisionMonsterOwned,
+} from '../../data/divisionMonsters'
 import { buddyDefinitions, buddyThemeLabels } from '../../data/buddies'
 import { advancedBossCategoryLabels, bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
 import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
@@ -88,6 +95,9 @@ function bossDanLabel(boss: BossDefinition): string {
   if (boss.subtractionAreaId) {
     return `-${boss.no - 18}`
   }
+  if (boss.divisionAreaId) {
+    return `÷${boss.no - 24}`
+  }
   if (boss.advancedCategory === 'square') {
     return '平'
   }
@@ -106,6 +116,9 @@ function bossDanLabel(boss: BossDefinition): string {
 function bossAccentDan(boss: BossDefinition): number {
   if (boss.subtractionAreaId) {
     return Math.max(1, boss.no - 18)
+  }
+  if (boss.divisionAreaId) {
+    return Math.max(1, boss.no - 24)
   }
   if (boss.advancedCategory === 'square') {
     return 8
@@ -452,6 +465,42 @@ export function MonsterBookPage() {
           </section>
         </>
       ) : null}
+
+          <section className="collection-section" aria-labelledby="division-monsters-title">
+            <h2 id="division-monsters-title">わりざんのなかま</h2>
+            <div className="monster-grid book-grid">
+              {divisionMonsterDefinitions.map((monster) => {
+                const owned = isDivisionMonsterOwned(saveData.progress.categoryCorrect, monster)
+                const progressCount = divisionCorrectForArea(saveData.progress.categoryCorrect, monster.areaId)
+                return (
+                  <article
+                    className={owned ? 'book-card division-monster-card' : 'book-card silhouette division-monster-card'}
+                    key={monster.id}
+                    {...cardAction({
+                      name: owned ? monster.name : '？？？',
+                      description: owned ? monster.description : `${divisionAreaLabel(monster.areaId)}を練習しよう`,
+                      acquiredAt: null,
+                      method: owned ? `${monster.threshold}問 正解` : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">÷{String(monster.no).padStart(2, '0')}</span>
+                    <DivisionMonsterSprite
+                      monster={monster}
+                      locked={!owned}
+                      className="book-pixel-icon"
+                    />
+                    <h2>{owned ? monster.name : '？？？'}</h2>
+                    <p>
+                      {owned
+                        ? monster.description
+                        : `${progressCount}/${monster.threshold}問`}
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
 
       {activeTab === 'buddies' ? (
         <>

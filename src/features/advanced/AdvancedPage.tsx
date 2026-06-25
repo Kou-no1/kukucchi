@@ -23,7 +23,7 @@ import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
-import type { AnswerResult, Question, ScoreState } from '../../types/game'
+import type { AnswerResult, AnswerValue, Question, ScoreState } from '../../types/game'
 import { createId } from '../../utils/id'
 
 type AdvancedCategory = 'mixed' | 'square' | 'pi' | 'development'
@@ -140,7 +140,7 @@ export function AdvancedPage() {
     navigate('/result', { state: { summary: applied.summary } })
   }
 
-  function handleAnswer(answer: number | string) {
+  function handleAnswer(answer: AnswerValue) {
     if (feedback !== 'idle') {
       return
     }

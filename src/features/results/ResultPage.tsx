@@ -55,6 +55,9 @@ function replayPathForSummary(summary: GameSessionSummary): string {
   if (summary.details?.planet === 'subtract') {
     return `${basePath}?planet=subtract`
   }
+  if (summary.details?.planet === 'divide') {
+    return `${basePath}?planet=divide`
+  }
   return basePath
 }
 
@@ -226,6 +229,8 @@ export function ResultPage() {
       ? '/planet/add'
       : summary?.details?.planet === 'subtract'
         ? '/planet/subtract'
+        : summary?.details?.planet === 'divide'
+          ? '/planet/divide'
         : '/planet/multiply'
   const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
   const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null

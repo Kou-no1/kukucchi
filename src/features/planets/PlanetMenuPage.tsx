@@ -2,9 +2,10 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
+import { DivisionBossSprite } from '../../components/collection/DivisionBossSprite'
 import { SubtractionBossSprite } from '../../components/collection/SubtractionBossSprite'
 import { bosses } from '../../data/bosses'
-import { additionAreas, getPlanetById, subtractionAreas, type PlanetId } from '../../data/planets'
+import { additionAreas, divisionAreas, getPlanetById, subtractionAreas, type PlanetId } from '../../data/planets'
 import {
   getClearedStars,
   isBossUnlocked,
@@ -23,7 +24,7 @@ type PlanetMode = {
   callToAction?: string
 }
 
-const planetIds: PlanetId[] = ['multiply', 'add', 'subtract']
+const planetIds: PlanetId[] = ['add', 'subtract', 'multiply', 'divide']
 
 const multiplyModes: PlanetMode[] = [
   {
@@ -146,12 +147,42 @@ const subtractionModes: PlanetMode[] = [
   },
 ]
 
+const divisionModes: PlanetMode[] = [
+  {
+    label: 'おぼえる',
+    href: '/learn?planet=divide',
+    ready: true,
+    icon: '÷',
+    badge: '01',
+    subtitle: '3エリアを練習',
+  },
+  {
+    label: 'あそぶ',
+    href: '/rocket?planet=divide',
+    ready: true,
+    icon: 'VS',
+    badge: '02',
+    subtitle: 'わりざんロケット',
+  },
+  {
+    label: 'スピード',
+    href: '/speed?planet=divide',
+    ready: true,
+    icon: '30',
+    badge: '03',
+    subtitle: 'わりざんタイム',
+  },
+]
+
 function modesForPlanet(planetId: PlanetId): PlanetMode[] {
   if (planetId === 'add') {
     return additionModes
   }
   if (planetId === 'subtract') {
     return subtractionModes
+  }
+  if (planetId === 'divide') {
+    return divisionModes
   }
   return multiplyModes
 }
@@ -166,6 +197,9 @@ function planetSymbol(planetId: PlanetId) {
   }
   if (planetId === 'add') {
     return '+'
+  }
+  if (planetId === 'divide') {
+    return '÷'
   }
   return '-'
 }
@@ -217,6 +251,7 @@ export function PlanetMenuPage() {
   const modes = modesForPlanet(planet.id)
   const additionBosses = bosses.filter((boss) => boss.group === 'addition')
   const subtractionBosses = bosses.filter((boss) => boss.group === 'subtraction')
+  const divisionBosses = bosses.filter((boss) => boss.group === 'division')
   const lowGradePlanet = planet.id === 'add' || planet.id === 'subtract'
 
   return (
@@ -354,6 +389,64 @@ export function PlanetMenuPage() {
                         <span>
                           {'★'.repeat(getClearedStars(saveData, boss.id)) ||
                             (remaining !== null ? `あと${remaining}もん` : boss.shortLabel)}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {planet.id === 'divide' ? (
+            <>
+              <section className="planet-area-list" aria-labelledby="division-area-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">わりざん</p>
+                    <h2 id="division-area-menu-title">エリア練習</h2>
+                  </div>
+                </div>
+                <div className="stage-chip-grid addition-area-grid">
+                  {divisionAreas.map((area) => (
+                    <Link
+                      className="stage-chip addition-area-chip"
+                      key={area.id}
+                      to={`/learn?planet=divide&area=${area.id}`}
+                    >
+                      <strong>{area.name}</strong>
+                      <span>{area.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+              <section className="planet-area-list addition-boss-list" aria-labelledby="division-boss-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">B4</p>
+                    <h2 id="division-boss-menu-title">わりざんボス</h2>
+                  </div>
+                </div>
+                <div className="stage-chip-grid addition-area-grid">
+                  {divisionBosses.map((boss) => {
+                    const unlocked = isBossUnlocked(boss, saveData)
+                    const remaining = remainingQuestionsToUnlockBoss(boss, saveData)
+                    return (
+                      <Link
+                        className={unlocked ? 'stage-chip addition-area-chip' : 'stage-chip addition-area-chip locked'}
+                        key={boss.id}
+                        to={`/boss/${boss.id}`}
+                      >
+                        <DivisionBossSprite
+                          boss={boss}
+                          locked={!unlocked}
+                          compact
+                          className="planet-boss-chip-sprite"
+                        />
+                        <strong>{unlocked ? boss.label : '？？？'}</strong>
+                        <span>
+                          {'★'.repeat(getClearedStars(saveData, boss.id)) ||
+                            (remaining !== null ? `あと${remaining}問` : boss.shortLabel)}
                         </span>
                       </Link>
                     )

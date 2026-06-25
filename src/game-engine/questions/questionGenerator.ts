@@ -4,10 +4,11 @@ import type {
   Question,
   QuestionCategory,
 } from '../../types/game'
-import type { AdditionAreaId, SubtractionAreaId } from '../../data/planets'
+import type { AdditionAreaId, DivisionAreaId, SubtractionAreaId } from '../../data/planets'
 import { getReviewQueue } from '../review/weakFacts'
 import {
   selectAdaptiveAdditionFact,
+  selectAdaptiveDivisionFact,
   selectAdaptiveMultiplicationFact,
   selectAdaptiveSubtractionFact,
 } from '../school/schoolMode2'
@@ -15,6 +16,10 @@ import {
   generateAdditionFactQuestion,
   generateAdditionQuestion as generateRandomAdditionQuestion,
 } from './addition'
+import {
+  generateDivisionFactQuestion,
+  generateDivisionQuestion as generateRandomDivisionQuestion,
+} from './division'
 import {
   generateSubtractionFactQuestion,
   generateSubtractionQuestion as generateRandomSubtractionQuestion,
@@ -295,6 +300,36 @@ export function generateAdaptiveSubtractionQuestion(
     return generateSubtractionFactQuestion(areaId, fact.left, fact.right, rng)
   }
   return generateSubtractionQuestion(areaId, options)
+}
+
+export function generateDivisionQuestion(
+  areaId: DivisionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  return generateRandomDivisionQuestion(areaId, options.rng ?? Math.random)
+}
+
+export function generateAdaptiveDivisionQuestion(
+  facts: Record<string, MultiplicationFactProgress>,
+  areaId: DivisionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  const rng = options.rng ?? Math.random
+  if (options.schoolMode2Enabled) {
+    const fact = selectAdaptiveDivisionFact({
+      facts,
+      areaId,
+      rng,
+      recentIncorrectCount: options.recentIncorrectCount ?? 0,
+    })
+    return generateDivisionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  const queue = getReviewQueue(facts, new Date(), 8, { operation: 'division', areaId })
+  if (queue.length > 0 && rng() < 0.7) {
+    const fact = pick(queue, rng)
+    return generateDivisionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  return generateDivisionQuestion(areaId, options)
 }
 
 export function generateSquareQuestion(rng: RandomSource = Math.random): Question {

@@ -5,6 +5,7 @@ import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNotic
 import { StatPill } from '../../components/common/StatPill'
 import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
 import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
+import { DivisionBossSprite } from '../../components/collection/DivisionBossSprite'
 import { SubtractionBossSprite } from '../../components/collection/SubtractionBossSprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
@@ -35,6 +36,7 @@ import { createMultiplicationFactPool } from '../../game-engine/questions/factDi
 import {
   generateAdvancedQuestion,
   generateAdditionQuestion,
+  generateDivisionQuestion,
   generateMissingFactorQuestion,
   generateMultiplicationFactQuestion,
   generateSubtractionQuestion,
@@ -45,7 +47,7 @@ import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
-import type { AnswerResult, Question, ScoreState } from '../../types/game'
+import type { AnswerResult, AnswerValue, Question, ScoreState } from '../../types/game'
 import type { BossDifficultyId } from '../../types/save'
 import { createId } from '../../utils/id'
 
@@ -78,6 +80,9 @@ function createBossQuestion(boss: BossDefinition, difficulty: BossDifficulty): Q
   if (boss.subtractionAreaId) {
     return generateSubtractionQuestion(boss.subtractionAreaId)
   }
+  if (boss.divisionAreaId) {
+    return generateDivisionQuestion(boss.divisionAreaId)
+  }
   if (boss.advancedCategory) {
     return generateAdvancedQuestion(boss.advancedCategory)
   }
@@ -104,6 +109,9 @@ function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group'])
     if (group === 'subtraction') {
       return '/planet/subtract'
     }
+    if (group === 'division') {
+      return '/planet/divide'
+    }
     if (group === 'advanced') {
       return '/advanced'
     }
@@ -115,6 +123,9 @@ function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group'])
   if (boss?.group === 'subtraction' || group === 'subtraction') {
     return '/planet/subtract'
   }
+  if (boss?.group === 'division' || group === 'division') {
+    return '/planet/divide'
+  }
   return boss?.group === 'advanced' || group === 'advanced' ? '/advanced' : '/battle'
 }
 
@@ -123,7 +134,7 @@ function easyOperationDifficultyLabel(label: string): string {
 }
 
 function isEasyOperationGroup(group: BossDefinition['group']): boolean {
-  return group === 'addition' || group === 'subtraction'
+  return group === 'addition' || group === 'subtraction' || group === 'division'
 }
 
 export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['group'] }) {
@@ -214,7 +225,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
   )
 
   const recordAnswer = useCallback(
-    (answer: number | string, forceIncorrect = false) => {
+    (answer: AnswerValue, forceIncorrect = false) => {
       if (phase !== 'running' || feedback !== 'idle' || !activeBoss || !activeDifficulty || !question) {
         return
       }
@@ -365,6 +376,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
     const activeBossVariant = advancedBossVariantForBossId(activeBoss.id)
     const activeAdditionBoss = activeBoss.group === 'addition'
     const activeSubtractionBoss = activeBoss.group === 'subtraction'
+    const activeDivisionBoss = activeBoss.group === 'division'
     const easyOperation = isEasyOperationGroup(activeBoss.group)
     return (
       <AppShell
@@ -390,6 +402,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
                 />
               ) : activeSubtractionBoss ? (
                 <SubtractionBossSprite
+                  boss={activeBoss}
+                  compact
+                  className="boss-hud-sprite"
+                />
+              ) : activeDivisionBoss ? (
+                <DivisionBossSprite
                   boss={activeBoss}
                   compact
                   className="boss-hud-sprite"
@@ -541,6 +559,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
           const remainingToUnlock = remainingQuestionsToUnlockBoss(boss, saveData)
           const additionBoss = boss.group === 'addition'
           const subtractionBoss = boss.group === 'subtraction'
+          const divisionBoss = boss.group === 'division'
           const easyOperation = isEasyOperationGroup(boss.group)
           const ownsRewardUfo = rewardUfo
             ? saveData.progress.ownedUfos.includes(rewardUfo.id)
@@ -562,6 +581,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
                 />
               ) : subtractionBoss ? (
                 <SubtractionBossSprite
+                  boss={boss}
+                  locked={!unlocked}
+                  className="boss-card-sprite"
+                />
+              ) : divisionBoss ? (
+                <DivisionBossSprite
                   boss={boss}
                   locked={!unlocked}
                   className="boss-card-sprite"

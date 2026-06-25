@@ -25,6 +25,9 @@ function extractCategoryKey(result: AnswerResult): string | null {
   if (fact?.operation === 'subtraction' && fact.areaId) {
     return `subtraction:${fact.areaId}`
   }
+  if (fact?.operation === 'division' && fact.areaId) {
+    return `division:${fact.areaId}`
+  }
   if (result.questionId.startsWith('square-')) {
     return 'multiplication-square'
   }

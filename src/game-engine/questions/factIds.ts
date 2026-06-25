@@ -24,6 +24,10 @@ export function makeSubtractionFactId(areaId: string, left: number, right: numbe
   return `sub:${areaId}:${left}-${right}`
 }
 
+export function makeDivisionFactId(areaId: string, left: number, right: number): string {
+  return `divide:${areaId}:${left}/${right}`
+}
+
 export function parseFactId(id: string): ParsedFactId | null {
   const additionMatch = id.match(/^add:([a-z0-9-]+):(\d+)\+(\d+)$/)
   if (additionMatch) {
@@ -44,6 +48,17 @@ export function parseFactId(id: string): ParsedFactId | null {
       areaId: subtractionMatch[1],
       left: Number(subtractionMatch[2]),
       right: Number(subtractionMatch[3]),
+    }
+  }
+
+  const divisionMatch = id.match(/^divide:([a-z0-9-]+):(\d+)\/(\d+)$/)
+  if (divisionMatch) {
+    return {
+      id,
+      operation: 'division',
+      areaId: divisionMatch[1],
+      left: Number(divisionMatch[2]),
+      right: Number(divisionMatch[3]),
     }
   }
 
@@ -84,6 +99,10 @@ export function isSubtractionFactId(id: string): boolean {
   return parseFactId(id)?.operation === 'subtraction'
 }
 
+export function isDivisionFactId(id: string): boolean {
+  return parseFactId(id)?.operation === 'division'
+}
+
 export function isMultiplicationFactProgress(fact: MultiplicationFactProgress): boolean {
   return factOperationOf(fact) === 'multiplication'
 }
@@ -96,6 +115,10 @@ export function isSubtractionFactProgress(fact: MultiplicationFactProgress): boo
   return factOperationOf(fact) === 'subtraction'
 }
 
+export function isDivisionFactProgress(fact: MultiplicationFactProgress): boolean {
+  return factOperationOf(fact) === 'division'
+}
+
 export function formatFactLabel(fact: MultiplicationFactProgress | ParsedFactId): string {
   const operation = 'operation' in fact ? fact.operation : parseFactId(fact.id)?.operation
   if (operation === 'addition') {
@@ -103,6 +126,9 @@ export function formatFactLabel(fact: MultiplicationFactProgress | ParsedFactId)
   }
   if (operation === 'subtraction') {
     return `${fact.left} - ${fact.right}`
+  }
+  if (operation === 'division') {
+    return `${fact.left} ÷ ${fact.right}`
   }
   return `${fact.left} × ${fact.right}`
 }

@@ -801,7 +801,9 @@ legend {
 .kukucchi-effect-gather-light .kukucchi-effect-layer,
 .kukucchi-effect-plus-burst .kukucchi-effect-layer,
 .kukucchi-effect-scatter-light .kukucchi-effect-layer,
-.kukucchi-effect-minus-flash .kukucchi-effect-layer {
+.kukucchi-effect-minus-flash .kukucchi-effect-layer,
+.kukucchi-effect-divide-light .kukucchi-effect-layer,
+.kukucchi-effect-divide-flash .kukucchi-effect-layer {
   opacity: 1;
 }
 
@@ -824,7 +826,11 @@ legend {
 .kukucchi-effect-scatter-light .kukucchi-effect-layer::before,
 .kukucchi-effect-scatter-light .kukucchi-effect-layer::after,
 .kukucchi-effect-minus-flash .kukucchi-effect-layer::before,
-.kukucchi-effect-minus-flash .kukucchi-effect-layer::after {
+.kukucchi-effect-minus-flash .kukucchi-effect-layer::after,
+.kukucchi-effect-divide-light .kukucchi-effect-layer::before,
+.kukucchi-effect-divide-light .kukucchi-effect-layer::after,
+.kukucchi-effect-divide-flash .kukucchi-effect-layer::before,
+.kukucchi-effect-divide-flash .kukucchi-effect-layer::after {
   position: absolute;
   content: '';
 }
@@ -1038,13 +1044,55 @@ legend {
   animation: minusFlashFade 2.4s ease-in-out infinite;
 }
 
+.kukucchi-effect-divide-light .kukucchi-effect-layer::before {
+  inset: 8%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(223, 252, 255, 0.9) 0 4%, transparent 5%),
+    radial-gradient(circle at 24% 24%, rgba(159, 211, 255, 0.76) 0 4%, transparent 5%),
+    radial-gradient(circle at 76% 24%, rgba(167, 139, 250, 0.72) 0 4%, transparent 5%),
+    radial-gradient(circle at 24% 76%, rgba(103, 80, 216, 0.68) 0 4%, transparent 5%),
+    radial-gradient(circle at 76% 76%, rgba(255, 255, 255, 0.72) 0 4%, transparent 5%);
+  filter: drop-shadow(0 0 14px rgba(159, 211, 255, 0.62));
+  animation: divideLightSplit 3.2s ease-in-out infinite;
+}
+
+.kukucchi-effect-divide-light .kukucchi-effect-layer::after {
+  inset: 16%;
+  border: 2px dashed rgba(159, 211, 255, 0.5);
+  border-radius: 50%;
+  animation: divideLightRing 3.2s ease-in-out infinite;
+}
+
+.kukucchi-effect-divide-flash .kukucchi-effect-layer::before {
+  inset: 18%;
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.92) 0 6%, transparent 7%),
+    radial-gradient(circle at 50% 72%, rgba(255, 255, 255, 0.92) 0 6%, transparent 7%),
+    linear-gradient(90deg, transparent 0 43%, rgba(159, 211, 255, 0.92) 44% 56%, transparent 57%);
+  filter: drop-shadow(0 0 16px rgba(103, 80, 216, 0.74));
+  animation: divideFlashSweep 2.4s ease-in-out infinite;
+}
+
+.kukucchi-effect-divide-flash .kukucchi-effect-layer::after {
+  top: 48%;
+  left: 14%;
+  width: 72%;
+  height: 4%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.84);
+  animation: minusFlashFade 2.4s ease-in-out infinite;
+}
+
 .kukucchi.effect-low.kukucchi-effect-star-dust .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-soft-light .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-galaxy-swirl .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-gather-light .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-plus-burst .kukucchi-effect-layer::after,
 .kukucchi.effect-low.kukucchi-effect-scatter-light .kukucchi-effect-layer::after,
-.kukucchi.effect-low.kukucchi-effect-minus-flash .kukucchi-effect-layer::after {
+.kukucchi.effect-low.kukucchi-effect-minus-flash .kukucchi-effect-layer::after,
+.kukucchi.effect-low.kukucchi-effect-divide-light .kukucchi-effect-layer::after,
+.kukucchi.effect-low.kukucchi-effect-divide-flash .kukucchi-effect-layer::after {
   display: none;
 }
 
@@ -1245,6 +1293,46 @@ legend {
   }
 }
 
+@keyframes divideLightSplit {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.72);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.18);
+  }
+}
+
+@keyframes divideLightRing {
+  0%,
+  100% {
+    opacity: 0.24;
+    transform: rotate(0deg) scale(0.84);
+  }
+  50% {
+    opacity: 0.72;
+    transform: rotate(24deg) scale(1.1);
+  }
+}
+
+@keyframes divideFlashSweep {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(-10%) scale(0.5);
+  }
+  36% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  72% {
+    opacity: 0;
+    transform: translateY(10%) scale(1.24);
+  }
+}
+
 .kukucchi-buddy-mini-orbit-pet .kukucchi-buddy-layer,
 .kukucchi-buddy-pico-pet .kukucchi-buddy-layer,
 .kukucchi-buddy-luna-pet .kukucchi-buddy-layer {
@@ -1404,6 +1492,59 @@ legend {
   background:
     radial-gradient(circle at 50% 78%, rgba(255, 209, 102, 0.5) 0 30%, transparent 31%),
     linear-gradient(180deg, rgba(255, 226, 180, 0.76), rgba(255, 168, 96, 0.68));
+}
+
+.kukucchi-ufo-divide-ring .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #9fd3ff, #6750d8);
+  background:
+    radial-gradient(circle at 50% 19%, rgba(255, 255, 255, 0.88) 0 5%, transparent 6%),
+    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.88) 0 5%, transparent 6%),
+    linear-gradient(180deg, #dbe7ff, #8f8cff 56%, #3d2b8f);
+}
+
+.kukucchi-ufo-divide-ring .ufo-ship::before {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  z-index: 3;
+  width: 28%;
+  height: 5%;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 0 10px rgba(159, 211, 255, 0.76);
+  content: "";
+  transform: translateX(-50%);
+}
+
+.kukucchi-ufo-divide-quarter .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #c4b5fd, #47328f);
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(255, 255, 255, 0.86) 48% 52%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, rgba(255, 255, 255, 0.66) 48% 52%, transparent 53%),
+    linear-gradient(135deg, #dbe7ff, #a78bfa 48%, #4338ca);
+}
+
+.kukucchi-ufo-divide-quarter .ufo-cockpit {
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(103, 80, 216, 0.28) 48% 52%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, rgba(103, 80, 216, 0.24) 48% 52%, transparent 53%),
+    rgba(159, 211, 255, 0.68);
+}
+
+.kukucchi-ufo-divide-nebula .ufo-ship {
+  --kukucchi-gear-color: linear-gradient(180deg, #9fd3ff, #2e1065);
+  background:
+    radial-gradient(circle at 28% 30%, rgba(255, 255, 255, 0.76) 0 5%, transparent 6%),
+    radial-gradient(circle at 72% 24%, rgba(159, 211, 255, 0.68) 0 6%, transparent 7%),
+    radial-gradient(circle at 54% 70%, rgba(255, 255, 255, 0.56) 0 5%, transparent 6%),
+    linear-gradient(110deg, #9fd3ff, #6750d8 48%, #2e1065);
+  box-shadow: 0 0 24px rgba(103, 80, 216, 0.44);
+}
+
+.kukucchi-ufo-divide-nebula .ufo-cockpit {
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.36) 0 28%, transparent 29%),
+    linear-gradient(180deg, rgba(219, 231, 255, 0.78), rgba(167, 139, 250, 0.7));
 }
 
 .kukucchi-cheer .ufo-ring {
@@ -5572,6 +5713,48 @@ legend {
 
 .ufo-badge-sub-sunset .ufo-badge-body {
   background: linear-gradient(90deg, #be123c, #fb923c, #ffd166);
+}
+
+.ufo-badge-divide-ring .ufo-badge-dome {
+  background:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.9) 0 8%, transparent 9%),
+    radial-gradient(circle at 50% 72%, rgba(255, 255, 255, 0.84) 0 8%, transparent 9%),
+    linear-gradient(155deg, #dbe7ff, #9fd3ff 46%, #a78bfa);
+}
+
+.ufo-badge-divide-ring .ufo-badge-body {
+  border-color: rgba(159, 211, 255, 0.86);
+  background:
+    linear-gradient(0deg, transparent 43%, rgba(255, 255, 255, 0.68) 44% 56%, transparent 57%),
+    linear-gradient(90deg, #9fd3ff, #6750d8);
+}
+
+.ufo-badge-divide-quarter .ufo-badge-dome {
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(103, 80, 216, 0.35) 48% 52%, transparent 53%),
+    linear-gradient(0deg, transparent 47%, rgba(103, 80, 216, 0.28) 48% 52%, transparent 53%),
+    linear-gradient(155deg, #dbe7ff, #a78bfa);
+}
+
+.ufo-badge-divide-quarter .ufo-badge-body {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.66) 48%, rgba(46, 16, 101, 0.72) 49% 52%, rgba(255, 255, 255, 0.48) 53%),
+    linear-gradient(90deg, #9fd3ff, #a78bfa, #6750d8);
+}
+
+.ufo-badge-divide-nebula {
+  filter: drop-shadow(0 0 18px rgba(103, 80, 216, 0.58));
+}
+
+.ufo-badge-divide-nebula .ufo-badge-dome {
+  background:
+    radial-gradient(circle at 26% 28%, rgba(255, 255, 255, 0.82) 0 7%, transparent 8%),
+    radial-gradient(circle at 74% 70%, rgba(159, 211, 255, 0.72) 0 8%, transparent 9%),
+    linear-gradient(155deg, #9fd3ff, #6750d8 48%, #2e1065);
+}
+
+.ufo-badge-divide-nebula .ufo-badge-body {
+  background: linear-gradient(90deg, #2e1065, #6750d8, #9fd3ff);
 }
 
 .ufo-badge-special {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import globalCss from '../styles/global.css?raw'
-import { isCorrectAnswer } from '../game-engine/questions/answer'
+import { formatAnswerValue, isCorrectAnswer, isRemainderAnswerValue } from '../game-engine/questions/answer'
 import {
   generateAdditionQuestion,
+  generateDivisionQuestion,
   generateAdaptiveMultiplicationQuestion,
   generateAdvancedQuestion,
   generateChoices,
@@ -23,7 +24,15 @@ import {
   generateSubtractionChoices,
   hasCascadingBorrow,
 } from '../game-engine/questions/subtraction'
-import { makeAdditionFactId, makeSubtractionFactId } from '../game-engine/questions/factIds'
+import {
+  makeAdditionFactId,
+  makeDivisionFactId,
+  makeSubtractionFactId,
+} from '../game-engine/questions/factIds'
+import {
+  generateDivisionChoices,
+  generateDivisionFactQuestion,
+} from '../game-engine/questions/division'
 import {
   applyAnswerToScore,
   calculateSpeedBonus,
@@ -59,7 +68,7 @@ import {
 } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
-import { additionAreas, planets, subtractionAreas } from '../data/planets'
+import { additionAreas, divisionAreas, planets, subtractionAreas } from '../data/planets'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
 import {
   getLevelIconUnlocksBetween,
@@ -78,6 +87,8 @@ import {
   bossDifficulties,
   bosses,
   bossLimitedItems,
+  divisionLegendTitle,
+  divisionMasterTitle,
   subtractionLegendTitle,
   subtractionMasterTitle,
 } from '../data/bosses'
@@ -91,10 +102,16 @@ import {
   subtractionAreaCorrectKey,
   subtractionMonsterDefinitions,
 } from '../data/subtractionMonsters'
+import {
+  divisionAreaCorrectKey,
+  divisionMonsterDefinitions,
+  isDivisionMonsterOwned,
+} from '../data/divisionMonsters'
 import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
 import { additionRocketDifficulties } from '../data/additionRocket'
+import { divisionRocketDifficulties } from '../data/divisionRocket'
 import { subtractionRocketDifficulties } from '../data/subtractionRocket'
 import { playerIcons } from '../data/playerIcons'
 import {
@@ -108,6 +125,8 @@ import {
   galaxySwirlEffectId,
   addGatherLightEffectId,
   addPlusBurstEffectId,
+  divideFlashEffectId,
+  divideSplitLightEffectId,
   phase15EffectItemIds,
   rainbowAuraEffectId,
   shopEffectItemIds,
@@ -123,6 +142,9 @@ import {
   additionDoubleDomeUfoId,
   additionPlusRingUfoId,
   additionSunriseUfoId,
+  divisionNebulaUfoId,
+  divisionQuarterUfoId,
+  divisionRingUfoId,
   getUfoForBoss,
   specialUfoId,
   subtractionMinusRingUfoId,
@@ -199,6 +221,7 @@ import {
   classifySchoolMastery,
   rewardScaleForFact,
   selectAdaptiveAdditionFact,
+  selectAdaptiveDivisionFact,
   selectAdaptiveMultiplicationFact,
   selectAdaptiveSubtractionFact,
 } from '../game-engine/school/schoolMode2'
@@ -434,9 +457,11 @@ describe('question generation', () => {
     const multiplyPlanet = planets.find((planet) => planet.id === 'multiply')
     const additionPlanet = planets.find((planet) => planet.id === 'add')
     const subtractionPlanet = planets.find((planet) => planet.id === 'subtract')
-    expect(planets.map((planet) => planet.id)).toEqual(['add', 'subtract', 'multiply'])
+    const divisionPlanet = planets.find((planet) => planet.id === 'divide')
+    expect(planets.map((planet) => planet.id)).toEqual(['add', 'subtract', 'multiply', 'divide'])
     expect(additionPlanet?.status).toBe('live')
     expect(subtractionPlanet?.status).toBe('live')
+    expect(divisionPlanet?.status).toBe('live')
     expect(additionPlanet?.areas.map((area) => area.name)).toEqual([
       '1〜9のたしざん',
       '10までのたしざん',
@@ -470,6 +495,14 @@ describe('question generation', () => {
       'subtraction',
       'subtraction',
       'subtraction',
+    ])
+    expect(divisionPlanet?.areas).toHaveLength(3)
+    expect(divisionPlanet?.theme.primary).not.toBe(additionPlanet?.theme.primary)
+    expect(divisionPlanet?.theme.primary).not.toBe(subtractionPlanet?.theme.primary)
+    expect(divisionAreas.map((area) => area.generator.operation)).toEqual([
+      'division',
+      'division',
+      'division',
     ])
   })
 
@@ -611,6 +644,64 @@ describe('question generation', () => {
     })
     expect(question.id.startsWith('sub:sub-two-digit-borrow:')).toBe(true)
     expect(question.choices).toContain(question.answer)
+  })
+
+  it('generates division questions for all three areas and formats remainder answers', () => {
+    const samples = Object.fromEntries(
+      divisionAreas.map((area, areaIndex) => [
+        area.id,
+        Array.from({ length: 40 }, (_, sampleIndex) =>
+          generateDivisionQuestion(area.id, {
+            rng: createSeededRandom(9000 + areaIndex * 100 + sampleIndex),
+          }),
+        ),
+      ]),
+    )
+
+    expect(samples['divide-no-remainder'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return right >= 1 && right <= 9 && left % right === 0 && Number(question.answer) >= 1
+    })).toBe(true)
+    expect(samples['divide-with-remainder'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      const quotient = Math.floor(left / right)
+      const remainder = left % right
+      return (
+        right >= 2 &&
+        right <= 9 &&
+        quotient >= 1 &&
+        quotient <= 9 &&
+        remainder >= 1 &&
+        remainder < right &&
+        isRemainderAnswerValue(question.answer)
+      )
+    })).toBe(true)
+    expect(samples['divide-large'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      const remainder = left % right
+      return left >= 10 && left <= 99 && right >= 2 && right <= 9 && remainder >= 0 && remainder < right
+    })).toBe(true)
+
+    const question = generateDivisionFactQuestion('divide-with-remainder', 13, 4, createSeededRandom(134))
+    expect(question.id).toBe(makeDivisionFactId('divide-with-remainder', 13, 4))
+    expect(question.answer).toEqual({ kind: 'remainder', quotient: 3, remainder: 1 })
+    expect(formatAnswerValue(question.answer)).toBe('3あまり1')
+    expect(isCorrectAnswer(question, { kind: 'remainder', quotient: 3, remainder: 1 })).toBe(true)
+    expect(isCorrectAnswer(question, { kind: 'remainder', quotient: 2, remainder: 5 })).toBe(false)
+  })
+
+  it('generates division choices with unique remainder sets and impossible remainders as mistakes', () => {
+    const choices = generateDivisionChoices(3, 1, 4, createSeededRandom(131))
+    expect(new Set(choices.map(formatAnswerValue)).size).toBe(4)
+    expect(choices).toContainEqual({ kind: 'remainder', quotient: 3, remainder: 1 })
+    expect(
+      choices.some((choice) =>
+        isRemainderAnswerValue(choice) && choice.remainder >= 4,
+      ),
+    ).toBe(true)
   })
 
   it('generates missing-factor questions with consistent answers', () => {
@@ -1709,6 +1800,69 @@ describe('mastery, review, missions, and storage', () => {
     expect(selected.difficulty).toBeLessThanOrEqual(2)
   })
 
+  it('keeps division weak facts distinct and adapts within division areas', () => {
+    const save = createSaveWithPlayer()
+    const divideFactId = makeDivisionFactId('divide-with-remainder', 13, 4)
+    const summary: GameSessionSummary = {
+      id: 'division-weak',
+      mode: 'learn',
+      totalQuestions: 2,
+      correctCount: 0,
+      accuracy: 0,
+      averageResponseTimeMs: 2500,
+      maxCombo: 0,
+      score: 0,
+      earnedCoins: 0,
+      earnedExp: 4,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: divideFactId,
+          prompt: '13 ÷ 4',
+          expectedAnswer: { kind: 'remainder', quotient: 3, remainder: 1 },
+          givenAnswer: { kind: 'remainder', quotient: 2, remainder: 5 },
+          correct: false,
+          difficulty: 4,
+        }),
+        result({
+          questionId: '8x7',
+          prompt: '8 × 7',
+          expectedAnswer: 56,
+          givenAnswer: 54,
+          correct: false,
+          difficulty: 5,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const applied = applySessionResult(save, summary)
+    expect(applied.save.progress.facts[divideFactId]).toMatchObject({
+      operation: 'division',
+      areaId: 'divide-with-remainder',
+      incorrectCount: 1,
+    })
+    expect(applied.save.progress.facts['8x7']).toMatchObject({
+      operation: 'multiplication',
+      incorrectCount: 1,
+    })
+    expect(getWeakFacts(applied.save.progress.facts, 5).map((fact) => fact.id)).toEqual(
+      expect.arrayContaining([divideFactId, '8x7']),
+    )
+
+    const selected = selectAdaptiveDivisionFact({
+      facts: applied.save.progress.facts,
+      areaId: 'divide-with-remainder',
+      recentIncorrectCount: 2,
+      rng: () => 0,
+    })
+    expect(selected.areaId).toBe('divide-with-remainder')
+    expect(selected.difficulty).toBeLessThanOrEqual(3)
+  })
+
   it('validates ship and character names and migrates legacy saves with defaults', () => {
     expect(normalizeShipNameInput('あいうえおか')).toBe('あいうえお')
     expect(normalizeCharacterNameInput('スター号')).toBe('スター号')
@@ -2026,7 +2180,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(coreShopItems).toHaveLength(20)
     expect(suitShopItems).toHaveLength(5)
     expect(shopBuddyDefinitions).toHaveLength(11)
-    expect(shopItems).toHaveLength(43)
+    expect(shopItems).toHaveLength(45)
     const prices = coreShopItems.map((item) => item.price)
     expect(prices.at(0)).toBe(50)
     expect(prices.at(-1)).toBe(10000)
@@ -2037,19 +2191,22 @@ describe('mastery, review, missions, and storage', () => {
     expect(suitShopItems.map((item) => item.price)).toEqual([200, 250, 300, 350, 400])
     expect(suitShopItems.every((item) => item.kind === 'suit' && getShopItemTier(item) === 1)).toBe(true)
     expect(shopBuddyDefinitions.every((buddy) => buddy.source === 'shop')).toBe(true)
-    expect(phase15EffectItemIds).toHaveLength(10)
-    expect(shopEffectItemIds).toHaveLength(6)
+    expect(phase15EffectItemIds).toHaveLength(12)
+    expect(shopEffectItemIds).toHaveLength(7)
     expect(treasureEffectItemIds).toEqual([rainbowAuraEffectId])
-    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(10)
+    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(12)
     expect(
       shopEffectItemIds.map((itemId) => shopItems.find((item) => item.id === itemId)?.price),
-    ).toEqual([300, 350, 400, 350, 500, 500])
+    ).toEqual([300, 350, 400, 350, 500, 500, 500])
     expect(shopItems.find((item) => item.id === rainbowAuraEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === galaxySwirlEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === addPlusBurstEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === subScatterLightEffectId)?.rewardOrigin).toBeUndefined()
     expect(shopItems.find((item) => item.id === subMinusFlashEffectId)?.rewardOrigin).toBe('sub')
     expect(shopItems.find((item) => item.id === subMinusFlashEffectId)?.availableInShop).toBe(false)
+    expect(shopItems.find((item) => item.id === divideSplitLightEffectId)?.rewardOrigin).toBeUndefined()
+    expect(shopItems.find((item) => item.id === divideFlashEffectId)?.rewardOrigin).toBe('divide')
+    expect(shopItems.find((item) => item.id === divideFlashEffectId)?.availableInShop).toBe(false)
   })
 
   it('maps equipped shop items to home ship visual layers', () => {
@@ -2230,11 +2387,21 @@ describe('mastery, review, missions, and storage', () => {
     expect(subTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === subMinusFlashEffectId)?.origin).toBe('sub')
     expect(subTabs.find((tab) => tab.id === 'effect')?.entries.some((entry) => entry.id === subScatterLightEffectId)).toBe(false)
     expect(subTabs.find((tab) => tab.id === 'title')?.entries.some((entry) => entry.origin === 'sub')).toBe(true)
+    const divideTabs = buildCustomInventory(save, 'divide')
+    expect(divideTabs.find((tab) => tab.id === 'ufo')?.entries.map((entry) => entry.id)).toEqual([
+      divisionRingUfoId,
+      divisionQuarterUfoId,
+      divisionNebulaUfoId,
+    ])
+    expect(divideTabs.find((tab) => tab.id === 'buddy')?.entries).toHaveLength(12)
+    expect(divideTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === divideFlashEffectId)?.origin).toBe('divide')
+    expect(divideTabs.find((tab) => tab.id === 'effect')?.entries.some((entry) => entry.id === divideSplitLightEffectId)).toBe(false)
+    expect(divideTabs.find((tab) => tab.id === 'title')?.entries.some((entry) => entry.origin === 'divide')).toBe(true)
     expect(getHomeShipPreviewVisuals(save.progress.equippedItems).window).toBe('planet-view')
   })
 
   it('keeps custom reward origins extensible beyond the visible star filters', () => {
-    expect(customStarFilterOrder).toEqual(['all', 'add', 'subtract', 'multiply'])
+    expect(customStarFilterOrder).toEqual(['all', 'add', 'subtract', 'multiply', 'divide'])
     expect(customRewardOrigins).toEqual([
       'all',
       'add',
@@ -2334,6 +2501,11 @@ describe('mastery, review, missions, and storage', () => {
       ),
     ).toBe(true)
     expect(
+      divisionMonsterDefinitions.every((monster) =>
+        isDivisionMonsterOwned(fullOpen.progress.categoryCorrect, monster),
+      ),
+    ).toBe(true)
+    expect(
       [additionPlusRingUfoId, additionDoubleDomeUfoId, additionSunriseUfoId].every((ufoId) =>
         fullOpen.progress.ownedUfos.includes(ufoId),
       ),
@@ -2343,8 +2515,14 @@ describe('mastery, review, missions, and storage', () => {
         fullOpen.progress.ownedUfos.includes(ufoId),
       ),
     ).toBe(true)
+    expect(
+      [divisionRingUfoId, divisionQuarterUfoId, divisionNebulaUfoId].every((ufoId) =>
+        fullOpen.progress.ownedUfos.includes(ufoId),
+      ),
+    ).toBe(true)
     expect(fullOpen.progress.ownedItems).toContain(addPlusBurstEffectId)
     expect(fullOpen.progress.ownedItems).toContain(subMinusFlashEffectId)
+    expect(fullOpen.progress.ownedItems).toContain(divideFlashEffectId)
     expect(
       additionRocketDifficulties.every((difficulty) =>
         fullOpen.player?.titles.includes(difficulty.title),
@@ -2352,6 +2530,11 @@ describe('mastery, review, missions, and storage', () => {
     ).toBe(true)
     expect(
       subtractionRocketDifficulties.every((difficulty) =>
+        fullOpen.player?.titles.includes(difficulty.title),
+      ),
+    ).toBe(true)
+    expect(
+      divisionRocketDifficulties.every((difficulty) =>
         fullOpen.player?.titles.includes(difficulty.title),
       ),
     ).toBe(true)
@@ -2833,6 +3016,68 @@ describe('mastery, review, missions, and storage', () => {
     expect(save.progress.ownedItems).not.toContain(galaxySwirlEffectId)
   })
 
+  it('defines division monsters and counts them in the book', () => {
+    expect(divisionMonsterDefinitions).toHaveLength(12)
+    expect(divisionMonsterDefinitions.every((monster) => monster.origin === 'divide')).toBe(true)
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [divisionAreaCorrectKey('divide-no-remainder')]: 20,
+    }
+    expect(divisionMonsterDefinitions.filter((monster) => isDivisionMonsterOwned(save.progress.categoryCorrect, monster))).toHaveLength(4)
+    const progress = calculateBookProgress(save)
+    expect(progress.tabs.monsters.total).toBeGreaterThan(
+      additionMonsterDefinitions.length + subtractionMonsterDefinitions.length,
+    )
+  })
+
+  it('grants division boss UFOs, effects, and titles with divide origin custom entries', () => {
+    const divideRingBoss = bosses.find((boss) => boss.id === 'boss-divide-no-remainder')
+    const divideEffectBoss = bosses.find((boss) => boss.id === 'boss-divide-with-remainder')
+    expect(divideRingBoss).toBeDefined()
+    expect(divideEffectBoss).toBeDefined()
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [divisionAreaCorrectKey('divide-no-remainder')]: 20,
+      [divisionAreaCorrectKey('divide-with-remainder')]: 20,
+    }
+
+    const ringClear = applyBossClearReward(save, divideRingBoss!.id, 'normal', 9000)
+    expect(ringClear.rewardUfoIds).toEqual([divisionRingUfoId])
+    expect(ringClear.rewardTitles).toContain(divideRingBoss!.rewards.normal.title)
+    expect(ringClear.save.progress.ownedUfos).toContain(divisionRingUfoId)
+
+    const effectClear = applyBossClearReward(ringClear.save, divideEffectBoss!.id, 'normal', 9000)
+    expect(effectClear.rewardUfoIds).toEqual([divisionQuarterUfoId])
+    expect(effectClear.rewardEffectIds).toEqual([divideFlashEffectId])
+    expect(effectClear.save.progress.ownedItems).toContain(divideFlashEffectId)
+    expect(effectClear.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('effect', divideFlashEffectId) }),
+    )
+
+    const divideTabs = buildCustomInventory(effectClear.save, 'divide')
+    expect(divideTabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === divisionRingUfoId)?.owned).toBe(true)
+    expect(divideTabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === divisionQuarterUfoId)?.owned).toBe(true)
+    expect(divideTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === divideFlashEffectId)?.owned).toBe(true)
+  })
+
+  it('grants division master and legend titles separately from legacy all-gekimuzu rewards', () => {
+    const divisionBosses = bosses.filter((boss) => boss.group === 'division')
+    expect(divisionBosses).toHaveLength(3)
+    let save: SaveData = createSaveWithPlayer()
+    for (const boss of divisionBosses) {
+      save = applyBossClearReward(save, boss.id, 'normal', 8000).save
+    }
+    expect(save.player?.titles).toContain(divisionMasterTitle)
+    for (const boss of divisionBosses) {
+      save = applyBossClearReward(save, boss.id, 'hard', 8000).save
+      save = applyBossClearReward(save, boss.id, 'fast', 8000).save
+      save = applyBossClearReward(save, boss.id, 'gekimuzu', 8000).save
+    }
+    expect(save.player?.titles).toContain(divisionLegendTitle)
+    expect(save.progress.ownedUfos).not.toContain(specialUfoId)
+    expect(save.progress.ownedItems).not.toContain(galaxySwirlEffectId)
+  })
+
   it('generates addition questions in speed and play helpers', () => {
     const speedQuestion = createSpeedQuestion({
       planet: 'add',
@@ -2855,6 +3100,18 @@ describe('mastery, review, missions, and storage', () => {
     expect(playQuestion.id.startsWith('sub:')).toBe(true)
     expect(playQuestion.category.startsWith('subtraction-')).toBe(true)
     expect(Number(playQuestion.answer)).toBeGreaterThanOrEqual(1)
+  })
+
+  it('generates division questions in speed and play helpers', () => {
+    const speedQuestion = createSpeedQuestion({
+      planet: 'divide',
+      selectedAreas: ['divide-with-remainder'],
+    })
+    expect(speedQuestion.id.startsWith('divide:divide-with-remainder:')).toBe(true)
+    expect(isRemainderAnswerValue(speedQuestion.answer)).toBe(true)
+    const playQuestion = createMiniQuestion({ planet: 'divide', divisionRocketDifficulty: 'normal' })
+    expect(playQuestion.id.startsWith('divide:')).toBe(true)
+    expect(playQuestion.category.startsWith('division-')).toBe(true)
   })
 
   it('splits addition rocket questions into three difficulty ranges', () => {
@@ -2962,6 +3219,60 @@ describe('mastery, review, missions, and storage', () => {
     }
   })
 
+  it('splits division rocket questions into three difficulty ranges and titles', () => {
+    const easyQuestion = createMiniQuestion({
+      planet: 'divide',
+      divisionRocketDifficulty: 'easy',
+      rng: () => 0.99,
+    })
+    expect(Number(easyQuestion.metadata?.right)).toBeGreaterThanOrEqual(1)
+    expect(Number(easyQuestion.metadata?.right)).toBeLessThanOrEqual(9)
+    expect(Number(easyQuestion.metadata?.remainder)).toBe(0)
+    expect(isRemainderAnswerValue(easyQuestion.answer)).toBe(false)
+
+    const normalQuestion = createMiniQuestion({
+      planet: 'divide',
+      divisionRocketDifficulty: 'normal',
+      rng: () => 0.99,
+    })
+    expect(Number(normalQuestion.metadata?.right)).toBeGreaterThanOrEqual(2)
+    expect(Number(normalQuestion.metadata?.right)).toBeLessThanOrEqual(9)
+    expect(Number(normalQuestion.metadata?.remainder)).toBeGreaterThanOrEqual(1)
+    expect(Number(normalQuestion.metadata?.remainder)).toBeLessThan(Number(normalQuestion.metadata?.right))
+    expect(isRemainderAnswerValue(normalQuestion.answer)).toBe(true)
+
+    const hardQuestion = createMiniQuestion({
+      planet: 'divide',
+      divisionRocketDifficulty: 'hard',
+      rng: () => 0.99,
+    })
+    expect(Number(hardQuestion.metadata?.left)).toBeGreaterThanOrEqual(10)
+    expect(Number(hardQuestion.metadata?.left)).toBeLessThanOrEqual(99)
+    expect(Number(hardQuestion.metadata?.right)).toBeGreaterThanOrEqual(2)
+    expect(Number(hardQuestion.metadata?.right)).toBeLessThanOrEqual(9)
+
+    for (const difficulty of divisionRocketDifficulties) {
+      const rawSummary = buildSessionSummary({
+        id: `divide-rocket-${difficulty.id}`,
+        mode: 'rocket',
+        maxCombo: 14,
+        score: 100,
+        results: Array.from({ length: 14 }, () =>
+          result({ questionId: 'divide:divide-with-remainder:13/4', prompt: '13 ÷ 4', expectedAnswer: { kind: 'remainder', quotient: 3, remainder: 1 } }),
+        ),
+        finishedAt: '2026-01-05T00:00:00.000Z',
+      })
+      const summary: GameSessionSummary = {
+        ...rawSummary,
+        details: {
+          planet: 'divide',
+          divisionRocketDifficulty: difficulty.id,
+        },
+      }
+      expect(judgeNewTitles(summary, createSaveWithPlayer())).toContain(difficulty.title)
+    }
+  })
+
   it('caps level icon previews in settings CSS', () => {
     expect(globalCss).toContain('.settings-level-icon')
     expect(globalCss).toContain('max-width: 80px')
@@ -2969,7 +3280,7 @@ describe('mastery, review, missions, and storage', () => {
   })
 
   it('grants the all-gekimuzu reward once when the final boss clears', () => {
-    const legacyBosses = bosses.filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction')
+    const legacyBosses = bosses.filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction' && boss.group !== 'division')
     const finalBoss = legacyBosses[legacyBosses.length - 1]
     let save: SaveData = createSaveWithPlayer()
     for (const boss of legacyBosses.slice(0, -1)) {

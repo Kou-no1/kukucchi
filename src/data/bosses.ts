@@ -1,8 +1,8 @@
 import type { BossDifficultyId } from '../types/save'
 import { defaultMinDifficultyByBossDifficulty } from './factDifficulty'
-import type { AdditionAreaId, SubtractionAreaId } from './planets'
+import type { AdditionAreaId, DivisionAreaId, SubtractionAreaId } from './planets'
 
-export type BossGroup = 'basic' | 'advanced' | 'addition' | 'subtraction'
+export type BossGroup = 'basic' | 'advanced' | 'addition' | 'subtraction' | 'division'
 export type BossAdvancedCategory = 'square' | 'pi' | 'development'
 
 export const advancedBossCategoryLabels: Record<BossAdvancedCategory, string> = {
@@ -39,6 +39,7 @@ export type BossDefinition = {
   stages?: number[]
   additionAreaId?: AdditionAreaId
   subtractionAreaId?: SubtractionAreaId
+  divisionAreaId?: DivisionAreaId
   advancedCategory?: BossAdvancedCategory
   difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
   rewards: Record<BossDifficultyId, BossReward>
@@ -393,6 +394,92 @@ function createSubtractionRewards(seed: (typeof subtractionBossSeeds)[number]): 
   }
 }
 
+const divisionBossSeeds: Array<{
+  id: string
+  no: number
+  areaId: DivisionAreaId
+  label: string
+  shortLabel: string
+  emoji: string
+  description: string
+  normalTitle: string
+  normalUfoId?: string
+  normalEffectId?: string
+  difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
+}> = [
+  {
+    id: 'boss-divide-no-remainder',
+    no: 25,
+    areaId: 'divide-no-remainder',
+    label: 'わりわりキング',
+    shortLabel: 'わりわり',
+    emoji: '÷1',
+    description: 'あまりなしのわりざんをきれいに分ける、わりざんの王さま。',
+    normalTitle: 'わりざんビギナー',
+    normalUfoId: 'boss-divide-no-remainder-ufo',
+    difficultyOverrides: {
+      normal: { hp: 7, questionCount: 10 },
+      hard: { hp: 9, questionCount: 12, timeLimitSeconds: 7 },
+      fast: { hp: 11, questionCount: 14, timeLimitSeconds: 4 },
+      gekimuzu: { hp: 10, questionCount: 10, timeLimitSeconds: 2.6 },
+    },
+  },
+  {
+    id: 'boss-divide-with-remainder',
+    no: 26,
+    areaId: 'divide-with-remainder',
+    label: 'あまりマスター',
+    shortLabel: 'あまり',
+    emoji: '÷r',
+    description: '商とあまりを見きわめる、つよめのわりざんボス。',
+    normalTitle: 'あまりファイター',
+    normalUfoId: 'boss-divide-with-remainder-ufo',
+    normalEffectId: 'divide-flash',
+    difficultyOverrides: {
+      normal: { hp: 10, questionCount: 12 },
+      hard: { hp: 12, questionCount: 14, timeLimitSeconds: 6 },
+      fast: { hp: 14, questionCount: 16, timeLimitSeconds: 3 },
+      gekimuzu: { hp: 13, questionCount: 12, timeLimitSeconds: 1.9 },
+    },
+  },
+  {
+    id: 'boss-divide-large',
+    no: 27,
+    areaId: 'divide-large',
+    label: 'おおわりエンペラー',
+    shortLabel: 'おおわり',
+    emoji: '÷3',
+    description: '2けたの大きい数をグループに分ける、わりざん最強ボス。',
+    normalTitle: '大きいわりざんガード',
+    normalUfoId: 'boss-divide-large-ufo',
+    difficultyOverrides: {
+      normal: { hp: 11, questionCount: 12 },
+      hard: { hp: 13, questionCount: 14, timeLimitSeconds: 8 },
+      fast: { hp: 15, questionCount: 16, timeLimitSeconds: 5 },
+      gekimuzu: { hp: 13, questionCount: 12, timeLimitSeconds: 3 },
+    },
+  },
+]
+
+function createDivisionRewards(seed: (typeof divisionBossSeeds)[number]): Record<BossDifficultyId, BossReward> {
+  return {
+    normal: {
+      ufoId: seed.normalUfoId,
+      effectId: seed.normalEffectId,
+      title: seed.normalTitle,
+    },
+    hard: {
+      title: `${seed.shortLabel}ハードスター`,
+    },
+    fast: {
+      title: `${seed.shortLabel}スピードスター`,
+    },
+    gekimuzu: {
+      title: `${seed.shortLabel}げきムズスター`,
+    },
+  }
+}
+
 export const bosses: BossDefinition[] = [
   ...basicBossSeeds.map((seed) => ({
     ...seed,
@@ -483,12 +570,24 @@ export const bosses: BossDefinition[] = [
     difficultyOverrides: seed.difficultyOverrides,
     rewards: createSubtractionRewards(seed),
   })),
+  ...divisionBossSeeds.map((seed) => ({
+    id: seed.id,
+    no: seed.no,
+    group: 'division' as const,
+    label: seed.label,
+    shortLabel: seed.shortLabel,
+    emoji: seed.emoji,
+    description: seed.description,
+    divisionAreaId: seed.areaId,
+    difficultyOverrides: seed.difficultyOverrides,
+    rewards: createDivisionRewards(seed),
+  })),
 ]
 
 const itemKinds: BossLimitedItem['kind'][] = ['wear', 'hat', 'furniture', 'background']
 
 export const bossLimitedItems: BossLimitedItem[] = bosses
-  .filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction')
+  .filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction' && boss.group !== 'division')
   .flatMap((boss) =>
     bossItemDifficultyIds.map((difficulty, difficultyIndex) => ({
     id: boss.rewards[difficulty].itemId ?? `${boss.id}-${difficulty}-item`,
@@ -509,6 +608,8 @@ export const additionMasterTitle = 'たしざんますたー'
 export const additionLegendTitle = 'たしざんれじぇんど'
 export const subtractionMasterTitle = 'ひきざんますたー'
 export const subtractionLegendTitle = 'ひきざんれじぇんど'
+export const divisionMasterTitle = 'わりざんマスター'
+export const divisionLegendTitle = 'わりざんレジェンド'
 
 export function getBossDifficulty(
   boss: BossDefinition,

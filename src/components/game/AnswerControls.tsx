@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { NumericKeypad } from './NumericKeypad'
-import type { AnswerMode, Question } from '../../types/game'
+import { answerValueKey, formatAnswerValue } from '../../game-engine/questions/answer'
+import type { AnswerMode, AnswerValue, Question } from '../../types/game'
 
 export function AnswerControls({
   question,
@@ -14,7 +15,7 @@ export function AnswerControls({
   answerMode: AnswerMode
   inputValue: string
   onInputChange: (value: string) => void
-  onAnswer: (answer: number | string) => void
+  onAnswer: (answer: AnswerValue) => void
   disabled: boolean
 }) {
   useEffect(() => {
@@ -56,12 +57,12 @@ export function AnswerControls({
       {(question.choices ?? []).map((choice) => (
         <button
           className="choice-button"
-          key={choice}
+          key={answerValueKey(choice)}
           type="button"
           onClick={() => onAnswer(choice)}
           disabled={disabled}
         >
-          {choice}
+          {formatAnswerValue(choice)}
         </button>
       ))}
     </div>

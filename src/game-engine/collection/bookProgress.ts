@@ -2,6 +2,7 @@ import { bossLimitedItems, bosses, bossDifficultyIds } from '../../data/bosses'
 import { advancedMonsterDefinitions, isAdvancedMonsterOwned } from '../../data/advancedMonsters'
 import { additionMonsterDefinitions, isAdditionMonsterOwned } from '../../data/additionMonsters'
 import { isSubtractionMonsterOwned, subtractionMonsterDefinitions } from '../../data/subtractionMonsters'
+import { divisionMonsterDefinitions, isDivisionMonsterOwned } from '../../data/divisionMonsters'
 import { keyTypes } from '../../data/keys'
 import { buddyDefinitions } from '../../data/buddies'
 import { rocketBadges } from '../../data/rocketBadges'
@@ -66,6 +67,9 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
   const subtractionMonsterOwned = subtractionMonsterDefinitions.filter((monster) =>
     isSubtractionMonsterOwned(save.progress.categoryCorrect, monster),
   ).length
+  const divisionMonsterOwned = divisionMonsterDefinitions.filter((monster) =>
+    isDivisionMonsterOwned(save.progress.categoryCorrect, monster),
+  ).length
   const titleDefinitions = getTitleDefinitions()
   const definedTitles = new Set(titleDefinitions.map((title) => title.label))
   const ownedTitleCount = new Set((save.player?.titles ?? []).filter((title) => definedTitles.has(title))).size
@@ -78,11 +82,13 @@ export function calculateBookProgress(save: SaveData): BookProgressSummary {
       new Set(save.progress.monsterBook).size +
         advancedMonsterOwned +
         additionMonsterOwned +
-        subtractionMonsterOwned,
+        subtractionMonsterOwned +
+        divisionMonsterOwned,
       monsterTotal +
         advancedMonsterDefinitions.length +
         additionMonsterDefinitions.length +
-        subtractionMonsterDefinitions.length,
+        subtractionMonsterDefinitions.length +
+        divisionMonsterDefinitions.length,
     ),
     buddies: countPercent(new Set(save.progress.monsterBook).size + ownedBuddyCount, monsterTotal + buddyDefinitions.length),
     ufos: countPercent(new Set(save.progress.ownedUfos).size, ufoDefinitions.length),

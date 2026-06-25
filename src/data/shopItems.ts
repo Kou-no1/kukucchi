@@ -389,6 +389,8 @@ export const addGatherLightEffectId = 'add-gather-light'
 export const addPlusBurstEffectId = 'add-plus-burst'
 export const subScatterLightEffectId = 'sub-scatter-light'
 export const subMinusFlashEffectId = 'sub-minus-flash'
+export const divideSplitLightEffectId = 'divide-split-light'
+export const divideFlashEffectId = 'divide-flash'
 
 export const additionalEffectItems: ShopItem[] = [
   {
@@ -481,6 +483,32 @@ export const additionalEffectItems: ShopItem[] = [
     availableInShop: false,
     rewardOrigin: 'sub',
   },
+  {
+    id: divideSplitLightEffectId,
+    no: 44,
+    name: 'わけるひかり',
+    description: '光が同じくらいに分かれて広がる、わりざんみたいなひかり',
+    price: 500,
+    emoji: '÷',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'divide-light' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: divideFlashEffectId,
+    no: 45,
+    name: 'ディバイドフラッシュ',
+    description: '÷のひかりがすっと走る、わりざんボスのひかり',
+    price: 0,
+    emoji: '÷',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'divide-flash' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+    availableInShop: false,
+    rewardOrigin: 'divide',
+  },
 ]
 
 export const shopEffectItemIds = [
@@ -490,9 +518,10 @@ export const shopEffectItemIds = [
   'soft-light',
   addGatherLightEffectId,
   subScatterLightEffectId,
+  divideSplitLightEffectId,
 ]
 export const treasureEffectItemIds = [rainbowAuraEffectId]
-export const bossRewardEffectItemIds = [galaxySwirlEffectId, addPlusBurstEffectId, subMinusFlashEffectId]
+export const bossRewardEffectItemIds = [galaxySwirlEffectId, addPlusBurstEffectId, subMinusFlashEffectId, divideFlashEffectId]
 export const phase15EffectItemIds = [
   ...shopEffectItemIds,
   ...treasureEffectItemIds,

@@ -4,6 +4,7 @@ import {
   getSubtractionMonsterById,
   isSubtractionMonsterOwned,
 } from '../../data/subtractionMonsters'
+import { getDivisionMonsterById, isDivisionMonsterOwned } from '../../data/divisionMonsters'
 import type { SaveData } from '../../types/save'
 import { collectionRecordId, getCollectionRecord } from './collectionRecords'
 
@@ -68,6 +69,13 @@ export function parseSubtractionMonsterBuddySelectionId(
   return match?.[1] ?? null
 }
 
+export function parseDivisionMonsterBuddySelectionId(
+  selectionId: string | null | undefined,
+): string | null {
+  const match = selectionId?.match(/^division-monster:(.+)$/)
+  return match?.[1] ?? null
+}
+
 export function isDedicatedBuddyOwned(save: SaveData, buddyId: string): boolean {
   return Boolean(getCollectionRecord(save.progress.collectionRecords, 'buddy', buddyId))
 }
@@ -92,6 +100,13 @@ export function isBuddySelectionOwned(save: SaveData, selectionId: string | null
     const monsterDefinition = getSubtractionMonsterById(subtractionMonsterId)
     return monsterDefinition
       ? isSubtractionMonsterOwned(save.progress.categoryCorrect, monsterDefinition)
+      : false
+  }
+  const divisionMonsterId = parseDivisionMonsterBuddySelectionId(selectionId)
+  if (divisionMonsterId) {
+    const monsterDefinition = getDivisionMonsterById(divisionMonsterId)
+    return monsterDefinition
+      ? isDivisionMonsterOwned(save.progress.categoryCorrect, monsterDefinition)
       : false
   }
   const buddyId = parseDedicatedBuddySelectionId(selectionId)

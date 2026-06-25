@@ -5,9 +5,11 @@ import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
 import { SubtractionMonsterSprite } from '../../components/collection/SubtractionMonsterSprite'
+import { DivisionMonsterSprite } from '../../components/collection/DivisionMonsterSprite'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getAdditionMonsterById } from '../../data/additionMonsters'
+import { getDivisionMonsterById } from '../../data/divisionMonsters'
 import { getLevelIconById } from '../../data/levelIcons'
 import { getPlayerIcon } from '../../data/playerIcons'
 import { getSubtractionMonsterById } from '../../data/subtractionMonsters'
@@ -39,6 +41,12 @@ function renderSelectedBuddy(selectionId: string | null) {
     : undefined
   if (subtractionMonster) {
     return <SubtractionMonsterSprite monster={subtractionMonster} className="home-buddy-sprite" />
+  }
+  const divisionMonster = selectionId?.startsWith('division-monster:')
+    ? getDivisionMonsterById(selectionId.replace(/^division-monster:/, ''))
+    : undefined
+  if (divisionMonster) {
+    return <DivisionMonsterSprite monster={divisionMonster} className="home-buddy-sprite" />
   }
   const monster = parseMonsterBuddySelectionId(selectionId)
   if (monster) {

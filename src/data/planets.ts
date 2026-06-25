@@ -1,6 +1,6 @@
 import type { QuestionCategory } from '../types/game'
 
-export type PlanetId = 'multiply' | 'add' | 'subtract'
+export type PlanetId = 'multiply' | 'add' | 'subtract' | 'divide'
 export type PlanetStatus = 'live' | 'planned'
 
 export type AdditionAreaId =
@@ -19,6 +19,11 @@ export type SubtractionAreaId =
   | 'sub-two-digit-borrow'
   | 'sub-three-digit'
 
+export type DivisionAreaId =
+  | 'divide-no-remainder'
+  | 'divide-with-remainder'
+  | 'divide-large'
+
 export type AdditionGeneratorRule =
   | 'sum-within-9'
   | 'sum-within-10'
@@ -34,6 +39,11 @@ export type SubtractionGeneratorRule =
   | 'two-digit-no-borrow'
   | 'two-digit-borrow'
   | 'three-digit-borrow'
+
+export type DivisionGeneratorRule =
+  | 'division-no-remainder'
+  | 'division-with-remainder'
+  | 'division-large'
 
 export type GeneratorSpec =
   | {
@@ -58,6 +68,17 @@ export type GeneratorSpec =
       minSubtrahend: number
       maxSubtrahend: number
     }
+  | {
+      operation: 'division'
+      areaId: DivisionAreaId
+      rule: DivisionGeneratorRule
+      category: QuestionCategory
+      minDividend: number
+      maxDividend: number
+      minDivisor: number
+      maxDivisor: number
+      answerKind: 'integer' | 'remainder' | 'mixed'
+    }
 
 export type AdditionAreaDefinition = {
   id: AdditionAreaId
@@ -77,7 +98,16 @@ export type SubtractionAreaDefinition = {
   generator: Extract<GeneratorSpec, { operation: 'subtraction' }>
 }
 
-export type AreaDefinition = AdditionAreaDefinition | SubtractionAreaDefinition
+export type DivisionAreaDefinition = {
+  id: DivisionAreaId
+  no: number
+  name: string
+  shortName: string
+  description: string
+  generator: Extract<GeneratorSpec, { operation: 'division' }>
+}
+
+export type AreaDefinition = AdditionAreaDefinition | SubtractionAreaDefinition | DivisionAreaDefinition
 
 export type PlanetTheme = {
   primary: string
@@ -295,6 +325,63 @@ export const subtractionAreas: SubtractionAreaDefinition[] = [
   },
 ]
 
+export const divisionAreas: DivisionAreaDefinition[] = [
+  {
+    id: 'divide-no-remainder',
+    no: 1,
+    name: 'あまりなしのわりざん',
+    shortName: 'あまりなし',
+    description: '九九のぎゃくで、わり切れる',
+    generator: {
+      operation: 'division',
+      areaId: 'divide-no-remainder',
+      rule: 'division-no-remainder',
+      category: 'division-no-remainder',
+      minDividend: 1,
+      maxDividend: 81,
+      minDivisor: 1,
+      maxDivisor: 9,
+      answerKind: 'integer',
+    },
+  },
+  {
+    id: 'divide-with-remainder',
+    no: 2,
+    name: 'あまりのあるわりざん',
+    shortName: 'あまりあり',
+    description: '商とあまりをセットでえらぶ',
+    generator: {
+      operation: 'division',
+      areaId: 'divide-with-remainder',
+      rule: 'division-with-remainder',
+      category: 'division-with-remainder',
+      minDividend: 3,
+      maxDividend: 89,
+      minDivisor: 2,
+      maxDivisor: 9,
+      answerKind: 'remainder',
+    },
+  },
+  {
+    id: 'divide-large',
+    no: 3,
+    name: '大きいかずのわりざん',
+    shortName: '大きいかず',
+    description: '2けたを1けたでわる',
+    generator: {
+      operation: 'division',
+      areaId: 'divide-large',
+      rule: 'division-large',
+      category: 'division-large',
+      minDividend: 10,
+      maxDividend: 99,
+      minDivisor: 2,
+      maxDivisor: 9,
+      answerKind: 'mixed',
+    },
+  },
+]
+
 export const planets: PlanetDefinition[] = [
   {
     id: 'add',
@@ -344,6 +431,21 @@ export const planets: PlanetDefinition[] = [
     },
     areas: [],
   },
+  {
+    id: 'divide',
+    name: 'わりざんのほし',
+    shortName: 'わりざん',
+    status: 'live',
+    theme: {
+      primary: '#6750d8',
+      accent: '#9fd3ff',
+      surface: '#f0edff',
+      text: '#24154d',
+      motif: 'むらさきネビュラ',
+    },
+    generator: divisionAreas[0].generator,
+    areas: divisionAreas,
+  },
 ]
 
 export function getPlanetById(planetId: PlanetId): PlanetDefinition {
@@ -366,4 +468,12 @@ export function isSubtractionAreaId(
   value: string | null | undefined,
 ): value is SubtractionAreaId {
   return subtractionAreas.some((area) => area.id === value)
+}
+
+export function getDivisionAreaById(areaId: DivisionAreaId): DivisionAreaDefinition {
+  return divisionAreas.find((area) => area.id === areaId) ?? divisionAreas[0]
+}
+
+export function isDivisionAreaId(value: string | null | undefined): value is DivisionAreaId {
+  return divisionAreas.some((area) => area.id === value)
 }

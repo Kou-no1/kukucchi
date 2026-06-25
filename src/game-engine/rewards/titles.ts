@@ -5,11 +5,14 @@ import {
   additionLegendTitle,
   additionMasterTitle,
   bosses,
+  divisionLegendTitle,
+  divisionMasterTitle,
   legendaryBossTitle,
   subtractionLegendTitle,
   subtractionMasterTitle,
 } from '../../data/bosses'
 import { additionRocketDifficulties } from '../../data/additionRocket'
+import { divisionRocketDifficulties } from '../../data/divisionRocket'
 import { subtractionRocketDifficulties } from '../../data/subtractionRocket'
 import type { RewardOrigin } from '../../types/rewardOrigin'
 
@@ -38,6 +41,7 @@ export type TitleEmblemFamily =
   | 'boss-advanced'
   | 'boss-addition'
   | 'boss-subtraction'
+  | 'boss-division'
   | 'master'
   | 'legendary'
 
@@ -56,6 +60,10 @@ function hasAdditionResult(summary: GameSessionSummary): boolean {
 
 function hasSubtractionResult(summary: GameSessionSummary): boolean {
   return summary.results.some((result) => result.questionId.startsWith('sub:'))
+}
+
+function hasDivisionResult(summary: GameSessionSummary): boolean {
+  return summary.results.some((result) => result.questionId.startsWith('divide:'))
 }
 
 function maxCorrectComboForAdditionArea(summary: GameSessionSummary, areaId: string): number {
@@ -77,6 +85,20 @@ function maxCorrectComboForSubtractionArea(summary: GameSessionSummary, areaId: 
   let maxCombo = 0
   for (const result of summary.results) {
     if (result.correct && result.questionId.startsWith(`sub:${areaId}:`)) {
+      combo += 1
+      maxCombo = Math.max(maxCombo, combo)
+    } else {
+      combo = 0
+    }
+  }
+  return maxCombo
+}
+
+function maxCorrectComboForDivisionArea(summary: GameSessionSummary, areaId: string): number {
+  let combo = 0
+  let maxCombo = 0
+  for (const result of summary.results) {
+    if (result.correct && result.questionId.startsWith(`divide:${areaId}:`)) {
       combo += 1
       maxCombo = Math.max(maxCombo, combo)
     } else {
@@ -173,6 +195,31 @@ export const titleRules: TitleRule[] = [
       summary.details?.subtractionRocketDifficulty === difficulty.id &&
       summary.totalQuestions >= 14,
   })),
+  {
+    id: 'division-first-step',
+    label: 'わりざんのたまご',
+    description: 'わりざんの星ではじめて問題を解いたしるし',
+    origin: 'divide',
+    canEarn: (summary) => hasDivisionResult(summary),
+  },
+  {
+    id: 'division-remainder-30-combo',
+    label: 'あまりはかせ',
+    description: 'あまりのあるわりざんを30問連続で正解したしるし',
+    origin: 'divide',
+    canEarn: (summary) => maxCorrectComboForDivisionArea(summary, 'divide-with-remainder') >= 30,
+  },
+  ...divisionRocketDifficulties.map((difficulty) => ({
+    id: `division-rocket-${difficulty.id}`,
+    label: difficulty.title,
+    description: `${difficulty.label}のロケットをクリアしたしるし`,
+    origin: 'divide' as const,
+    canEarn: (summary: GameSessionSummary) =>
+      summary.mode === 'rocket' &&
+      summary.details?.planet === 'divide' &&
+      summary.details?.divisionRocketDifficulty === difficulty.id &&
+      summary.totalQuestions >= 14,
+  })),
 ]
 
 function uniqueTitleDefinitions(definitions: TitleDefinition[]): TitleDefinition[] {
@@ -202,10 +249,17 @@ export function getTitleDefinitions(): TitleDefinition[] {
     Object.values(boss.rewards).map((reward) => ({
       id: titleRecordId(reward.title),
       label: reward.title,
-      origin: boss.group === 'addition' ? ('add' as const) : boss.group === 'subtraction' ? ('sub' as const) : ('multiply' as const),
+      origin:
+        boss.group === 'addition'
+          ? ('add' as const)
+          : boss.group === 'subtraction'
+            ? ('sub' as const)
+            : boss.group === 'division'
+              ? ('divide' as const)
+              : ('multiply' as const),
       description: `${boss.label}にいどんだしるし`,
       method:
-        boss.group === 'addition' || boss.group === 'subtraction'
+        boss.group === 'addition' || boss.group === 'subtraction' || boss.group === 'division'
           ? `${boss.label} ぼすばとる`
           : `${boss.label} ボスバトル`,
     })),
@@ -252,6 +306,20 @@ export function getTitleDefinitions(): TitleDefinition[] {
       description: 'ひきざんの6えりあをげきむずでこえたしるし',
       method: 'ひきざんぜんえりあげきむず',
       origin: 'sub' as const,
+    },
+    {
+      id: titleRecordId(divisionMasterTitle),
+      label: divisionMasterTitle,
+      description: 'わりざんの3エリアボスをすべてたおしたしるし',
+      method: 'わりざん全エリアボス',
+      origin: 'divide' as const,
+    },
+    {
+      id: titleRecordId(divisionLegendTitle),
+      label: divisionLegendTitle,
+      description: 'わりざんの3エリアをげきムズでこえたしるし',
+      method: 'わりざん全エリアげきムズ',
+      origin: 'divide' as const,
     },
   ])
 }
@@ -334,11 +402,23 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
     }
   }
 
+  if (title === divisionMasterTitle || title === divisionLegendTitle) {
+    return {
+      family: title === divisionLegendTitle ? 'legendary' : 'master',
+      rarity: title === divisionLegendTitle ? 'legendary' : 'epic',
+      motif: '÷',
+      primary: '#9fd3ff',
+      secondary: '#6750d8',
+      accent: title === divisionLegendTitle ? '#ffd166' : '#ffffff',
+    }
+  }
+
   const bossReward = bossRewardTitleMap.get(title)
   if (bossReward) {
     const isAdvanced = bossReward.bossGroup === 'advanced'
     const isAddition = bossReward.bossGroup === 'addition'
     const isSubtraction = bossReward.bossGroup === 'subtraction'
+    const isDivision = bossReward.bossGroup === 'division'
     const rarityByDifficulty: Record<string, TitleEmblemRarity> = {
       normal: 'common',
       hard: 'rare',
@@ -350,13 +430,15 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
         ? 'boss-addition'
         : isSubtraction
           ? 'boss-subtraction'
-          : isAdvanced
-            ? 'boss-advanced'
-            : 'boss-basic',
+          : isDivision
+            ? 'boss-division'
+            : isAdvanced
+              ? 'boss-advanced'
+              : 'boss-basic',
       rarity: rarityByDifficulty[bossReward.difficultyId] ?? 'rare',
-      motif: isAddition ? '+' : isSubtraction ? '-' : bossReward.difficultyId === 'gekimuzu' ? '★' : isAdvanced ? '◇' : '×',
-      primary: isAddition ? '#ffd35c' : isSubtraction ? '#ff9f5f' : isAdvanced ? '#a78bfa' : '#5be9f4',
-      secondary: isAddition ? '#34d399' : isSubtraction ? '#a8552a' : isAdvanced ? '#22d3ee' : '#4d75ff',
+      motif: isAddition ? '+' : isSubtraction ? '-' : isDivision ? '÷' : bossReward.difficultyId === 'gekimuzu' ? '★' : isAdvanced ? '◇' : '×',
+      primary: isAddition ? '#ffd35c' : isSubtraction ? '#ff9f5f' : isDivision ? '#9fd3ff' : isAdvanced ? '#a78bfa' : '#5be9f4',
+      secondary: isAddition ? '#34d399' : isSubtraction ? '#a8552a' : isDivision ? '#6750d8' : isAdvanced ? '#22d3ee' : '#4d75ff',
       accent: bossReward.difficultyId === 'normal' ? '#e8fbff' : '#ffd86a',
     }
   }
@@ -389,6 +471,16 @@ export function getTitleEmblemDefinition(title: string | null | undefined): Titl
       motif: '-',
       primary: '#ff9f5f',
       secondary: '#a8552a',
+      accent: '#ffffff',
+    }
+  }
+  if (rule?.origin === 'divide') {
+    return {
+      family: 'streak',
+      rarity: rule.id === 'division-remainder-30-combo' ? 'epic' : 'common',
+      motif: '÷',
+      primary: '#9fd3ff',
+      secondary: '#6750d8',
       accent: '#ffffff',
     }
   }

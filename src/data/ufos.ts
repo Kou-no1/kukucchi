@@ -14,6 +14,9 @@ export type UfoVariant =
   | 'sub-minus-ring'
   | 'sub-split'
   | 'sub-sunset'
+  | 'divide-ring'
+  | 'divide-quarter'
+  | 'divide-nebula'
 
 export type UfoDefinition = {
   id: string
@@ -34,6 +37,9 @@ export const additionSunriseUfoId = 'boss-add-three-digit-ufo'
 export const subtractionMinusRingUfoId = 'boss-sub-borrow-basic-ufo'
 export const subtractionSplitUfoId = 'boss-sub-two-digit-borrow-ufo'
 export const subtractionSunsetUfoId = 'boss-sub-three-digit-ufo'
+export const divisionRingUfoId = 'boss-divide-no-remainder-ufo'
+export const divisionQuarterUfoId = 'boss-divide-with-remainder-ufo'
+export const divisionNebulaUfoId = 'boss-divide-large-ufo'
 
 const bossUfoSeeds: Record<
   string,
@@ -171,6 +177,30 @@ const bossUfoSeeds: Record<
     motif: '-3',
     origin: 'sub',
   },
+  'boss-divide-no-remainder': {
+    name: 'ディバイドリング号',
+    description: '÷のリングが青紫にひかる、わりざんのUFO。',
+    variant: 'divide-ring',
+    lights: 8,
+    motif: '÷',
+    origin: 'divide',
+  },
+  'boss-divide-with-remainder': {
+    name: 'クォーター号',
+    description: '4つに分かれた機体で、あまりの山場をこえるUFO。',
+    variant: 'divide-quarter',
+    lights: 10,
+    motif: '1/4',
+    origin: 'divide',
+  },
+  'boss-divide-large': {
+    name: 'ネビュラ号',
+    description: '青紫の星雲をまとって大きいわりざんを進むUFO。',
+    variant: 'divide-nebula',
+    lights: 12,
+    motif: '÷3',
+    origin: 'divide',
+  },
 }
 
 export const bossUfos: UfoDefinition[] = bosses.flatMap((boss) => {
@@ -189,7 +219,7 @@ export const bossUfos: UfoDefinition[] = bosses.flatMap((boss) => {
 })
 
 const legacyBossUfoCount = bosses.filter(
-  (boss) => boss.group !== 'addition' && boss.group !== 'subtraction',
+  (boss) => boss.group !== 'addition' && boss.group !== 'subtraction' && boss.group !== 'division',
 ).length
 
 export const specialUfo: UfoDefinition = {

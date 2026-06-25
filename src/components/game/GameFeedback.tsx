@@ -1,9 +1,12 @@
+import { formatAnswerValue } from '../../game-engine/questions/answer'
+import type { AnswerValue } from '../../types/game'
+
 export function GameFeedback({
   state,
   correctAnswer,
 }: {
   state: 'idle' | 'correct' | 'incorrect'
-  correctAnswer: number | string
+  correctAnswer: AnswerValue
 }) {
   if (state === 'idle') {
     return <p className="feedback feedback-idle">ゆっくりでだいじょうぶ</p>
@@ -13,7 +16,7 @@ export function GameFeedback({
   }
   return (
     <p className="feedback feedback-incorrect">
-      おしい！ こたえは <strong>{correctAnswer}</strong>
+      おしい！ こたえは <strong>{formatAnswerValue(correctAnswer)}</strong>
     </p>
   )
 }

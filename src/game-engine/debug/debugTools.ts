@@ -1,6 +1,7 @@
 import { advancedMonsterDefinitions } from '../../data/advancedMonsters'
 import { additionAreaCorrectKey, additionMonsterDefinitions } from '../../data/additionMonsters'
 import { subtractionAreaCorrectKey, subtractionMonsterDefinitions } from '../../data/subtractionMonsters'
+import { divisionAreaCorrectKey, divisionMonsterDefinitions } from '../../data/divisionMonsters'
 import { bossDifficulties, bosses, bossLimitedItems } from '../../data/bosses'
 import { buddyDefinitions } from '../../data/buddies'
 import { keyTypes } from '../../data/keys'
@@ -116,6 +117,10 @@ export function fullOpenDebugSaveData(
   }
   for (const monster of subtractionMonsterDefinitions) {
     const key = subtractionAreaCorrectKey(monster.areaId)
+    categoryCorrect[key] = Math.max(categoryCorrect[key] ?? 0, monster.threshold)
+  }
+  for (const monster of divisionMonsterDefinitions) {
+    const key = divisionAreaCorrectKey(monster.areaId)
     categoryCorrect[key] = Math.max(categoryCorrect[key] ?? 0, monster.threshold)
   }
   const titles = Array.from(

@@ -14,6 +14,9 @@ function planetSymbol(planetId: string) {
   if (planetId === 'add') {
     return '+'
   }
+  if (planetId === 'divide') {
+    return '÷'
+  }
   return '-'
 }
 

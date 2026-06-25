@@ -9,21 +9,27 @@ import { ModeStartScreen } from '../../components/game/ModeStartScreen'
 import { QuestionVisual } from '../../components/game/QuestionVisual'
 import {
   additionAreas,
+  divisionAreas,
   getAdditionAreaById,
+  getDivisionAreaById,
   getSubtractionAreaById,
   isAdditionAreaId,
+  isDivisionAreaId,
   isSubtractionAreaId,
   subtractionAreas,
   type AdditionAreaId,
+  type DivisionAreaId,
   type SubtractionAreaId,
 } from '../../data/planets'
 import { getKukuReading } from '../../data/kukuReadings'
-import { isCorrectAnswer } from '../../game-engine/questions/answer'
+import { formatAnswerValue, isCorrectAnswer } from '../../game-engine/questions/answer'
 import {
   generateAdditionQuestion,
   generateAdaptiveAdditionQuestion,
+  generateAdaptiveDivisionQuestion,
   generateAdaptiveSubtractionQuestion,
   generateAdvancedQuestion,
+  generateDivisionQuestion,
   generateMultiplicationFactQuestion,
   generateSubtractionQuestion,
 } from '../../game-engine/questions/questionGenerator'
@@ -34,14 +40,14 @@ import { useDailyUsage } from '../../hooks/useDailyUsage'
 import { useSaveData } from '../../hooks/useSaveData'
 import { playCorrectSound, speakJapanese } from '../../services/audioService'
 import { applySessionResult } from '../../services/resultService'
-import type { AnswerMode, AnswerResult, Question, ScoreState } from '../../types/game'
+import type { AnswerMode, AnswerResult, AnswerValue, Question, ScoreState } from '../../types/game'
 import { createId } from '../../utils/id'
 
 const stages = [1, 2, 3, 4, 5, 6, 7, 8, 9]
 const goalQuestions = 9
 
 type LearnPhase = 'ready' | 'running'
-type LearnKind = 'kuku' | 'addition' | 'subtraction' | 'square' | 'pi'
+type LearnKind = 'kuku' | 'addition' | 'subtraction' | 'division' | 'square' | 'pi'
 type LearnOrder = 'random' | 'ascending' | 'descending'
 type VisualMode = 'groups' | 'line' | 'addition' | 'reading'
 
@@ -49,6 +55,7 @@ const learnKindLabels: Record<LearnKind, string> = {
   kuku: '九九',
   addition: 'たしざん',
   subtraction: 'ひきざん',
+  division: 'わりざん',
   square: '平方数',
   pi: '円周率',
 }
@@ -93,6 +100,7 @@ function createLearnQuestion(
     right,
     additionAreaId,
     subtractionAreaId,
+    divisionAreaId,
     facts,
     schoolMode2Enabled,
     recentIncorrectCount,
@@ -103,6 +111,7 @@ function createLearnQuestion(
     right: number
     additionAreaId: AdditionAreaId
     subtractionAreaId: SubtractionAreaId
+    divisionAreaId: DivisionAreaId
     facts: Parameters<typeof generateAdaptiveAdditionQuestion>[0]
     schoolMode2Enabled: boolean
     recentIncorrectCount: number
@@ -116,6 +125,12 @@ function createLearnQuestion(
   }
   if (kind === 'subtraction') {
     return generateAdaptiveSubtractionQuestion(facts, subtractionAreaId, {
+      schoolMode2Enabled,
+      recentIncorrectCount,
+    })
+  }
+  if (kind === 'division') {
+    return generateAdaptiveDivisionQuestion(facts, divisionAreaId, {
       schoolMode2Enabled,
       recentIncorrectCount,
     })
@@ -136,11 +151,14 @@ export function LearnPage() {
   const { rewardBudgetReached } = useDailyUsage()
   const fromAdditionPlanet = searchParams.get('planet') === 'add'
   const fromSubtractionPlanet = searchParams.get('planet') === 'subtract'
+  const fromDivisionPlanet = searchParams.get('planet') === 'divide'
   const initialLearnKind: LearnKind = fromAdditionPlanet
     ? 'addition'
     : fromSubtractionPlanet
       ? 'subtraction'
-      : 'kuku'
+      : fromDivisionPlanet
+        ? 'division'
+        : 'kuku'
   const requestedAreaId = searchParams.get('area')
   const initialAdditionAreaId: AdditionAreaId = isAdditionAreaId(requestedAreaId)
     ? requestedAreaId
@@ -148,10 +166,14 @@ export function LearnPage() {
   const initialSubtractionAreaId: SubtractionAreaId = isSubtractionAreaId(requestedAreaId)
     ? requestedAreaId
     : 'sub-within-9'
+  const initialDivisionAreaId: DivisionAreaId = isDivisionAreaId(requestedAreaId)
+    ? requestedAreaId
+    : 'divide-no-remainder'
   const [phase, setPhase] = useState<LearnPhase>('ready')
   const [learnKind, setLearnKind] = useState<LearnKind>(initialLearnKind)
   const [additionAreaId, setAdditionAreaId] = useState<AdditionAreaId>(initialAdditionAreaId)
   const [subtractionAreaId, setSubtractionAreaId] = useState<SubtractionAreaId>(initialSubtractionAreaId)
+  const [divisionAreaId, setDivisionAreaId] = useState<DivisionAreaId>(initialDivisionAreaId)
   const [stage, setStage] = useState(2)
   const [answerMode, setAnswerMode] = useState<AnswerMode>('choice')
   const [learnOrder, setLearnOrder] = useState<LearnOrder>('random')
@@ -164,6 +186,8 @@ export function LearnPage() {
       ? generateAdditionQuestion(initialAdditionAreaId)
       : initialLearnKind === 'subtraction'
         ? generateSubtractionQuestion(initialSubtractionAreaId)
+        : initialLearnKind === 'division'
+          ? generateDivisionQuestion(initialDivisionAreaId)
       : createKukuQuestion(2, 'choice', 1),
   )
   const [inputValue, setInputValue] = useState('')
@@ -194,10 +218,11 @@ export function LearnPage() {
 
   const selectedAdditionArea = getAdditionAreaById(additionAreaId)
   const selectedSubtractionArea = getSubtractionAreaById(subtractionAreaId)
+  const selectedDivisionArea = getDivisionAreaById(divisionAreaId)
 
   function createCurrentQuestion(nextIndex: number, completedResults: AnswerResult[]): Question {
     const activeAnswerMode =
-      learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction'
+      learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division'
         ? 'choice'
         : answerMode
     return createLearnQuestion({
@@ -207,6 +232,7 @@ export function LearnPage() {
       right: questionOrder[nextIndex] ?? 1,
       additionAreaId,
       subtractionAreaId,
+      divisionAreaId,
       facts: saveData.progress.facts,
       schoolMode2Enabled: saveData.settings.schoolMode2Enabled,
       recentIncorrectCount: resultIncorrectStreak(completedResults),
@@ -232,12 +258,13 @@ export function LearnPage() {
         kind: learnKind,
         stage,
         answerMode:
-          learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction'
+          learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division'
             ? 'choice'
             : answerMode,
         right: nextOrder[0] ?? 1,
         additionAreaId,
         subtractionAreaId,
+        divisionAreaId,
         facts: saveData.progress.facts,
         schoolMode2Enabled: saveData.settings.schoolMode2Enabled,
         recentIncorrectCount: 0,
@@ -267,7 +294,7 @@ export function LearnPage() {
     resetQuestion(nextIndex, completedResults)
   }
 
-  function handleAnswer(answer: number | string) {
+  function handleAnswer(answer: AnswerValue) {
     if (phase !== 'running' || feedback !== 'idle') {
       return
     }
@@ -306,7 +333,7 @@ export function LearnPage() {
 
   function handleSpeak() {
     if (learnKind !== 'kuku') {
-      speakJapanese(`${question.prompt}、こたえは ${question.answer}`, saveData.settings.speechEnabled)
+      speakJapanese(`${question.prompt}、こたえは ${formatAnswerValue(question.answer)}`, saveData.settings.speechEnabled)
       return
     }
     const left = Number(question.metadata?.left ?? 2)
@@ -319,7 +346,7 @@ export function LearnPage() {
   const right = Number(question.metadata?.right ?? 1)
   const revealReading = learnKind === 'kuku' && (feedback === 'correct' || visualMode === 'reading')
   const activeAnswerMode =
-    learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction'
+    learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division'
       ? 'choice'
       : answerMode
   const backToPlanet =
@@ -327,6 +354,8 @@ export function LearnPage() {
       ? '/planet/add'
       : learnKind === 'subtraction'
         ? '/planet/subtract'
+        : learnKind === 'division'
+          ? '/planet/divide'
         : '/planet/multiply'
 
   function finish() {
@@ -343,18 +372,24 @@ export function LearnPage() {
             ? 'add'
             : learnKind === 'subtraction'
               ? 'subtract'
+              : learnKind === 'division'
+                ? 'divide'
               : 'multiply',
         areaId:
           learnKind === 'addition'
             ? additionAreaId
             : learnKind === 'subtraction'
               ? subtractionAreaId
+              : learnKind === 'division'
+                ? divisionAreaId
               : null,
         areaName:
           learnKind === 'addition'
             ? selectedAdditionArea.name
             : learnKind === 'subtraction'
               ? selectedSubtractionArea.name
+              : learnKind === 'division'
+                ? selectedDivisionArea.name
               : null,
       },
       finishedAt: new Date().toISOString(),
@@ -394,11 +429,11 @@ export function LearnPage() {
           startLabel={learnKind === 'addition' || learnKind === 'subtraction' ? 'すたーと！' : undefined}
           onStart={startLearn}
         >
-          {!fromAdditionPlanet && !fromSubtractionPlanet ? (
+          {!fromAdditionPlanet && !fromSubtractionPlanet && !fromDivisionPlanet ? (
             <div className="duration-select-panel learn-kind-panel" aria-label="けいさんをえらぶ">
               <strong>けいさん</strong>
               <div className="segmented learn-start-segmented">
-                {(['kuku', 'addition', 'square', 'pi'] as const).map((kind) => (
+                {(['kuku', 'addition', 'division', 'square', 'pi'] as const).map((kind) => (
                   <button
                     className={learnKind === kind ? 'selected' : ''}
                     key={kind}
@@ -407,6 +442,29 @@ export function LearnPage() {
                     aria-pressed={learnKind === kind}
                   >
                     {learnKindLabels[kind]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {learnKind === 'division' ? (
+            <div className="stage-select-panel addition-area-panel" aria-label="練習するエリア">
+              <div className="start-option-header">
+                <strong>練習するエリア</strong>
+                <span>{selectedDivisionArea.shortName}</span>
+              </div>
+              <div className="stage-chip-grid addition-area-grid">
+                {divisionAreas.map((area) => (
+                  <button
+                    className={divisionAreaId === area.id ? 'stage-chip selected addition-area-chip' : 'stage-chip addition-area-chip'}
+                    key={area.id}
+                    type="button"
+                    onClick={() => setDivisionAreaId(area.id)}
+                    aria-pressed={divisionAreaId === area.id}
+                  >
+                    <strong>{area.name}</strong>
+                    <span>{area.description}</span>
                   </button>
                 ))}
               </div>
@@ -517,10 +575,10 @@ export function LearnPage() {
                 type="button"
                 onClick={() => setAnswerMode('input')}
                 aria-pressed={activeAnswerMode === 'input'}
-                disabled={learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction'}
-                aria-disabled={learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction'}
+                disabled={learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division'}
+                aria-disabled={learnKind === 'pi' || learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division'}
               >
-                {learnKind === 'addition' || learnKind === 'subtraction' ? 'にゅうりょく' : '入力'}
+                {learnKind === 'addition' || learnKind === 'subtraction' || learnKind === 'division' ? 'にゅうりょく' : '入力'}
               </button>
             </div>
           </div>

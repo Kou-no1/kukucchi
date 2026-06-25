@@ -6,12 +6,14 @@ import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
 import { SubtractionMonsterSprite } from '../../components/collection/SubtractionMonsterSprite'
+import { DivisionMonsterSprite } from '../../components/collection/DivisionMonsterSprite'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
 import { getLevelIconById, getUnlockedLevelIcons } from '../../data/levelIcons'
 import { getAdditionMonsterById } from '../../data/additionMonsters'
 import { getSubtractionMonsterById } from '../../data/subtractionMonsters'
+import { getDivisionMonsterById } from '../../data/divisionMonsters'
 import { playerIcons } from '../../data/playerIcons'
 import { defaultCharacterName } from '../../data/shipName'
 import { equipShopItem, getHomeShipPreviewVisuals } from '../../data/shopItems'
@@ -42,6 +44,12 @@ function renderBuddy(selectionId: string | null, className = 'custom-preview-bud
     : undefined
   if (subtractionMonster) {
     return <SubtractionMonsterSprite monster={subtractionMonster} className={className} />
+  }
+  const divisionMonster = selectionId?.startsWith('division-monster:')
+    ? getDivisionMonsterById(selectionId.replace(/^division-monster:/, ''))
+    : undefined
+  if (divisionMonster) {
+    return <DivisionMonsterSprite monster={divisionMonster} className={className} />
   }
   const monster = parseMonsterBuddySelectionId(selectionId)
   if (monster) {
@@ -79,6 +87,15 @@ function EntryIcon({ entry }: { entry: CustomInventoryEntry }) {
     return (
       <SubtractionMonsterSprite
         monster={entry.subtractionMonster}
+        locked={locked}
+        className="custom-item-sprite"
+      />
+    )
+  }
+  if (entry.kind === 'division-monster-buddy' && entry.divisionMonster) {
+    return (
+      <DivisionMonsterSprite
+        monster={entry.divisionMonster}
         locked={locked}
         className="custom-item-sprite"
       />
@@ -161,6 +178,7 @@ export function CustomPage() {
         entry.kind === 'monster-buddy' ||
         entry.kind === 'addition-monster-buddy' ||
         entry.kind === 'subtraction-monster-buddy' ||
+        entry.kind === 'division-monster-buddy' ||
         entry.kind === 'dedicated-buddy'
       ) {
         return {
