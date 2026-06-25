@@ -1,5 +1,6 @@
 export type OperationRewardOrigin =
   | 'add'
+  | 'sub'
   | 'subtract'
   | 'multiply'
   | 'divide'

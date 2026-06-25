@@ -9,6 +9,7 @@ import {
   generateMissingFactorQuestion,
   generateMultiplicationQuestion,
   generatePiQuestion,
+  generateSubtractionQuestion,
 } from '../game-engine/questions/questionGenerator'
 import {
   createMultiplicationFactPool,
@@ -18,7 +19,11 @@ import {
   generateAdditionChoices,
   generateAdditionFactQuestion,
 } from '../game-engine/questions/addition'
-import { makeAdditionFactId } from '../game-engine/questions/factIds'
+import {
+  generateSubtractionChoices,
+  hasCascadingBorrow,
+} from '../game-engine/questions/subtraction'
+import { makeAdditionFactId, makeSubtractionFactId } from '../game-engine/questions/factIds'
 import {
   applyAnswerToScore,
   calculateSpeedBonus,
@@ -54,7 +59,7 @@ import {
 } from '../game-engine/review/weakFacts'
 import { generateDailyMissions } from '../game-engine/missions/missions'
 import { formatKukuReading, kukuReadings } from '../data/kukuReadings'
-import { additionAreas, planets } from '../data/planets'
+import { additionAreas, planets, subtractionAreas } from '../data/planets'
 import { danPalette, getDanSpriteColors } from '../data/danPalette'
 import {
   getLevelIconUnlocksBetween,
@@ -73,16 +78,24 @@ import {
   bossDifficulties,
   bosses,
   bossLimitedItems,
+  subtractionLegendTitle,
+  subtractionMasterTitle,
 } from '../data/bosses'
 import {
   additionMonsterDefinitions,
   additionAreaCorrectKey,
   isAdditionMonsterOwned,
 } from '../data/additionMonsters'
+import {
+  isSubtractionMonsterOwned,
+  subtractionAreaCorrectKey,
+  subtractionMonsterDefinitions,
+} from '../data/subtractionMonsters'
 import { buddyDefinitions, shopBuddyDefinitions } from '../data/buddies'
 import { canKeyOpenChest, keyTypes, treasureChestTypes } from '../data/keys'
 import { rocketBadges } from '../data/rocketBadges'
 import { additionRocketDifficulties } from '../data/additionRocket'
+import { subtractionRocketDifficulties } from '../data/subtractionRocket'
 import { playerIcons } from '../data/playerIcons'
 import {
   equipShopItem,
@@ -98,6 +111,8 @@ import {
   phase15EffectItemIds,
   rainbowAuraEffectId,
   shopEffectItemIds,
+  subMinusFlashEffectId,
+  subScatterLightEffectId,
   suitShopItems,
   shopItems,
   treasureEffectItemIds,
@@ -110,6 +125,9 @@ import {
   additionSunriseUfoId,
   getUfoForBoss,
   specialUfoId,
+  subtractionMinusRingUfoId,
+  subtractionSplitUfoId,
+  subtractionSunsetUfoId,
   ufoDefinitions,
 } from '../data/ufos'
 import { containsBannedWord, validateShipName } from '../utils/bannedWords'
@@ -182,6 +200,7 @@ import {
   rewardScaleForFact,
   selectAdaptiveAdditionFact,
   selectAdaptiveMultiplicationFact,
+  selectAdaptiveSubtractionFact,
 } from '../game-engine/school/schoolMode2'
 import { createDefaultSaveData, migrateSaveData } from '../storage/saveData'
 import { applySessionResult } from '../services/resultService'
@@ -411,11 +430,13 @@ describe('question generation', () => {
     expect(samples.every((question) => !/×\s*[1-9][0-9]/.test(question.prompt))).toBe(true)
   })
 
-  it('orders planets by school progression and defines a live addition planet with six areas', () => {
+  it('orders planets by school progression and defines live operation planets with six areas', () => {
     const multiplyPlanet = planets.find((planet) => planet.id === 'multiply')
     const additionPlanet = planets.find((planet) => planet.id === 'add')
+    const subtractionPlanet = planets.find((planet) => planet.id === 'subtract')
     expect(planets.map((planet) => planet.id)).toEqual(['add', 'subtract', 'multiply'])
     expect(additionPlanet?.status).toBe('live')
+    expect(subtractionPlanet?.status).toBe('live')
     expect(additionPlanet?.areas.map((area) => area.name)).toEqual([
       '1〜9のたしざん',
       '10までのたしざん',
@@ -424,7 +445,16 @@ describe('question generation', () => {
       '2けたのたしざん（くりあがり）',
       'おおきいかずのたしざん',
     ])
+    expect(subtractionPlanet?.areas.map((area) => area.name)).toEqual([
+      '1〜9のひきざん',
+      '10からのひきざん',
+      'くりさがりのひきざん',
+      '2けたのひきざん',
+      '2けたのひきざん（くりさがり）',
+      'おおきいかずのひきざん',
+    ])
     expect(additionPlanet?.theme.primary).not.toBe(multiplyPlanet?.theme.primary)
+    expect(subtractionPlanet?.theme.motif).toBe('ゆうやけのくれーたー')
     expect(additionAreas.map((area) => area.generator.operation)).toEqual([
       'addition',
       'addition',
@@ -432,6 +462,14 @@ describe('question generation', () => {
       'addition',
       'addition',
       'addition',
+    ])
+    expect(subtractionAreas.map((area) => area.generator.operation)).toEqual([
+      'subtraction',
+      'subtraction',
+      'subtraction',
+      'subtraction',
+      'subtraction',
+      'subtraction',
     ])
   })
 
@@ -503,6 +541,76 @@ describe('question generation', () => {
     const question = generateAdditionFactQuestion('add-two-digit-carry', 27, 58, createSeededRandom(58))
     expect(question.id).toBe(makeAdditionFactId('add-two-digit-carry', 27, 58))
     expect(question.choices).toContain(85)
+  })
+
+  it('generates subtraction questions that match all six area rules and stay positive', () => {
+    const samples = Object.fromEntries(
+      subtractionAreas.map((area, areaIndex) => [
+        area.id,
+        Array.from({ length: 45 }, (_, sampleIndex) =>
+          generateSubtractionQuestion(area.id, {
+            rng: createSeededRandom(7000 + areaIndex * 100 + sampleIndex),
+          }),
+        ),
+      ]),
+    )
+
+    const isPositive = (question: ReturnType<typeof generateSubtractionQuestion>) =>
+      Number(question.metadata?.left) - Number(question.metadata?.right) >= 1
+
+    expect(Object.values(samples).flat().every(isPositive)).toBe(true)
+    expect(samples['sub-within-9'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 2 && left <= 9 && right >= 1 && right < left
+    })).toBe(true)
+    expect(samples['sub-within-10'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 2 && left <= 10 && right >= 1 && right < left
+    })).toBe(true)
+    expect(samples['sub-borrow-basic'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 11 && left <= 18 && right >= 1 && right <= 9 && left % 10 < right
+    })).toBe(true)
+    expect(samples['sub-two-digit-no-borrow'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return (
+        left >= 10 &&
+        left <= 99 &&
+        right >= 10 &&
+        right <= 99 &&
+        left > right &&
+        left % 10 >= right % 10 &&
+        Math.floor(left / 10) >= Math.floor(right / 10)
+      )
+    })).toBe(true)
+    expect(samples['sub-two-digit-borrow'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 10 && left <= 99 && right >= 10 && right <= 99 && left > right && left % 10 < right % 10
+    })).toBe(true)
+    expect(samples['sub-three-digit'].every((question) => {
+      const left = Number(question.metadata?.left)
+      const right = Number(question.metadata?.right)
+      return left >= 100 && left <= 999 && right >= 100 && right <= 999 && left > right
+    })).toBe(true)
+    expect(hasCascadingBorrow(304, 176)).toBe(true)
+  })
+
+  it('generates subtraction choices with borrow mistakes and unique answers', () => {
+    const choices = generateSubtractionChoices(49, 73, 24, createSeededRandom(73))
+    expect(new Set(choices).size).toBe(4)
+    expect(choices).toContain(49)
+    expect(choices.some((choice) => [51, 39, 48, 50].includes(choice))).toBe(true)
+
+    const question = generateSubtractionQuestion('sub-two-digit-borrow', {
+      rng: createSeededRandom(130),
+    })
+    expect(question.id.startsWith('sub:sub-two-digit-borrow:')).toBe(true)
+    expect(question.choices).toContain(question.answer)
   })
 
   it('generates missing-factor questions with consistent answers', () => {
@@ -1283,6 +1391,112 @@ describe('mastery, review, missions, and storage', () => {
     expect(tapered.save.progress.monsterBook).not.toContain(addFactId)
   })
 
+  it('records subtraction progress and grants coins and exp through the existing result flow', () => {
+    const save = createSaveWithPlayer()
+    const question = generateSubtractionQuestion('sub-within-10', {
+      rng: createSeededRandom(510),
+    })
+    const expectedAnswer = Number(question.answer)
+    const summary: GameSessionSummary = {
+      id: 'subtraction-learn',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 12,
+      earnedExp: 24,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: question.id,
+          prompt: question.prompt,
+          expectedAnswer,
+          givenAnswer: expectedAnswer,
+          difficulty: question.difficulty,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const applied = applySessionResult(save, summary)
+    const progress = applied.save.progress.facts[question.id]
+    expect(applied.save.player?.coins).toBe(12)
+    expect(applied.save.player?.exp).toBe(24)
+    expect(progress).toMatchObject({
+      id: question.id,
+      operation: 'subtraction',
+      areaId: 'sub-within-10',
+      correctCount: 1,
+    })
+    expect(applied.save.progress.categoryCorrect['subtraction:sub-within-10']).toBe(1)
+    expect(countCorrectForStages(applied.save, [4])).toBe(0)
+  })
+
+  it('applies school reward tapering to mastered subtraction facts', () => {
+    const save = createSaveWithPlayer()
+    const subFactId = makeSubtractionFactId('sub-within-10', 9, 4)
+    const masteredSubtraction = {
+      ...createFactProgress(9, 4, {
+        id: subFactId,
+        operation: 'subtraction',
+        areaId: 'sub-within-10',
+      }),
+      correctCount: 7,
+      consecutiveCorrect: 4,
+      averageResponseTimeMs: 1800,
+      masteryLevel: 5 as const,
+    }
+    const summary: GameSessionSummary = {
+      id: 'subtraction-tapered',
+      mode: 'learn',
+      totalQuestions: 1,
+      correctCount: 1,
+      accuracy: 100,
+      averageResponseTimeMs: 1000,
+      maxCombo: 1,
+      score: 100,
+      earnedCoins: 10,
+      earnedExp: 30,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: subFactId,
+          prompt: '9 - 4',
+          expectedAnswer: 5,
+          givenAnswer: 5,
+          difficulty: 1,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const tapered = applySessionResult(
+      {
+        ...save,
+        progress: {
+          ...save.progress,
+          facts: {
+            [subFactId]: masteredSubtraction,
+          },
+        },
+      },
+      summary,
+    )
+    expect(tapered.summary.earnedCoins).toBe(2)
+    expect(tapered.summary.earnedExp).toBe(6)
+    expect(tapered.summary.details?.schoolRewardScalePercent).toBe(20)
+    expect(tapered.save.progress.monsterBook).not.toContain(subFactId)
+  })
+
   it('keeps full practice rewards when school mode 2 is off', () => {
     const mastered = {
       ...createFactProgress(2, 2),
@@ -1429,6 +1643,69 @@ describe('mastery, review, missions, and storage', () => {
       rng: () => 0,
     })
     expect(selected.areaId).toBe('add-carry-basic')
+    expect(selected.difficulty).toBeLessThanOrEqual(2)
+  })
+
+  it('keeps subtraction weak facts distinct and adapts within subtraction areas', () => {
+    const save = createSaveWithPlayer()
+    const subFactId = makeSubtractionFactId('sub-borrow-basic', 13, 8)
+    const summary: GameSessionSummary = {
+      id: 'subtraction-weak',
+      mode: 'learn',
+      totalQuestions: 2,
+      correctCount: 0,
+      accuracy: 0,
+      averageResponseTimeMs: 2500,
+      maxCombo: 0,
+      score: 0,
+      earnedCoins: 0,
+      earnedExp: 4,
+      newTitles: [],
+      bestUpdated: false,
+      weakFacts: [],
+      masteredFacts: [],
+      results: [
+        result({
+          questionId: subFactId,
+          prompt: '13 - 8',
+          expectedAnswer: 5,
+          givenAnswer: 6,
+          correct: false,
+          difficulty: 3,
+        }),
+        result({
+          questionId: '8x7',
+          prompt: '8 × 7',
+          expectedAnswer: 56,
+          givenAnswer: 54,
+          correct: false,
+          difficulty: 5,
+        }),
+      ],
+      finishedAt: '2026-01-01T00:00:00.000Z',
+    }
+
+    const applied = applySessionResult(save, summary)
+    expect(applied.save.progress.facts[subFactId]).toMatchObject({
+      operation: 'subtraction',
+      areaId: 'sub-borrow-basic',
+      incorrectCount: 1,
+    })
+    expect(applied.save.progress.facts['8x7']).toMatchObject({
+      operation: 'multiplication',
+      incorrectCount: 1,
+    })
+    expect(getWeakFacts(applied.save.progress.facts, 5).map((fact) => fact.id)).toEqual(
+      expect.arrayContaining([subFactId, '8x7']),
+    )
+
+    const selected = selectAdaptiveSubtractionFact({
+      facts: applied.save.progress.facts,
+      areaId: 'sub-borrow-basic',
+      recentIncorrectCount: 2,
+      rng: () => 0,
+    })
+    expect(selected.areaId).toBe('sub-borrow-basic')
     expect(selected.difficulty).toBeLessThanOrEqual(2)
   })
 
@@ -1749,7 +2026,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(coreShopItems).toHaveLength(20)
     expect(suitShopItems).toHaveLength(5)
     expect(shopBuddyDefinitions).toHaveLength(11)
-    expect(shopItems).toHaveLength(41)
+    expect(shopItems).toHaveLength(43)
     const prices = coreShopItems.map((item) => item.price)
     expect(prices.at(0)).toBe(50)
     expect(prices.at(-1)).toBe(10000)
@@ -1760,16 +2037,19 @@ describe('mastery, review, missions, and storage', () => {
     expect(suitShopItems.map((item) => item.price)).toEqual([200, 250, 300, 350, 400])
     expect(suitShopItems.every((item) => item.kind === 'suit' && getShopItemTier(item) === 1)).toBe(true)
     expect(shopBuddyDefinitions.every((buddy) => buddy.source === 'shop')).toBe(true)
-    expect(phase15EffectItemIds).toHaveLength(8)
-    expect(shopEffectItemIds).toHaveLength(5)
+    expect(phase15EffectItemIds).toHaveLength(10)
+    expect(shopEffectItemIds).toHaveLength(6)
     expect(treasureEffectItemIds).toEqual([rainbowAuraEffectId])
-    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(8)
+    expect(shopItems.filter((item) => item.kind === 'effect')).toHaveLength(10)
     expect(
       shopEffectItemIds.map((itemId) => shopItems.find((item) => item.id === itemId)?.price),
-    ).toEqual([300, 350, 400, 350, 500])
+    ).toEqual([300, 350, 400, 350, 500, 500])
     expect(shopItems.find((item) => item.id === rainbowAuraEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === galaxySwirlEffectId)?.availableInShop).toBe(false)
     expect(shopItems.find((item) => item.id === addPlusBurstEffectId)?.availableInShop).toBe(false)
+    expect(shopItems.find((item) => item.id === subScatterLightEffectId)?.rewardOrigin).toBeUndefined()
+    expect(shopItems.find((item) => item.id === subMinusFlashEffectId)?.rewardOrigin).toBe('sub')
+    expect(shopItems.find((item) => item.id === subMinusFlashEffectId)?.availableInShop).toBe(false)
   })
 
   it('maps equipped shop items to home ship visual layers', () => {
@@ -1940,6 +2220,16 @@ describe('mastery, review, missions, and storage', () => {
     expect(addTabs.find((tab) => tab.id === 'buddy')?.entries).toHaveLength(18)
     expect(addTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === addPlusBurstEffectId)?.origin).toBe('add')
     expect(addTabs.find((tab) => tab.id === 'title')?.entries.some((entry) => entry.origin === 'add')).toBe(true)
+    const subTabs = buildCustomInventory(save, 'subtract')
+    expect(subTabs.find((tab) => tab.id === 'ufo')?.entries.map((entry) => entry.id)).toEqual([
+      subtractionMinusRingUfoId,
+      subtractionSplitUfoId,
+      subtractionSunsetUfoId,
+    ])
+    expect(subTabs.find((tab) => tab.id === 'buddy')?.entries).toHaveLength(18)
+    expect(subTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === subMinusFlashEffectId)?.origin).toBe('sub')
+    expect(subTabs.find((tab) => tab.id === 'effect')?.entries.some((entry) => entry.id === subScatterLightEffectId)).toBe(false)
+    expect(subTabs.find((tab) => tab.id === 'title')?.entries.some((entry) => entry.origin === 'sub')).toBe(true)
     expect(getHomeShipPreviewVisuals(save.progress.equippedItems).window).toBe('planet-view')
   })
 
@@ -1948,6 +2238,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(customRewardOrigins).toEqual([
       'all',
       'add',
+      'sub',
       'subtract',
       'multiply',
       'divide',
@@ -1957,6 +2248,7 @@ describe('mastery, review, missions, and storage', () => {
     expect(matchesCustomStarFilter('divide', 'all')).toBe(true)
     expect(matchesCustomStarFilter('divide', 'multiply')).toBe(false)
     expect(matchesCustomStarFilter('multiply', 'multiply')).toBe(true)
+    expect(matchesCustomStarFilter('sub', 'subtract')).toBe(true)
   })
 
   it('unlocks level icons every five levels without changing save data', () => {
@@ -2037,13 +2329,29 @@ describe('mastery, review, missions, and storage', () => {
       ),
     ).toBe(true)
     expect(
+      subtractionMonsterDefinitions.every((monster) =>
+        isSubtractionMonsterOwned(fullOpen.progress.categoryCorrect, monster),
+      ),
+    ).toBe(true)
+    expect(
       [additionPlusRingUfoId, additionDoubleDomeUfoId, additionSunriseUfoId].every((ufoId) =>
         fullOpen.progress.ownedUfos.includes(ufoId),
       ),
     ).toBe(true)
+    expect(
+      [subtractionMinusRingUfoId, subtractionSplitUfoId, subtractionSunsetUfoId].every((ufoId) =>
+        fullOpen.progress.ownedUfos.includes(ufoId),
+      ),
+    ).toBe(true)
     expect(fullOpen.progress.ownedItems).toContain(addPlusBurstEffectId)
+    expect(fullOpen.progress.ownedItems).toContain(subMinusFlashEffectId)
     expect(
       additionRocketDifficulties.every((difficulty) =>
+        fullOpen.player?.titles.includes(difficulty.title),
+      ),
+    ).toBe(true)
+    expect(
+      subtractionRocketDifficulties.every((difficulty) =>
         fullOpen.player?.titles.includes(difficulty.title),
       ),
     ).toBe(true)
@@ -2467,6 +2775,64 @@ describe('mastery, review, missions, and storage', () => {
     expect(save.progress.ownedItems).not.toContain(galaxySwirlEffectId)
   })
 
+  it('defines subtraction monsters and counts them in the book', () => {
+    expect(subtractionMonsterDefinitions).toHaveLength(18)
+    expect(subtractionMonsterDefinitions.every((monster) => monster.origin === 'sub')).toBe(true)
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [subtractionAreaCorrectKey('sub-within-9')]: 20,
+    }
+    expect(subtractionMonsterDefinitions.filter((monster) => isSubtractionMonsterOwned(save.progress.categoryCorrect, monster))).toHaveLength(3)
+    const progress = calculateBookProgress(save)
+    expect(progress.tabs.monsters.total).toBeGreaterThan(additionMonsterDefinitions.length)
+  })
+
+  it('grants subtraction boss UFOs, effects, and titles with sub origin custom entries', () => {
+    const subBorrowBoss = bosses.find((boss) => boss.id === 'boss-sub-borrow-basic')
+    const subEffectBoss = bosses.find((boss) => boss.id === 'boss-sub-two-digit-no-borrow')
+    expect(subBorrowBoss).toBeDefined()
+    expect(subEffectBoss).toBeDefined()
+    const save = createSaveWithPlayer()
+    save.progress.categoryCorrect = {
+      [subtractionAreaCorrectKey('sub-borrow-basic')]: 20,
+      [subtractionAreaCorrectKey('sub-two-digit-no-borrow')]: 20,
+    }
+
+    const borrowClear = applyBossClearReward(save, subBorrowBoss!.id, 'normal', 9000)
+    expect(borrowClear.rewardUfoIds).toEqual([subtractionMinusRingUfoId])
+    expect(borrowClear.rewardTitles).toContain(subBorrowBoss!.rewards.normal.title)
+    expect(borrowClear.save.progress.ownedUfos).toContain(subtractionMinusRingUfoId)
+
+    const effectClear = applyBossClearReward(borrowClear.save, subEffectBoss!.id, 'normal', 9000)
+    expect(effectClear.rewardEffectIds).toEqual([subMinusFlashEffectId])
+    expect(effectClear.save.progress.ownedItems).toContain(subMinusFlashEffectId)
+    expect(effectClear.save.progress.collectionRecords).toContainEqual(
+      expect.objectContaining({ id: collectionRecordId('effect', subMinusFlashEffectId) }),
+    )
+
+    const subTabs = buildCustomInventory(effectClear.save, 'subtract')
+    expect(subTabs.find((tab) => tab.id === 'ufo')?.entries.find((entry) => entry.id === subtractionMinusRingUfoId)?.owned).toBe(true)
+    expect(subTabs.find((tab) => tab.id === 'effect')?.entries.find((entry) => entry.id === subMinusFlashEffectId)?.owned).toBe(true)
+  })
+
+  it('grants subtraction master and legend titles separately from legacy all-gekimuzu rewards', () => {
+    const subtractionBosses = bosses.filter((boss) => boss.group === 'subtraction')
+    expect(subtractionBosses).toHaveLength(6)
+    let save: SaveData = createSaveWithPlayer()
+    for (const boss of subtractionBosses) {
+      save = applyBossClearReward(save, boss.id, 'normal', 8000).save
+    }
+    expect(save.player?.titles).toContain(subtractionMasterTitle)
+    for (const boss of subtractionBosses) {
+      save = applyBossClearReward(save, boss.id, 'hard', 8000).save
+      save = applyBossClearReward(save, boss.id, 'fast', 8000).save
+      save = applyBossClearReward(save, boss.id, 'gekimuzu', 8000).save
+    }
+    expect(save.player?.titles).toContain(subtractionLegendTitle)
+    expect(save.progress.ownedUfos).not.toContain(specialUfoId)
+    expect(save.progress.ownedItems).not.toContain(galaxySwirlEffectId)
+  })
+
   it('generates addition questions in speed and play helpers', () => {
     const speedQuestion = createSpeedQuestion({
       planet: 'add',
@@ -2476,6 +2842,19 @@ describe('mastery, review, missions, and storage', () => {
     const playQuestion = createMiniQuestion({ planet: 'add' })
     expect(playQuestion.id.startsWith('add:')).toBe(true)
     expect(playQuestion.category.startsWith('addition-')).toBe(true)
+  })
+
+  it('generates subtraction questions in speed and play helpers', () => {
+    const speedQuestion = createSpeedQuestion({
+      planet: 'subtract',
+      selectedAreas: ['sub-within-9'],
+    })
+    expect(speedQuestion.id.startsWith('sub:sub-within-9:')).toBe(true)
+    expect(Number(speedQuestion.answer)).toBeGreaterThanOrEqual(1)
+    const playQuestion = createMiniQuestion({ planet: 'subtract' })
+    expect(playQuestion.id.startsWith('sub:')).toBe(true)
+    expect(playQuestion.category.startsWith('subtraction-')).toBe(true)
+    expect(Number(playQuestion.answer)).toBeGreaterThanOrEqual(1)
   })
 
   it('splits addition rocket questions into three difficulty ranges', () => {
@@ -2529,6 +2908,60 @@ describe('mastery, review, missions, and storage', () => {
     }
   })
 
+  it('splits subtraction rocket questions into three difficulty ranges and titles', () => {
+    const easyQuestion = createMiniQuestion({
+      planet: 'subtract',
+      subtractionRocketDifficulty: 'easy',
+      rng: () => 0.99,
+    })
+    expect(Number(easyQuestion.metadata?.left)).toBeLessThanOrEqual(18)
+    expect(Number(easyQuestion.metadata?.right)).toBeLessThanOrEqual(9)
+    expect(Number(easyQuestion.answer)).toBeGreaterThanOrEqual(1)
+
+    const normalQuestion = createMiniQuestion({
+      planet: 'subtract',
+      subtractionRocketDifficulty: 'normal',
+      rng: () => 0.99,
+    })
+    expect(Number(normalQuestion.metadata?.left)).toBeLessThanOrEqual(99)
+    expect(Number(normalQuestion.metadata?.right)).toBeLessThanOrEqual(99)
+    expect(Number(normalQuestion.answer)).toBeGreaterThanOrEqual(1)
+
+    const hardQuestion = createMiniQuestion({
+      planet: 'subtract',
+      subtractionRocketDifficulty: 'hard',
+      rng: () => 0.99,
+    })
+    expect(Number(hardQuestion.metadata?.left)).toBeGreaterThanOrEqual(100)
+    expect(Number(hardQuestion.metadata?.right)).toBeGreaterThanOrEqual(100)
+    expect(Number(hardQuestion.answer)).toBeGreaterThanOrEqual(1)
+    expect(subtractionRocketDifficulties.map((difficulty) => difficulty.title)).toEqual([
+      'ひきざんろけっとびぎなー',
+      'ひきざんろけっとぱいろっと',
+      'ひきざんろけっときゃぷてん',
+    ])
+    for (const difficulty of subtractionRocketDifficulties) {
+      const rawSummary = buildSessionSummary({
+        id: `sub-rocket-${difficulty.id}`,
+        mode: 'rocket',
+        maxCombo: 14,
+        score: 100,
+        results: Array.from({ length: 14 }, () =>
+          result({ questionId: 'sub:sub-within-9:5-2', prompt: '5 - 2', expectedAnswer: 3 }),
+        ),
+        finishedAt: '2026-01-05T00:00:00.000Z',
+      })
+      const summary: GameSessionSummary = {
+        ...rawSummary,
+        details: {
+          planet: 'subtract',
+          subtractionRocketDifficulty: difficulty.id,
+        },
+      }
+      expect(judgeNewTitles(summary, createSaveWithPlayer())).toContain(difficulty.title)
+    }
+  })
+
   it('caps level icon previews in settings CSS', () => {
     expect(globalCss).toContain('.settings-level-icon')
     expect(globalCss).toContain('max-width: 80px')
@@ -2536,7 +2969,7 @@ describe('mastery, review, missions, and storage', () => {
   })
 
   it('grants the all-gekimuzu reward once when the final boss clears', () => {
-    const legacyBosses = bosses.filter((boss) => boss.group !== 'addition')
+    const legacyBosses = bosses.filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction')
     const finalBoss = legacyBosses[legacyBosses.length - 1]
     let save: SaveData = createSaveWithPlayer()
     for (const boss of legacyBosses.slice(0, -1)) {

@@ -1,4 +1,9 @@
 import { buddyDefinitions, getBuddyById } from '../../data/buddies'
+import { getAdditionMonsterById, isAdditionMonsterOwned } from '../../data/additionMonsters'
+import {
+  getSubtractionMonsterById,
+  isSubtractionMonsterOwned,
+} from '../../data/subtractionMonsters'
 import type { SaveData } from '../../types/save'
 import { collectionRecordId, getCollectionRecord } from './collectionRecords'
 
@@ -49,6 +54,20 @@ export function parseDedicatedBuddySelectionId(
   return match?.[1] ?? null
 }
 
+export function parseAdditionMonsterBuddySelectionId(
+  selectionId: string | null | undefined,
+): string | null {
+  const match = selectionId?.match(/^addition-monster:(.+)$/)
+  return match?.[1] ?? null
+}
+
+export function parseSubtractionMonsterBuddySelectionId(
+  selectionId: string | null | undefined,
+): string | null {
+  const match = selectionId?.match(/^subtraction-monster:(.+)$/)
+  return match?.[1] ?? null
+}
+
 export function isDedicatedBuddyOwned(save: SaveData, buddyId: string): boolean {
   return Boolean(getCollectionRecord(save.progress.collectionRecords, 'buddy', buddyId))
 }
@@ -60,6 +79,20 @@ export function isBuddySelectionOwned(save: SaveData, selectionId: string | null
   const monster = parseMonsterBuddySelectionId(selectionId)
   if (monster) {
     return save.progress.monsterBook.includes(`${monster.left}x${monster.right}`)
+  }
+  const additionMonsterId = parseAdditionMonsterBuddySelectionId(selectionId)
+  if (additionMonsterId) {
+    const monsterDefinition = getAdditionMonsterById(additionMonsterId)
+    return monsterDefinition
+      ? isAdditionMonsterOwned(save.progress.categoryCorrect, monsterDefinition)
+      : false
+  }
+  const subtractionMonsterId = parseSubtractionMonsterBuddySelectionId(selectionId)
+  if (subtractionMonsterId) {
+    const monsterDefinition = getSubtractionMonsterById(subtractionMonsterId)
+    return monsterDefinition
+      ? isSubtractionMonsterOwned(save.progress.categoryCorrect, monsterDefinition)
+      : false
   }
   const buddyId = parseDedicatedBuddySelectionId(selectionId)
   return buddyId ? isDedicatedBuddyOwned(save, buddyId) : false

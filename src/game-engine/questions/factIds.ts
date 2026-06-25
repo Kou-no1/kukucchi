@@ -20,6 +20,10 @@ export function makeAdditionFactId(areaId: string, left: number, right: number):
   return `add:${areaId}:${left}+${right}`
 }
 
+export function makeSubtractionFactId(areaId: string, left: number, right: number): string {
+  return `sub:${areaId}:${left}-${right}`
+}
+
 export function parseFactId(id: string): ParsedFactId | null {
   const additionMatch = id.match(/^add:([a-z0-9-]+):(\d+)\+(\d+)$/)
   if (additionMatch) {
@@ -29,6 +33,17 @@ export function parseFactId(id: string): ParsedFactId | null {
       areaId: additionMatch[1],
       left: Number(additionMatch[2]),
       right: Number(additionMatch[3]),
+    }
+  }
+
+  const subtractionMatch = id.match(/^sub:([a-z0-9-]+):(\d+)-(\d+)$/)
+  if (subtractionMatch) {
+    return {
+      id,
+      operation: 'subtraction',
+      areaId: subtractionMatch[1],
+      left: Number(subtractionMatch[2]),
+      right: Number(subtractionMatch[3]),
     }
   }
 
@@ -65,6 +80,10 @@ export function isAdditionFactId(id: string): boolean {
   return parseFactId(id)?.operation === 'addition'
 }
 
+export function isSubtractionFactId(id: string): boolean {
+  return parseFactId(id)?.operation === 'subtraction'
+}
+
 export function isMultiplicationFactProgress(fact: MultiplicationFactProgress): boolean {
   return factOperationOf(fact) === 'multiplication'
 }
@@ -73,9 +92,17 @@ export function isAdditionFactProgress(fact: MultiplicationFactProgress): boolea
   return factOperationOf(fact) === 'addition'
 }
 
+export function isSubtractionFactProgress(fact: MultiplicationFactProgress): boolean {
+  return factOperationOf(fact) === 'subtraction'
+}
+
 export function formatFactLabel(fact: MultiplicationFactProgress | ParsedFactId): string {
   const operation = 'operation' in fact ? fact.operation : parseFactId(fact.id)?.operation
-  return operation === 'addition'
-    ? `${fact.left} + ${fact.right}`
-    : `${fact.left} × ${fact.right}`
+  if (operation === 'addition') {
+    return `${fact.left} + ${fact.right}`
+  }
+  if (operation === 'subtraction') {
+    return `${fact.left} - ${fact.right}`
+  }
+  return `${fact.left} × ${fact.right}`
 }

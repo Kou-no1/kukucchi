@@ -2,8 +2,9 @@ import type { CSSProperties, ReactNode } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { AppShell } from '../../components/common/AppShell'
 import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
+import { SubtractionBossSprite } from '../../components/collection/SubtractionBossSprite'
 import { bosses } from '../../data/bosses'
-import { additionAreas, getPlanetById, type PlanetId } from '../../data/planets'
+import { additionAreas, getPlanetById, subtractionAreas, type PlanetId } from '../../data/planets'
 import {
   getClearedStars,
   isBossUnlocked,
@@ -118,6 +119,43 @@ const additionModes: PlanetMode[] = [
   },
 ]
 
+const subtractionModes: PlanetMode[] = [
+  {
+    label: 'おぼえる',
+    href: '/learn?planet=subtract',
+    ready: true,
+    icon: '-',
+    badge: '01',
+    subtitle: '6えりあをれんしゅう',
+  },
+  {
+    label: 'あそぶ',
+    href: '/rocket?planet=subtract',
+    ready: true,
+    icon: 'VS',
+    badge: '02',
+    subtitle: 'ひきざんろけっと',
+  },
+  {
+    label: 'すぴーど',
+    href: '/speed?planet=subtract',
+    ready: true,
+    icon: '30',
+    badge: '03',
+    subtitle: 'ひきざんたいむ',
+  },
+]
+
+function modesForPlanet(planetId: PlanetId): PlanetMode[] {
+  if (planetId === 'add') {
+    return additionModes
+  }
+  if (planetId === 'subtract') {
+    return subtractionModes
+  }
+  return multiplyModes
+}
+
 function isPlanetId(value: string | undefined): value is PlanetId {
   return planetIds.some((id) => id === value)
 }
@@ -176,8 +214,10 @@ export function PlanetMenuPage() {
     '--planet-surface': planet.theme.surface,
     '--planet-text': planet.theme.text,
   } as CSSProperties
-  const modes = planet.id === 'add' ? additionModes : multiplyModes
+  const modes = modesForPlanet(planet.id)
   const additionBosses = bosses.filter((boss) => boss.group === 'addition')
+  const subtractionBosses = bosses.filter((boss) => boss.group === 'subtraction')
+  const lowGradePlanet = planet.id === 'add' || planet.id === 'subtract'
 
   return (
     <AppShell title={planet.shortName} backTo="/home" className="planet-menu-shell">
@@ -186,7 +226,7 @@ export function PlanetMenuPage() {
           {planetSymbol(planet.id)}
         </span>
         <div className="planet-menu-copy">
-          <p className="welcome">{planet.id === 'add' ? 'ほしのめにゅー' : 'ほしのメニュー'}</p>
+          <p className="welcome">{lowGradePlanet ? 'ほしのめにゅー' : 'ほしのメニュー'}</p>
           <h2 id="planet-menu-title">{planet.name}</h2>
           <p className="title-line">
             {planet.status === 'live'
@@ -247,6 +287,64 @@ export function PlanetMenuPage() {
                         to={`/boss/${boss.id}`}
                       >
                         <AdditionBossSprite
+                          boss={boss}
+                          locked={!unlocked}
+                          compact
+                          className="planet-boss-chip-sprite"
+                        />
+                        <strong>{unlocked ? boss.label : '？？？'}</strong>
+                        <span>
+                          {'★'.repeat(getClearedStars(saveData, boss.id)) ||
+                            (remaining !== null ? `あと${remaining}もん` : boss.shortLabel)}
+                        </span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </section>
+            </>
+          ) : null}
+
+          {planet.id === 'subtract' ? (
+            <>
+              <section className="planet-area-list" aria-labelledby="subtraction-area-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">ひきざん</p>
+                    <h2 id="subtraction-area-menu-title">えりあれんしゅう</h2>
+                  </div>
+                </div>
+                <div className="stage-chip-grid addition-area-grid">
+                  {subtractionAreas.map((area) => (
+                    <Link
+                      className="stage-chip addition-area-chip"
+                      key={area.id}
+                      to={`/learn?planet=subtract&area=${area.id}`}
+                    >
+                      <strong>{area.name}</strong>
+                      <span>{area.description}</span>
+                    </Link>
+                  ))}
+                </div>
+              </section>
+              <section className="planet-area-list addition-boss-list" aria-labelledby="subtraction-boss-menu-title">
+                <div className="section-heading-row">
+                  <div>
+                    <p className="welcome">B3</p>
+                    <h2 id="subtraction-boss-menu-title">ひきざんぼす</h2>
+                  </div>
+                </div>
+                <div className="stage-chip-grid addition-area-grid">
+                  {subtractionBosses.map((boss) => {
+                    const unlocked = isBossUnlocked(boss, saveData)
+                    const remaining = remainingQuestionsToUnlockBoss(boss, saveData)
+                    return (
+                      <Link
+                        className={unlocked ? 'stage-chip addition-area-chip' : 'stage-chip addition-area-chip locked'}
+                        key={boss.id}
+                        to={`/boss/${boss.id}`}
+                      >
+                        <SubtractionBossSprite
                           boss={boss}
                           locked={!unlocked}
                           compact

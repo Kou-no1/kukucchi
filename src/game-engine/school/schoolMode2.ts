@@ -1,7 +1,9 @@
 import type { AnswerResult, GameMode, GameSessionSummary, MultiplicationFactProgress } from '../../types/game'
-import type { AdditionAreaId } from '../../data/planets'
+import type { AdditionAreaId, SubtractionAreaId } from '../../data/planets'
 import type { AdditionFactPair } from '../questions/addition'
 import { createAdditionFactPool } from '../questions/addition'
+import type { SubtractionFactPair } from '../questions/subtraction'
+import { createSubtractionFactPool } from '../questions/subtraction'
 import type { MultiplicationFactPair } from '../questions/factDifficulty'
 import { createMultiplicationFactPool } from '../questions/factDifficulty'
 import {
@@ -9,6 +11,7 @@ import {
   factIdFromResult,
   makeAdditionFactId,
   makeMultiplicationFactId,
+  makeSubtractionFactId,
   parseFactId,
 } from '../questions/factIds'
 import type { RandomSource } from '../questions/questionGenerator'
@@ -121,7 +124,7 @@ function recentIncorrectStreakOf(fact: MultiplicationFactProgress | undefined): 
 }
 
 function adaptiveWeight(
-  pair: MultiplicationFactPair | AdditionFactPair,
+  pair: MultiplicationFactPair | AdditionFactPair | SubtractionFactPair,
   fact: MultiplicationFactProgress | undefined,
   recentIncorrectCount: number,
 ): number {
@@ -206,10 +209,60 @@ export function selectAdaptiveAdditionFact({
     }
   }
 
-  const pool = [...poolById.values()]
+  const rawPool = [...poolById.values()]
+  const easierPool = rawPool.filter((pair) => pair.difficulty <= 2)
+  const pool = recentIncorrectCount >= 2 && easierPool.length > 0 ? easierPool : rawPool
   const weighted = pool.map((pair) => ({
     pair,
     weight: adaptiveWeight(pair, facts[makeAdditionFactId(areaId, pair.left, pair.right)], recentIncorrectCount),
+  }))
+  const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
+  if (totalWeight <= 0) {
+    return pool[0]
+  }
+  let cursor = rng() * totalWeight
+  for (const item of weighted) {
+    cursor -= item.weight
+    if (cursor <= 0) {
+      return item.pair
+    }
+  }
+  return weighted.at(-1)?.pair ?? pool[0]
+}
+
+export function selectAdaptiveSubtractionFact({
+  facts,
+  areaId,
+  rng = Math.random,
+  recentIncorrectCount = 0,
+}: {
+  facts: Record<string, MultiplicationFactProgress>
+  areaId: SubtractionAreaId
+  rng?: RandomSource
+  recentIncorrectCount?: number
+}): SubtractionFactPair {
+  const poolById = new Map<string, SubtractionFactPair>()
+  for (const pair of createSubtractionFactPool({ areaId })) {
+    poolById.set(makeSubtractionFactId(areaId, pair.left, pair.right), pair)
+  }
+  for (const fact of Object.values(facts)) {
+    const parsed = parseFactId(fact.id)
+    if (parsed?.operation === 'subtraction' && parsed.areaId === areaId) {
+      poolById.set(parsed.id, {
+        areaId,
+        left: parsed.left,
+        right: parsed.right,
+        difficulty: Math.max(1, Math.min(5, Math.round(fact.masteryLevel || 1))),
+      })
+    }
+  }
+
+  const rawPool = [...poolById.values()]
+  const easierPool = rawPool.filter((pair) => pair.difficulty <= 2)
+  const pool = recentIncorrectCount >= 2 && easierPool.length > 0 ? easierPool : rawPool
+  const weighted = pool.map((pair) => ({
+    pair,
+    weight: adaptiveWeight(pair, facts[makeSubtractionFactId(areaId, pair.left, pair.right)], recentIncorrectCount),
   }))
   const totalWeight = weighted.reduce((sum, item) => sum + item.weight, 0)
   if (totalWeight <= 0) {

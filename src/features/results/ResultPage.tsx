@@ -47,6 +47,17 @@ export function replayPath(mode: GameSessionSummary['mode']): string {
   return '/learn'
 }
 
+function replayPathForSummary(summary: GameSessionSummary): string {
+  const basePath = replayPath(summary.mode)
+  if (summary.details?.planet === 'add') {
+    return `${basePath}?planet=add`
+  }
+  if (summary.details?.planet === 'subtract') {
+    return `${basePath}?planet=subtract`
+  }
+  return basePath
+}
+
 function detailNumber(summary: GameSessionSummary, key: string): number | null {
   const value = summary.details?.[key]
   return typeof value === 'number' ? value : null
@@ -210,7 +221,12 @@ export function ResultPage() {
   const { saveData } = useSaveData()
   const { budgetMinutes, shouldShowNotice } = useDailyUsage()
   const summary = (location.state as { summary?: GameSessionSummary } | null)?.summary
-  const planetMenuPath = summary?.details?.planet === 'add' ? '/planet/add' : '/planet/multiply'
+  const planetMenuPath =
+    summary?.details?.planet === 'add'
+      ? '/planet/add'
+      : summary?.details?.planet === 'subtract'
+        ? '/planet/subtract'
+        : '/planet/multiply'
   const rewardBudgetPaused = summary?.details?.rewardBudgetPaused === true
   const schoolRewardScalePercent = summary ? detailNumber(summary, 'schoolRewardScalePercent') : null
   const [budgetNoticeDismissed, setBudgetNoticeDismissed] = useState(false)
@@ -424,7 +440,7 @@ export function ResultPage() {
       </section>
 
       <section className="action-band">
-        <Link className="primary-action" to={replayPath(summary.mode)}>
+        <Link className="primary-action" to={replayPathForSummary(summary)}>
           もう一回
         </Link>
         <Link className="secondary-action" to={planetMenuPath}>

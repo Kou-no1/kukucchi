@@ -14,6 +14,11 @@ import {
   getAdditionRocketDifficulty,
   type AdditionRocketDifficultyId,
 } from '../../data/additionRocket'
+import {
+  getSubtractionRocketDifficulty,
+  subtractionRocketDifficulties,
+  type SubtractionRocketDifficultyId,
+} from '../../data/subtractionRocket'
 import { miniGameMinDifficulty } from '../../data/factDifficulty'
 import { getKeyTypeById, keyForTreasureStreak, treasureChestTypes } from '../../data/keys'
 import { earnedRocketBadges, rocketBadges } from '../../data/rocketBadges'
@@ -26,6 +31,7 @@ import { averageStageDifficulty } from '../../game-engine/questions/factDifficul
 import {
   generateAdditionQuestion,
   generateMultiplicationQuestion,
+  generateSubtractionQuestion,
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
@@ -96,17 +102,24 @@ export function createMiniQuestion({
   planet = 'multiply',
   stages = allStages,
   additionRocketDifficulty = 'hard',
+  subtractionRocketDifficulty = 'hard',
   rng = Math.random,
 }: {
-  planet?: 'multiply' | 'add'
+  planet?: 'multiply' | 'add' | 'subtract'
   stages?: number[]
   additionRocketDifficulty?: AdditionRocketDifficultyId
+  subtractionRocketDifficulty?: SubtractionRocketDifficultyId
   rng?: () => number
 } = {}): Question {
   if (planet === 'add') {
     const difficulty = getAdditionRocketDifficulty(additionRocketDifficulty)
     const areaId = difficulty.areaIds[Math.floor(rng() * difficulty.areaIds.length)] ?? difficulty.areaIds[0]
     return generateAdditionQuestion(areaId, { rng })
+  }
+  if (planet === 'subtract') {
+    const difficulty = getSubtractionRocketDifficulty(subtractionRocketDifficulty)
+    const areaId = difficulty.areaIds[Math.floor(rng() * difficulty.areaIds.length)] ?? difficulty.areaIds[0]
+    return generateSubtractionQuestion(areaId, { rng })
   }
   return generateMultiplicationQuestion({
     answerMode: 'choice',
@@ -133,15 +146,23 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   const { saveData, setSaveData } = useSaveData()
   const { rewardBudgetReached } = useDailyUsage()
   const isAdditionPlanet = searchParams.get('planet') === 'add'
-  const questionPlanet = isAdditionPlanet ? 'add' : 'multiply'
-  const backTo = isAdditionPlanet ? '/planet/add' : '/planet/multiply'
+  const isSubtractionPlanet = searchParams.get('planet') === 'subtract'
+  const operationPlanet = isAdditionPlanet || isSubtractionPlanet
+  const questionPlanet = isAdditionPlanet ? 'add' : isSubtractionPlanet ? 'subtract' : 'multiply'
+  const backTo = isAdditionPlanet
+    ? '/planet/add'
+    : isSubtractionPlanet
+      ? '/planet/subtract'
+      : '/planet/multiply'
   const config = gameConfig[variant]
   const equippedUfo = getUfoById(saveData.progress.equippedUfoId)
   const [phase, setPhase] = useState<MiniGamePhase>('ready')
   const [additionRocketDifficulty, setAdditionRocketDifficulty] =
     useState<AdditionRocketDifficultyId>('easy')
+  const [subtractionRocketDifficulty, setSubtractionRocketDifficulty] =
+    useState<SubtractionRocketDifficultyId>('easy')
   const [question, setQuestion] = useState<Question>(() =>
-    createMiniQuestion({ planet: questionPlanet, additionRocketDifficulty }),
+    createMiniQuestion({ planet: questionPlanet, additionRocketDifficulty, subtractionRocketDifficulty }),
   )
   const [selectedBattleStages, setSelectedBattleStages] = useState<number[]>([...allStages])
   const [feedback, setFeedback] = useState<'idle' | 'correct' | 'incorrect'>('idle')
@@ -185,7 +206,14 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
 
   function resetRunState() {
     finishedRef.current = false
-    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages, additionRocketDifficulty }))
+    setQuestion(
+      createMiniQuestion({
+        planet: questionPlanet,
+        stages: questionStages,
+        additionRocketDifficulty,
+        subtractionRocketDifficulty,
+      }),
+    )
     setFeedback('idle')
     setResults([])
     setScoreState({ score: 0, combo: 0, maxCombo: 0 })
@@ -208,11 +236,18 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
   }
 
   const nextQuestion = useCallback(() => {
-    setQuestion(createMiniQuestion({ planet: questionPlanet, stages: questionStages, additionRocketDifficulty }))
+    setQuestion(
+      createMiniQuestion({
+        planet: questionPlanet,
+        stages: questionStages,
+        additionRocketDifficulty,
+        subtractionRocketDifficulty,
+      }),
+    )
     setFeedback('idle')
     setTimeLeftMs(battleTimeLimitMs)
     startedAtRef.current = Date.now()
-  }, [additionRocketDifficulty, questionPlanet, questionStages])
+  }, [additionRocketDifficulty, questionPlanet, questionStages, subtractionRocketDifficulty])
 
   const finish = useCallback(
     (
@@ -254,11 +289,14 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
         finishedAt: new Date().toISOString(),
       })
       const details: NonNullable<GameSessionSummary['details']> = {}
-      if (isAdditionPlanet) {
-        details.planet = 'add'
+      if (operationPlanet) {
+        details.planet = isAdditionPlanet ? 'add' : 'subtract'
       }
       if (isAdditionPlanet && variant === 'rocket') {
         details.additionRocketDifficulty = additionRocketDifficulty
+      }
+      if (isSubtractionPlanet && variant === 'rocket') {
+        details.subtractionRocketDifficulty = subtractionRocketDifficulty
       }
       if (variant === 'battle') {
         details.heartsLeft = options.battleHearts ?? hearts
@@ -400,7 +438,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
       setSaveData(nextSave)
       navigate('/result', { state: { summary: nextSummary } })
     },
-    [additionRocketDifficulty, distance, earnedKeyIds, enemyHp, hearts, isAdditionPlanet, keys, navigate, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, variant],
+    [additionRocketDifficulty, distance, earnedKeyIds, enemyHp, hearts, isAdditionPlanet, isSubtractionPlanet, keys, navigate, operationPlanet, results, rewardBudgetReached, saveData, scoreState, setSaveData, specialUses, subtractionRocketDifficulty, variant],
   )
 
   const recordAnswer = useCallback(
@@ -578,7 +616,7 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
           description={config.startDescription}
           level={saveData.player?.level ?? 1}
           backTo={backTo}
-          startLabel={isAdditionPlanet ? 'すたーと！' : undefined}
+          startLabel={operationPlanet ? 'すたーと！' : undefined}
           onStart={startGame}
         >
           {variant === 'battle' ? (
@@ -609,17 +647,33 @@ export function MiniGamePage({ variant }: { variant: MiniGameVariant }) {
               <p className="quiet-text">えらんだだんのモンスターだけが出るよ</p>
             </div>
           ) : null}
-          {isAdditionPlanet && variant === 'rocket' ? (
+          {operationPlanet && variant === 'rocket' ? (
             <div className="duration-select-panel addition-rocket-difficulty-panel" aria-label="むずかしさをえらぶ">
               <strong>むずかしさ</strong>
               <div className="segmented learn-start-segmented">
-                {additionRocketDifficulties.map((difficulty) => (
+                {(isAdditionPlanet ? additionRocketDifficulties : subtractionRocketDifficulties).map((difficulty) => (
                   <button
-                    className={additionRocketDifficulty === difficulty.id ? 'selected' : ''}
+                    className={
+                      (isAdditionPlanet
+                        ? additionRocketDifficulty === difficulty.id
+                        : subtractionRocketDifficulty === difficulty.id)
+                        ? 'selected'
+                        : ''
+                    }
                     key={difficulty.id}
                     type="button"
-                    onClick={() => setAdditionRocketDifficulty(difficulty.id)}
-                    aria-pressed={additionRocketDifficulty === difficulty.id}
+                    onClick={() => {
+                      if (isAdditionPlanet) {
+                        setAdditionRocketDifficulty(difficulty.id as AdditionRocketDifficultyId)
+                      } else {
+                        setSubtractionRocketDifficulty(difficulty.id as SubtractionRocketDifficultyId)
+                      }
+                    }}
+                    aria-pressed={
+                      isAdditionPlanet
+                        ? additionRocketDifficulty === difficulty.id
+                        : subtractionRocketDifficulty === difficulty.id
+                    }
                   >
                     {difficulty.label}
                     <small>{difficulty.description}</small>

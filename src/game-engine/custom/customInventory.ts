@@ -7,6 +7,12 @@ import {
   isAdditionMonsterOwned,
   type AdditionMonsterDefinition,
 } from '../../data/additionMonsters'
+import {
+  isSubtractionMonsterOwned,
+  subtractionCorrectForArea,
+  subtractionMonsterDefinitions,
+  type SubtractionMonsterDefinition,
+} from '../../data/subtractionMonsters'
 import { buddyDefinitions, buddyThemeLabels, type BuddyDefinition } from '../../data/buddies'
 import {
   getEquipmentSlotForKind,
@@ -32,6 +38,7 @@ export type CustomEntryKind =
   | 'ufo'
   | 'monster-buddy'
   | 'addition-monster-buddy'
+  | 'subtraction-monster-buddy'
   | 'dedicated-buddy'
   | 'title'
 
@@ -60,6 +67,7 @@ export type CustomInventoryEntry = {
     right: number
   }
   additionMonster?: AdditionMonsterDefinition
+  subtractionMonster?: SubtractionMonsterDefinition
 }
 
 export type CustomInventoryTab = {
@@ -94,6 +102,7 @@ export const customStarFilterOrder: CustomStarFilter[] = ['all', 'add', 'subtrac
 export const customRewardOrigins: CustomRewardOrigin[] = [
   'all',
   'add',
+  'sub',
   'subtract',
   'multiply',
   'divide',
@@ -105,6 +114,9 @@ export function matchesCustomStarFilter(
   origin: CustomRewardOrigin,
   starFilter: CustomStarFilter,
 ): boolean {
+  if (starFilter === 'subtract') {
+    return origin === 'subtract' || origin === 'sub'
+  }
   return starFilter === 'all' || origin === starFilter
 }
 
@@ -234,6 +246,27 @@ function additionMonsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
   })
 }
 
+function subtractionMonsterBuddyEntries(save: SaveData): CustomInventoryEntry[] {
+  return subtractionMonsterDefinitions.map((monster) => {
+    const selectionId = `subtraction-monster:${monster.id}`
+    const owned = isSubtractionMonsterOwned(save.progress.categoryCorrect, monster)
+    const progressCount = subtractionCorrectForArea(save.progress.categoryCorrect, monster.areaId)
+    return {
+      id: selectionId,
+      tabId: 'buddy',
+      kind: 'subtraction-monster-buddy',
+      origin: monster.origin,
+      label: owned ? monster.name : '？？？',
+      description: owned ? monster.description : `${progressCount}/${monster.threshold}もん`,
+      owned,
+      selected: owned && save.progress.equippedBuddyId === selectionId,
+      method: owned ? `${monster.threshold}もん せいかい` : 'ひきざんのほし',
+      acquiredAt: null,
+      subtractionMonster: monster,
+    } satisfies CustomInventoryEntry
+  })
+}
+
 function dedicatedBuddyEntries(save: SaveData): CustomInventoryEntry[] {
   return buddyDefinitions.map((buddy) => {
     const record = getCollectionRecord(save.progress.collectionRecords, 'buddy', buddy.id)
@@ -286,6 +319,7 @@ export function buildCustomInventory(
     ...ufoEntries(save),
     ...monsterBuddyEntries(save),
     ...additionMonsterBuddyEntries(save),
+    ...subtractionMonsterBuddyEntries(save),
     ...dedicatedBuddyEntries(save),
     ...titleEntries(save),
   ].filter((entry) => matchesCustomStarFilter(entry.origin, starFilter))

@@ -4,7 +4,7 @@ export type LearningLevel =
   | 'challenge'
   | 'advanced'
 
-export type ArithmeticOperation = 'multiplication' | 'addition'
+export type ArithmeticOperation = 'multiplication' | 'addition' | 'subtraction'
 
 export type QuestionCategory =
   | 'multiplication-basic'
@@ -16,6 +16,12 @@ export type QuestionCategory =
   | 'addition-two-digit-no-carry'
   | 'addition-two-digit-carry'
   | 'addition-three-digit'
+  | 'subtraction-within-9'
+  | 'subtraction-within-10'
+  | 'subtraction-borrow-basic'
+  | 'subtraction-two-digit-no-borrow'
+  | 'subtraction-two-digit-borrow'
+  | 'subtraction-three-digit'
   | 'two-digit-times-one-digit'
   | 'two-digit-times-two-digit'
   | 'divisors'

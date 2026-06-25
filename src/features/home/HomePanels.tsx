@@ -3,10 +3,14 @@ import { BuddySprite } from '../../components/collection/BuddySprite'
 import { LevelIconBadge } from '../../components/collection/LevelIconBadge'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
 import { PlayerIconBadge } from '../../components/collection/PlayerIconBadge'
+import { AdditionMonsterSprite } from '../../components/collection/AdditionMonsterSprite'
+import { SubtractionMonsterSprite } from '../../components/collection/SubtractionMonsterSprite'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { KukucchiCharacter } from '../../components/character/KukucchiCharacter'
+import { getAdditionMonsterById } from '../../data/additionMonsters'
 import { getLevelIconById } from '../../data/levelIcons'
 import { getPlayerIcon } from '../../data/playerIcons'
+import { getSubtractionMonsterById } from '../../data/subtractionMonsters'
 import {
   equipmentSlots,
   getEquippedItemForSlot,
@@ -24,6 +28,18 @@ import { getWeakFacts, weakFactHintText } from '../../game-engine/review/weakFac
 import { useSaveData } from '../../hooks/useSaveData'
 
 function renderSelectedBuddy(selectionId: string | null) {
+  const additionMonster = selectionId?.startsWith('addition-monster:')
+    ? getAdditionMonsterById(selectionId.replace(/^addition-monster:/, ''))
+    : undefined
+  if (additionMonster) {
+    return <AdditionMonsterSprite monster={additionMonster} className="home-buddy-sprite" />
+  }
+  const subtractionMonster = selectionId?.startsWith('subtraction-monster:')
+    ? getSubtractionMonsterById(selectionId.replace(/^subtraction-monster:/, ''))
+    : undefined
+  if (subtractionMonster) {
+    return <SubtractionMonsterSprite monster={subtractionMonster} className="home-buddy-sprite" />
+  }
   const monster = parseMonsterBuddySelectionId(selectionId)
   if (monster) {
     return (

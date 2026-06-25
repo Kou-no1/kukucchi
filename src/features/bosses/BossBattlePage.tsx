@@ -5,6 +5,7 @@ import { DailyBudgetNoticeModal } from '../../components/common/DailyBudgetNotic
 import { StatPill } from '../../components/common/StatPill'
 import { AdditionBossSprite } from '../../components/collection/AdditionBossSprite'
 import { AdvancedBossSprite } from '../../components/collection/AdvancedBossSprite'
+import { SubtractionBossSprite } from '../../components/collection/SubtractionBossSprite'
 import { UfoBadge } from '../../components/collection/UfoBadge'
 import { AnswerControls } from '../../components/game/AnswerControls'
 import { GameFeedback } from '../../components/game/GameFeedback'
@@ -36,6 +37,7 @@ import {
   generateAdditionQuestion,
   generateMissingFactorQuestion,
   generateMultiplicationFactQuestion,
+  generateSubtractionQuestion,
 } from '../../game-engine/questions/questionGenerator'
 import { buildSessionSummary } from '../../game-engine/rewards/rewards'
 import { applyAnswerToScore } from '../../game-engine/scoring/score'
@@ -73,6 +75,9 @@ function createBossQuestion(boss: BossDefinition, difficulty: BossDifficulty): Q
   if (boss.additionAreaId) {
     return generateAdditionQuestion(boss.additionAreaId)
   }
+  if (boss.subtractionAreaId) {
+    return generateSubtractionQuestion(boss.subtractionAreaId)
+  }
   if (boss.advancedCategory) {
     return generateAdvancedQuestion(boss.advancedCategory)
   }
@@ -96,6 +101,9 @@ function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group'])
     if (group === 'addition') {
       return '/planet/add'
     }
+    if (group === 'subtraction') {
+      return '/planet/subtract'
+    }
     if (group === 'advanced') {
       return '/advanced'
     }
@@ -104,7 +112,18 @@ function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group'])
   if (boss?.group === 'addition' || group === 'addition') {
     return '/planet/add'
   }
+  if (boss?.group === 'subtraction' || group === 'subtraction') {
+    return '/planet/subtract'
+  }
   return boss?.group === 'advanced' || group === 'advanced' ? '/advanced' : '/battle'
+}
+
+function easyOperationDifficultyLabel(label: string): string {
+  return label.replace('ムズ', 'むず')
+}
+
+function isEasyOperationGroup(group: BossDefinition['group']): boolean {
+  return group === 'addition' || group === 'subtraction'
 }
 
 export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['group'] }) {
@@ -127,6 +146,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
   const battleStartedAtRef = useRef(Date.now())
 
   const visibleBosses = bosses.filter((boss) => (bossId ? boss.id === bossId : boss.group === group))
+  const effectiveGroup = visibleBosses[0]?.group ?? group
 
   const nextQuestion = useCallback(
     (boss: BossDefinition, difficulty: BossDifficulty, nextIndex: number) => {
@@ -308,23 +328,24 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
 
   if (phase === 'ready' && activeBoss && activeDifficulty) {
     const backTo = bossBackTo(activeBoss, group)
+    const easyOperation = isEasyOperationGroup(activeBoss.group)
     return (
       <AppShell title={activeBoss.label} backTo={backTo} onBack={bossId ? undefined : returnToBossSelect}>
         <ModeStartScreen
           title={activeBoss.label}
-          eyebrow={group === 'addition' ? activeDifficulty.label.replace('ムズ', 'むず') : activeDifficulty.label}
+          eyebrow={easyOperation ? easyOperationDifficultyLabel(activeDifficulty.label) : activeDifficulty.label}
           description={
-            group === 'addition'
+            easyOperation
               ? `${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきむずはミスなしでクリア！`
               : `${activeDifficulty.questionCount}もんで HP${activeDifficulty.hp} をけずろう。げきムズはミスなしでクリア！`
           }
           level={saveData.player?.level ?? 1}
           backTo={backTo}
           onBack={bossId ? undefined : returnToBossSelect}
-          startLabel={group === 'addition' ? 'すたーと！' : undefined}
+          startLabel={easyOperation ? 'すたーと！' : undefined}
           onStart={() => startBattle(activeBoss, activeDifficulty)}
         >
-          <div className="boss-start-summary" aria-label={group === 'addition' ? 'ぼすばとるのじゅんび' : 'ボスバトルのじゅんび'}>
+          <div className="boss-start-summary" aria-label={easyOperation ? 'ぼすばとるのじゅんび' : 'ボスバトルのじゅんび'}>
             <span>もんだい {activeDifficulty.questionCount}</span>
             <span>HP {activeDifficulty.hp}</span>
             <span>
@@ -343,6 +364,8 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
     const timePercent = limitMs ? Math.max(0, Math.round((timeLeftMs / limitMs) * 100)) : 100
     const activeBossVariant = advancedBossVariantForBossId(activeBoss.id)
     const activeAdditionBoss = activeBoss.group === 'addition'
+    const activeSubtractionBoss = activeBoss.group === 'subtraction'
+    const easyOperation = isEasyOperationGroup(activeBoss.group)
     return (
       <AppShell
         title={activeBoss.label}
@@ -365,6 +388,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
                   compact
                   className="boss-hud-sprite"
                 />
+              ) : activeSubtractionBoss ? (
+                <SubtractionBossSprite
+                  boss={activeBoss}
+                  compact
+                  className="boss-hud-sprite"
+                />
               ) : (
                 <span aria-hidden="true">{activeBoss.emoji}</span>
               )}
@@ -383,7 +412,9 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
               </div>
             </div>
           ) : (
-            <p className="quiet-text">時間制限なし。おちついていこう！</p>
+            <p className="quiet-text">
+              {easyOperation ? 'じかんせいげんなし。おちついていこう！' : '時間制限なし。おちついていこう！'}
+            </p>
           )}
           <h2 id="boss-question" className="question-prompt">
             {question.prompt}
@@ -409,6 +440,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
       battleResult.rewardEffectIds.length > 0 ||
       battleResult.rewardTitles.length > 0
     const finalTitleUnlocked = battleResult.rewardTitles.includes(allGekimuzuTitle)
+    const easyOperation = isEasyOperationGroup(battleResult.boss.group)
     return (
       <AppShell
         title={battleResult.boss.label}
@@ -430,20 +462,23 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
         ) : null}
         <section className="boss-result">
           <p className="welcome">
-            {battleResult.cleared ? 'クリア！' : 'おしい！もういちど！'}
+            {battleResult.cleared ? (easyOperation ? 'くりあ！' : 'クリア！') : 'おしい！もういちど！'}
           </p>
           <h2>
-            {battleResult.damage}/{battleResult.difficulty.hp} ダメージ
+            {battleResult.damage}/{battleResult.difficulty.hp} {easyOperation ? 'だめーじ' : 'ダメージ'}
           </h2>
-          <p className="title-line">タイム {formatSeconds(battleResult.elapsedMs)}</p>
+          <p className="title-line">{easyOperation ? 'たいむ' : 'タイム'} {formatSeconds(battleResult.elapsedMs)}</p>
           <div className="stats-row compact-stats">
             <StatPill label="しょうぶ" value={battleResult.cleared ? 'かち' : 'おしい'} />
             <StatPill
-              label="ボスHP"
+              label={easyOperation ? 'ぼすHP' : 'ボスHP'}
               value={`${Math.max(0, battleResult.difficulty.hp - battleResult.damage)}`}
             />
             <StatPill label="くくっちHP" value="げんき" />
-            <StatPill label="むずかしさ" value={battleResult.difficulty.label} />
+            <StatPill
+              label="むずかしさ"
+              value={easyOperation ? easyOperationDifficultyLabel(battleResult.difficulty.label) : battleResult.difficulty.label}
+            />
           </div>
           {hasRewards ? (
             <div className="boss-reward-list">
@@ -462,7 +497,13 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
             </div>
           ) : (
             <p className="quiet-text">
-              {battleResult.cleared ? 'クリアコインをもらったよ。' : 'おこられないからだいじょうぶ。もう一回いこう！'}
+              {battleResult.cleared
+                ? easyOperation
+                  ? 'くりあコインをもらったよ。'
+                  : 'クリアコインをもらったよ。'
+                : easyOperation
+                  ? 'おこられないからだいじょうぶ。もういっかいいこう！'
+                  : 'おこられないからだいじょうぶ。もう一回いこう！'}
             </p>
           )}
           <div className="action-band">
@@ -474,7 +515,7 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
               もういちど
             </button>
             <button className="secondary-action" type="button" onClick={() => setPhase('select')}>
-              ボス一覧
+              {easyOperation ? 'ぼすいちらん' : 'ボス一覧'}
             </button>
           </div>
         </section>
@@ -487,11 +528,11 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
   }
 
   return (
-    <AppShell
-      title={group === 'addition' ? 'たしざんぼす' : group === 'advanced' ? '高学年ボス' : 'ボスバトル'}
-      backTo={bossBackTo(null, group)}
+      <AppShell
+      title={effectiveGroup === 'addition' ? 'たしざんぼす' : effectiveGroup === 'subtraction' ? 'ひきざんぼす' : effectiveGroup === 'advanced' ? '高学年ボス' : 'ボスバトル'}
+      backTo={bossBackTo(null, effectiveGroup)}
     >
-      <section className="boss-list" aria-label="ボス一覧">
+      <section className="boss-list" aria-label={isEasyOperationGroup(effectiveGroup) ? 'ぼすいちらん' : 'ボス一覧'}>
         {visibleBosses.map((boss) => {
           const unlocked = isBossUnlocked(boss, saveData)
           const clearedStars = getClearedStars(saveData, boss.id)
@@ -499,6 +540,8 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
           const rewardUfo = getUfoForBoss(boss.id)
           const remainingToUnlock = remainingQuestionsToUnlockBoss(boss, saveData)
           const additionBoss = boss.group === 'addition'
+          const subtractionBoss = boss.group === 'subtraction'
+          const easyOperation = isEasyOperationGroup(boss.group)
           const ownsRewardUfo = rewardUfo
             ? saveData.progress.ownedUfos.includes(rewardUfo.id)
             : false
@@ -517,6 +560,12 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
                   locked={!unlocked}
                   className="boss-card-sprite"
                 />
+              ) : subtractionBoss ? (
+                <SubtractionBossSprite
+                  boss={boss}
+                  locked={!unlocked}
+                  className="boss-card-sprite"
+                />
               ) : (
                 <span className="boss-emoji" aria-hidden="true">
                   {unlocked ? boss.emoji : '◆'}
@@ -531,13 +580,13 @@ export function BossBattlePage({ group = 'basic' }: { group?: BossDefinition['gr
               {!unlocked && remainingToUnlock !== null ? (
                 <p className="boss-unlock-progress">あと {remainingToUnlock}もん で かいほう！</p>
               ) : null}
-              <p>{unlocked ? boss.description : '条件をみたすと出会えます。'}</p>
-              <strong>{'★'.repeat(clearedStars) || '未クリア'}</strong>
+              <p>{unlocked ? boss.description : easyOperation ? 'じょうけんをみたすとであえます。' : '条件をみたすと出会えます。'}</p>
+              <strong>{'★'.repeat(clearedStars) || (easyOperation ? 'まだ' : '未クリア')}</strong>
               {rewardUfo ? (
                 <div className="boss-ufo-preview">
                   <UfoBadge ufo={rewardUfo} locked={!ownsRewardUfo} compact />
                   <small>
-                    げきムズ初回クリア報酬：{ownsRewardUfo ? rewardUfo.name : '？？？'}
+                    {easyOperation ? 'げきむずはじめてくりあ：' : 'げきムズ初回クリア報酬：'}{ownsRewardUfo ? rewardUfo.name : '？？？'}
                   </small>
                 </div>
               ) : null}

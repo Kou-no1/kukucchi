@@ -1,8 +1,8 @@
 import type { BossDifficultyId } from '../types/save'
 import { defaultMinDifficultyByBossDifficulty } from './factDifficulty'
-import type { AdditionAreaId } from './planets'
+import type { AdditionAreaId, SubtractionAreaId } from './planets'
 
-export type BossGroup = 'basic' | 'advanced' | 'addition'
+export type BossGroup = 'basic' | 'advanced' | 'addition' | 'subtraction'
 export type BossAdvancedCategory = 'square' | 'pi' | 'development'
 
 export const advancedBossCategoryLabels: Record<BossAdvancedCategory, string> = {
@@ -38,6 +38,7 @@ export type BossDefinition = {
   description: string
   stages?: number[]
   additionAreaId?: AdditionAreaId
+  subtractionAreaId?: SubtractionAreaId
   advancedCategory?: BossAdvancedCategory
   difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
   rewards: Record<BossDifficultyId, BossReward>
@@ -260,6 +261,138 @@ function createAdditionRewards(seed: (typeof additionBossSeeds)[number]): Record
   }
 }
 
+const subtractionBossSeeds: Array<{
+  id: string
+  no: number
+  areaId: SubtractionAreaId
+  label: string
+  shortLabel: string
+  emoji: string
+  description: string
+  normalTitle: string
+  normalUfoId?: string
+  normalEffectId?: string
+  difficultyOverrides?: Partial<Record<BossDifficultyId, Partial<BossDifficulty>>>
+}> = [
+  {
+    id: 'boss-sub-within-9',
+    no: 19,
+    areaId: 'sub-within-9',
+    label: 'ひきひききんぐ',
+    shortLabel: 'ひきひき',
+    emoji: '-1',
+    description: '1〜9のひきざんをみまもる、やさしいまいなすのおうさま。',
+    normalTitle: 'ひきざんびぎなー',
+    difficultyOverrides: {
+      normal: { hp: 6, questionCount: 8 },
+      hard: { hp: 8, questionCount: 10, timeLimitSeconds: 7 },
+      fast: { hp: 10, questionCount: 12, timeLimitSeconds: 4 },
+      gekimuzu: { hp: 9, questionCount: 10, timeLimitSeconds: 2.4 },
+    },
+  },
+  {
+    id: 'boss-sub-within-10',
+    no: 20,
+    areaId: 'sub-within-10',
+    label: 'てんからぷりんす',
+    shortLabel: 'てんから',
+    emoji: '-10',
+    description: '10までのかずから、すっとわかれるひきざんのおうじ。',
+    normalTitle: 'てんからちゃれんじゃー',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 7 },
+      fast: { timeLimitSeconds: 4 },
+      gekimuzu: { timeLimitSeconds: 2.2 },
+    },
+  },
+  {
+    id: 'boss-sub-borrow-basic',
+    no: 21,
+    areaId: 'sub-borrow-basic',
+    label: 'くりさがりますたー',
+    shortLabel: 'くりさがり',
+    emoji: '-↓',
+    description: 'くりさがりのやまをおりる、つよめのひきざんぼす。',
+    normalTitle: 'くりさがりふぁいたー',
+    normalUfoId: 'boss-sub-borrow-basic-ufo',
+    difficultyOverrides: {
+      normal: { hp: 9, questionCount: 12 },
+      hard: { hp: 11, questionCount: 14, timeLimitSeconds: 6 },
+      fast: { hp: 13, questionCount: 16, timeLimitSeconds: 3 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 1.8 },
+    },
+  },
+  {
+    id: 'boss-sub-two-digit-no-borrow',
+    no: 22,
+    areaId: 'sub-two-digit-no-borrow',
+    label: 'にけたばろん',
+    shortLabel: 'にけたひき',
+    emoji: '-2',
+    description: 'じゅうのくらいといちのくらいをならべてたたかう、2けたのぼす。',
+    normalTitle: 'にけたひきないと',
+    normalEffectId: 'sub-minus-flash',
+    difficultyOverrides: {
+      hard: { timeLimitSeconds: 8 },
+      fast: { timeLimitSeconds: 5 },
+      gekimuzu: { timeLimitSeconds: 3.4 },
+    },
+  },
+  {
+    id: 'boss-sub-two-digit-borrow',
+    no: 23,
+    areaId: 'sub-two-digit-borrow',
+    label: 'さがりえんぺらー',
+    shortLabel: 'さがり',
+    emoji: '--',
+    description: '2けたのくりさがりをおおきくささえるつよめのぼす。',
+    normalTitle: '2けたくりさがりがーど',
+    normalUfoId: 'boss-sub-two-digit-borrow-ufo',
+    difficultyOverrides: {
+      normal: { hp: 9, questionCount: 12 },
+      hard: { hp: 11, questionCount: 14, timeLimitSeconds: 7 },
+      fast: { hp: 13, questionCount: 16, timeLimitSeconds: 4 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 2.8 },
+    },
+  },
+  {
+    id: 'boss-sub-three-digit',
+    no: 24,
+    areaId: 'sub-three-digit',
+    label: 'おおひきじぇねらる',
+    shortLabel: 'おおひき',
+    emoji: '-3',
+    description: '3けたのおおきなかずをどっしりけずる、ひきざんさいきょうぼす。',
+    normalTitle: 'おおきいかずこまんだー',
+    normalUfoId: 'boss-sub-three-digit-ufo',
+    difficultyOverrides: {
+      normal: { hp: 10, questionCount: 12 },
+      hard: { hp: 12, questionCount: 14, timeLimitSeconds: 8 },
+      fast: { hp: 14, questionCount: 16, timeLimitSeconds: 5 },
+      gekimuzu: { hp: 12, questionCount: 12, timeLimitSeconds: 3.2 },
+    },
+  },
+]
+
+function createSubtractionRewards(seed: (typeof subtractionBossSeeds)[number]): Record<BossDifficultyId, BossReward> {
+  return {
+    normal: {
+      ufoId: seed.normalUfoId,
+      effectId: seed.normalEffectId,
+      title: seed.normalTitle,
+    },
+    hard: {
+      title: `${seed.shortLabel}はーどすたー`,
+    },
+    fast: {
+      title: `${seed.shortLabel}すぴーどすたー`,
+    },
+    gekimuzu: {
+      title: `${seed.shortLabel}げきむずすたー`,
+    },
+  }
+}
+
 export const bosses: BossDefinition[] = [
   ...basicBossSeeds.map((seed) => ({
     ...seed,
@@ -338,12 +471,24 @@ export const bosses: BossDefinition[] = [
     difficultyOverrides: seed.difficultyOverrides,
     rewards: createAdditionRewards(seed),
   })),
+  ...subtractionBossSeeds.map((seed) => ({
+    id: seed.id,
+    no: seed.no,
+    group: 'subtraction' as const,
+    label: seed.label,
+    shortLabel: seed.shortLabel,
+    emoji: seed.emoji,
+    description: seed.description,
+    subtractionAreaId: seed.areaId,
+    difficultyOverrides: seed.difficultyOverrides,
+    rewards: createSubtractionRewards(seed),
+  })),
 ]
 
 const itemKinds: BossLimitedItem['kind'][] = ['wear', 'hat', 'furniture', 'background']
 
 export const bossLimitedItems: BossLimitedItem[] = bosses
-  .filter((boss) => boss.group !== 'addition')
+  .filter((boss) => boss.group !== 'addition' && boss.group !== 'subtraction')
   .flatMap((boss) =>
     bossItemDifficultyIds.map((difficulty, difficultyIndex) => ({
     id: boss.rewards[difficulty].itemId ?? `${boss.id}-${difficulty}-item`,
@@ -362,6 +507,8 @@ export const allGekimuzuTitle = 'すべてをしるもの'
 
 export const additionMasterTitle = 'たしざんますたー'
 export const additionLegendTitle = 'たしざんれじぇんど'
+export const subtractionMasterTitle = 'ひきざんますたー'
+export const subtractionLegendTitle = 'ひきざんれじぇんど'
 
 export function getBossDifficulty(
   boss: BossDefinition,

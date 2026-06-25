@@ -11,6 +11,9 @@ export type UfoVariant =
   | 'add-plus-ring'
   | 'add-double-dome'
   | 'add-sunrise'
+  | 'sub-minus-ring'
+  | 'sub-split'
+  | 'sub-sunset'
 
 export type UfoDefinition = {
   id: string
@@ -28,6 +31,9 @@ export const specialUfoId = 'ufo-special-master'
 export const additionPlusRingUfoId = 'boss-add-carry-basic-ufo'
 export const additionDoubleDomeUfoId = 'boss-add-two-digit-carry-ufo'
 export const additionSunriseUfoId = 'boss-add-three-digit-ufo'
+export const subtractionMinusRingUfoId = 'boss-sub-borrow-basic-ufo'
+export const subtractionSplitUfoId = 'boss-sub-two-digit-borrow-ufo'
+export const subtractionSunsetUfoId = 'boss-sub-three-digit-ufo'
 
 const bossUfoSeeds: Record<
   string,
@@ -141,6 +147,30 @@ const bossUfoSeeds: Record<
     motif: '+3',
     origin: 'add',
   },
+  'boss-sub-borrow-basic': {
+    name: 'まいなすりんぐごう',
+    description: 'ひかる - がたのわでくりさがりをしずかにささえる、ひきざんのうちゅうせん。',
+    variant: 'sub-minus-ring',
+    lights: 8,
+    motif: '-',
+    origin: 'sub',
+  },
+  'boss-sub-two-digit-borrow': {
+    name: 'すぷりっとごう',
+    description: 'きたいがひだりとみぎにわかれる、2けたくりさがりのうちゅうせん。',
+    variant: 'sub-split',
+    lights: 10,
+    motif: '--',
+    origin: 'sub',
+  },
+  'boss-sub-three-digit': {
+    name: 'さんせっとごう',
+    description: 'ゆうひがしずむいろでおおきいかずをてらす、ひきざんさいごのうちゅうせん。',
+    variant: 'sub-sunset',
+    lights: 12,
+    motif: '-3',
+    origin: 'sub',
+  },
 }
 
 export const bossUfos: UfoDefinition[] = bosses.flatMap((boss) => {
@@ -158,7 +188,9 @@ export const bossUfos: UfoDefinition[] = bosses.flatMap((boss) => {
   ]
 })
 
-const legacyBossUfoCount = bosses.filter((boss) => boss.group !== 'addition').length
+const legacyBossUfoCount = bosses.filter(
+  (boss) => boss.group !== 'addition' && boss.group !== 'subtraction',
+).length
 
 export const specialUfo: UfoDefinition = {
   id: specialUfoId,

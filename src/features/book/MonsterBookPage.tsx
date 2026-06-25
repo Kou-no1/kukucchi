@@ -6,6 +6,7 @@ import { AdvancedMonsterSprite } from '../../components/collection/AdvancedMonst
 import { BuddySprite } from '../../components/collection/BuddySprite'
 import { KeyIcon } from '../../components/collection/KeyIcon'
 import { MonsterSprite } from '../../components/collection/MonsterSprite'
+import { SubtractionMonsterSprite } from '../../components/collection/SubtractionMonsterSprite'
 import { TitleEmblem } from '../../components/collection/TitleEmblem'
 import { TreasureIcon } from '../../components/collection/TreasureIcon'
 import { TrophySprite } from '../../components/collection/TrophySprite'
@@ -22,6 +23,12 @@ import {
   additionMonsterDefinitions,
   isAdditionMonsterOwned,
 } from '../../data/additionMonsters'
+import {
+  isSubtractionMonsterOwned,
+  subtractionAreaLabel,
+  subtractionCorrectForArea,
+  subtractionMonsterDefinitions,
+} from '../../data/subtractionMonsters'
 import { buddyDefinitions, buddyThemeLabels } from '../../data/buddies'
 import { advancedBossCategoryLabels, bossDifficultyIds, bosses, bossLimitedItems, getBossDifficulty } from '../../data/bosses'
 import type { BossDefinition, BossLimitedItem } from '../../data/bosses'
@@ -78,6 +85,9 @@ function keyActivate(event: KeyboardEvent<HTMLElement>, action: () => void) {
 }
 
 function bossDanLabel(boss: BossDefinition): string {
+  if (boss.subtractionAreaId) {
+    return `-${boss.no - 18}`
+  }
   if (boss.advancedCategory === 'square') {
     return '平'
   }
@@ -94,6 +104,9 @@ function bossDanLabel(boss: BossDefinition): string {
 }
 
 function bossAccentDan(boss: BossDefinition): number {
+  if (boss.subtractionAreaId) {
+    return Math.max(1, boss.no - 18)
+  }
   if (boss.advancedCategory === 'square') {
     return 8
   }
@@ -387,6 +400,41 @@ export function MonsterBookPage() {
                   >
                     <span className="boss-no">+{String(monster.no).padStart(2, '0')}</span>
                     <AdditionMonsterSprite
+                      monster={monster}
+                      locked={!owned}
+                      className="book-pixel-icon"
+                    />
+                    <h2>{owned ? monster.name : '？？？'}</h2>
+                    <p>
+                      {owned
+                        ? monster.description
+                        : `${progressCount}/${monster.threshold}もん`}
+                    </p>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+          <section className="collection-section" aria-labelledby="subtraction-monsters-title">
+            <h2 id="subtraction-monsters-title">ひきざんのなかま</h2>
+            <div className="monster-grid book-grid">
+              {subtractionMonsterDefinitions.map((monster) => {
+                const owned = isSubtractionMonsterOwned(saveData.progress.categoryCorrect, monster)
+                const progressCount = subtractionCorrectForArea(saveData.progress.categoryCorrect, monster.areaId)
+                return (
+                  <article
+                    className={owned ? 'book-card subtraction-monster-card' : 'book-card silhouette subtraction-monster-card'}
+                    key={monster.id}
+                    {...cardAction({
+                      name: owned ? monster.name : '？？？',
+                      description: owned ? monster.description : `${subtractionAreaLabel(monster.areaId)}をれんしゅうしよう`,
+                      acquiredAt: null,
+                      method: owned ? `${monster.threshold}もん せいかい` : '？？？',
+                      owned,
+                    })}
+                  >
+                    <span className="boss-no">-{String(monster.no).padStart(2, '0')}</span>
+                    <SubtractionMonsterSprite
                       monster={monster}
                       locked={!owned}
                       className="book-pixel-icon"

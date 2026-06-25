@@ -387,6 +387,8 @@ export const rainbowAuraEffectId = 'rainbow-aura'
 export const galaxySwirlEffectId = 'galaxy-swirl'
 export const addGatherLightEffectId = 'add-gather-light'
 export const addPlusBurstEffectId = 'add-plus-burst'
+export const subScatterLightEffectId = 'sub-scatter-light'
+export const subMinusFlashEffectId = 'sub-minus-flash'
 
 export const additionalEffectItems: ShopItem[] = [
   {
@@ -453,11 +455,44 @@ export const additionalEffectItems: ShopItem[] = [
     availableInShop: false,
     rewardOrigin: 'add',
   },
+  {
+    id: subScatterLightEffectId,
+    no: 42,
+    name: 'ちるひかり',
+    description: 'まんなかからひかりのつぶがそとへちらばる、ひきざんみたいなひかり',
+    price: 500,
+    emoji: '-',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'scatter-light' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+  },
+  {
+    id: subMinusFlashEffectId,
+    no: 43,
+    name: 'まいなすふらっしゅ',
+    description: '- のひかりがすっとはしってきえる、ひきざんぼすのひかり',
+    price: 0,
+    emoji: '-',
+    kind: 'effect',
+    visual: { layer: 'effect', variant: 'minus-flash' },
+    tier: 1,
+    countsTowardTierUnlock: false,
+    availableInShop: false,
+    rewardOrigin: 'sub',
+  },
 ]
 
-export const shopEffectItemIds = ['comet-ship', 'sparkle-trail', 'comet-burst', 'soft-light', addGatherLightEffectId]
+export const shopEffectItemIds = [
+  'comet-ship',
+  'sparkle-trail',
+  'comet-burst',
+  'soft-light',
+  addGatherLightEffectId,
+  subScatterLightEffectId,
+]
 export const treasureEffectItemIds = [rainbowAuraEffectId]
-export const bossRewardEffectItemIds = [galaxySwirlEffectId, addPlusBurstEffectId]
+export const bossRewardEffectItemIds = [galaxySwirlEffectId, addPlusBurstEffectId, subMinusFlashEffectId]
 export const phase15EffectItemIds = [
   ...shopEffectItemIds,
   ...treasureEffectItemIds,

@@ -4,16 +4,21 @@ import type {
   Question,
   QuestionCategory,
 } from '../../types/game'
-import type { AdditionAreaId } from '../../data/planets'
+import type { AdditionAreaId, SubtractionAreaId } from '../../data/planets'
 import { getReviewQueue } from '../review/weakFacts'
 import {
   selectAdaptiveAdditionFact,
   selectAdaptiveMultiplicationFact,
+  selectAdaptiveSubtractionFact,
 } from '../school/schoolMode2'
 import {
   generateAdditionFactQuestion,
   generateAdditionQuestion as generateRandomAdditionQuestion,
 } from './addition'
+import {
+  generateSubtractionFactQuestion,
+  generateSubtractionQuestion as generateRandomSubtractionQuestion,
+} from './subtraction'
 import { makeMultiplicationFactId } from './factIds'
 import { createMultiplicationFactPool, factDifficulty } from './factDifficulty'
 
@@ -260,6 +265,36 @@ export function generateAdaptiveAdditionQuestion(
     return generateAdditionFactQuestion(areaId, fact.left, fact.right, rng)
   }
   return generateAdditionQuestion(areaId, options)
+}
+
+export function generateSubtractionQuestion(
+  areaId: SubtractionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  return generateRandomSubtractionQuestion(areaId, options.rng ?? Math.random)
+}
+
+export function generateAdaptiveSubtractionQuestion(
+  facts: Record<string, MultiplicationFactProgress>,
+  areaId: SubtractionAreaId,
+  options: Omit<GenerateQuestionOptions, 'stage' | 'stages' | 'answerMode'> = {},
+): Question {
+  const rng = options.rng ?? Math.random
+  if (options.schoolMode2Enabled) {
+    const fact = selectAdaptiveSubtractionFact({
+      facts,
+      areaId,
+      rng,
+      recentIncorrectCount: options.recentIncorrectCount ?? 0,
+    })
+    return generateSubtractionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  const queue = getReviewQueue(facts, new Date(), 8, { operation: 'subtraction', areaId })
+  if (queue.length > 0 && rng() < 0.7) {
+    const fact = pick(queue, rng)
+    return generateSubtractionFactQuestion(areaId, fact.left, fact.right, rng)
+  }
+  return generateSubtractionQuestion(areaId, options)
 }
 
 export function generateSquareQuestion(rng: RandomSource = Math.random): Question {

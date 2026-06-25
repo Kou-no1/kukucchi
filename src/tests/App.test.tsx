@@ -68,8 +68,7 @@ describe('app flow', () => {
     ).toEqual(['たしざんのほし', 'ひきざんのほし', 'かけざんのほし'])
     expect(screen.getByRole('link', { name: /かけざんのほし/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /たしざんのほし/ })).toBeInTheDocument()
-    expect(screen.getByText('ひきざんのほし')).toBeInTheDocument()
-    expect(screen.getByText('じゅんびちゅう')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /ひきざんのほし/ })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'カスタム' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: '図かん' })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'ショップ' })).toBeInTheDocument()
@@ -97,6 +96,16 @@ describe('app flow', () => {
     expect(screen.queryByRole('button', { name: '九九' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '平方数' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: '円周率' })).not.toBeInTheDocument()
+
+    await user.click(screen.getAllByRole('link', { name: 'もどる' })[0])
+    expect(await screen.findByRole('heading', { name: 'たしざんのほし' })).toBeInTheDocument()
+    await user.click(screen.getAllByRole('link', { name: 'もどる' })[0])
+    await user.click(await screen.findByRole('link', { name: /ひきざんのほし/ }))
+    expect(await screen.findByRole('heading', { name: 'ひきざんのほし' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: /おぼえる/ })).toBeInTheDocument()
+    expect(document.querySelector('a[href="#/rocket?planet=subtract"]')).toBeInTheDocument()
+    expect(document.querySelector('a[href="#/speed?planet=subtract"]')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'ひきざんぼす' })).toBeInTheDocument()
   })
 
   it('returns to multiplication planet menu from boss selection', async () => {
