@@ -99,7 +99,7 @@ describe('app flow', () => {
     expect(screen.queryByRole('button', { name: '円周率' })).not.toBeInTheDocument()
   })
 
-  it('returns home from multiplication boss selection', async () => {
+  it('returns to multiplication planet menu from boss selection', async () => {
     const user = await completeOnboarding()
     await user.click(screen.getByRole('link', { name: /かけざんのほし/ }))
     expect(await screen.findByRole('heading', { name: 'かけざんのほし' })).toBeInTheDocument()
@@ -107,10 +107,10 @@ describe('app flow', () => {
     await user.click(screen.getByRole('link', { name: /ぼすばとる/ }))
     expect(await screen.findByRole('heading', { name: 'ボスバトル' })).toBeInTheDocument()
     const back = screen.getByRole('link', { name: 'もどる' })
-    expect(back).toHaveAttribute('href', '#/home')
+    expect(back).toHaveAttribute('href', '#/planet/multiply')
 
     await user.click(back)
-    expect(await screen.findByRole('heading', { name: 'ほしをえらぶ' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'かけざんのほし' })).toBeInTheDocument()
   })
 
   it('hides learning level setup and reflects player icon changes on home', async () => {

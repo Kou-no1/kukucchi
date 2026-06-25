@@ -99,7 +99,7 @@ function bossBackTo(boss: BossDefinition | null, group: BossDefinition['group'])
     if (group === 'advanced') {
       return '/advanced'
     }
-    return '/home'
+    return '/planet/multiply'
   }
   if (boss?.group === 'addition' || group === 'addition') {
     return '/planet/add'
